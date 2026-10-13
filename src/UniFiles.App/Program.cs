@@ -3,7 +3,9 @@ using Avalonia.Controls;
 using UniFiles.App.Platform;
 using UniFiles.App.Services;
 using UniFiles.Core.Storage;
+using UniFiles.Core.Jobs;
 using UniFiles.Core.Tools;
+using Velopack;
 
 namespace UniFiles.App;
 
@@ -17,6 +19,16 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Must run first: the installer starts the app with special arguments (install, update,
+        // uninstall) that Velopack handles here before exiting.
+        var velopack = VelopackApp.Build();
+        if (OperatingSystem.IsWindows())
+            velopack = velopack.OnBeforeUninstallFastCallback(_ => RemoveSystemIntegration());
+        velopack.Run();
+
+        CrashLog.Install();
+        ErrorDescriber.UnexpectedError = ex => CrashLog.Write("Job", ex);
+
         var request = LaunchRequest.Parse(args);
 
         // The language must be set before any text is read from the resources, including the
@@ -40,6 +52,19 @@ internal static class Program
         AppBuilder.Configure<App>()
             .UsePlatformDetect()
             .LogToTrace();
+
+    /// <summary>Uninstalling leaves nothing behind in the system: right-click menu removed.</summary>
+    private static void RemoveSystemIntegration()
+    {
+        try
+        {
+            ExplorerMenu.Installer.Uninstall();
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write("Uninstall", ex);
+        }
+    }
 
     /// <summary>Installer hooks: <c>--register</c> / <c>--unregister</c>.</summary>
     private static int SetContextMenu(SettingsStore store, bool enabled)

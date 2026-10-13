@@ -143,6 +143,17 @@ public partial class PreferencesViewModel : PageViewModel
     }
 
     [RelayCommand]
+    private void OpenNotices()
+    {
+        var file = Path.Combine(AppContext.BaseDirectory, "THIRD-PARTY-NOTICES.md");
+        if (File.Exists(file))
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(file) { UseShellExecute = true })?.Dispose();
+    }
+
+    [RelayCommand]
+    private Task OpenLogs() => DialogService.OpenFolderAsync(CrashLog.Folder);
+
+    [RelayCommand]
     private void ResetOutput() => OutputDirectory = AppSettings.DefaultOutputDirectory;
 
     [RelayCommand]

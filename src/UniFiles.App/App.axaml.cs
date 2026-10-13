@@ -45,6 +45,7 @@ public partial class App : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             _desktop = desktop;
+            CrashLog.InstallForDispatcher();
             var initial = Program.InitialRequest;
 
             // The splash greets interactive launches; right-click actions stay in the background.
@@ -92,6 +93,9 @@ public partial class App : Application
         splash?.Close();
 
         SingleInstance.Attach(request => Dispatcher.UIThread.Post(() => Handle(request)));
+
+        // Once the window is up and idle, get the video player ready.
+        DispatcherTimer.RunOnce(VideoPlayer.WarmUp, TimeSpan.FromSeconds(3));
     }
 
     public static void ApplyTheme(AppTheme theme)

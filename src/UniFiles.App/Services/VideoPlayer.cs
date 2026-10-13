@@ -20,7 +20,8 @@ public sealed class VideoPlayer : IDisposable
     private static readonly Lazy<LibVLC> Engine = new(() =>
     {
         LibVLCSharp.Shared.Core.Initialize();
-        return new LibVLC("--quiet", "--no-video-title-show", "--no-snapshot-preview");
+        // No network: LibVLC would otherwise look up artwork and metadata online.
+        return new LibVLC("--quiet", "--no-video-title-show", "--no-snapshot-preview", "--no-metadata-network-access");
     });
 
     private readonly object _frameLock = new();
@@ -59,6 +60,22 @@ public sealed class VideoPlayer : IDisposable
         _media.AddOption(":start-paused");
         _player.Media = _media;
     }
+
+    /// <summary>
+    /// Loads LibVLC in the background so the first video editor opens quickly: on a cold start,
+    /// Windows needs several seconds to read its ~90 MB of modules from disk.
+    /// </summary>
+    public static void WarmUp() => ThreadPool.QueueUserWorkItem(_ =>
+    {
+        try
+        {
+            _ = Engine.Value;
+        }
+        catch (Exception)
+        {
+            // No LibVLC (e.g. Linux without VLC): the editor reports it when opened.
+        }
+    });
 
     /// <summary>The latest frame; replaced when the video size is known.</summary>
     public WriteableBitmap? Frame { get; private set; }

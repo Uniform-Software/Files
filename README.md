@@ -35,6 +35,17 @@ UniFiles remplace les sites de conversion en ligne par une application de bureau
 - Historique des traitements, préférences (dossier de sortie, thème sombre ou clair, langue, animations réduites).
 - Accessibilité : navigation au clavier, libellés pour les lecteurs d'écran, cibles de 44 px, animations désactivables.
 
+## Installer (Windows)
+
+1. Télécharge `UniFiles-win-Setup.exe` depuis la page des versions.
+2. Lance-le : UniFiles s'installe pour ton compte, sans droits administrateur, et crée un raccourci sur le bureau et dans le menu Démarrer.
+3. Cette version n'est pas encore signée : si Windows affiche « Windows a protégé votre ordinateur », clique sur « Informations complémentaires », puis sur « Exécuter quand même ».
+
+Une version portable (`UniFiles-win-Portable.zip`) est aussi disponible : décompresse-la et lance `UniFiles.exe`.
+Pour désinstaller : Paramètres Windows → Applications → UniFiles. Le menu clic droit est retiré automatiquement.
+
+L'installeur Windows embarque ffmpeg 9.0.2, Ghostscript 10.08.0 et LibVLC : rien d'autre à installer.
+
 ## Programmes externes
 
 Les modules **Vidéo / audio** et **Compresser un PDF** s'appuient sur [ffmpeg](https://ffmpeg.org) et [Ghostscript](https://ghostscript.com). Pour l'instant, ils ne sont pas inclus dans l'appli. UniFiles les cherche, dans cet ordre :
@@ -62,6 +73,14 @@ dotnet test
 ```
 
 Options de ligne de commande : `UniFiles fichiers…` (ouvre l'appli sur ces fichiers), `--action <id> fichiers…` (action rapide en arrière-plan, ex. `--action image.compress`), `--register` / `--unregister` (ajoute ou retire le menu clic droit, pour les installeurs).
+
+### Publier une version Windows
+
+```powershell
+./build/release-windows.ps1 -Version 0.2.0
+```
+
+Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (build BtbN figé et vérifié par SHA-256) et Ghostscript avec leurs licences, puis crée l'installeur et les paquets de mise à jour avec [Velopack](https://velopack.io) dans `artifacts/releases`. Les notes de version sont lues dans `build/release-notes/<version>.md`. Prérequis : Ghostscript 10.08.0 installé sur la machine de build.
 
 Pour utiliser l'appli en mode portable ou en développement sans toucher à tes préférences, définis `UNIFILES_DATA_DIR` vers un autre dossier : les préférences et l'historique y seront stockés.
 
@@ -98,8 +117,11 @@ Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.A
 - [x] Icône et menu dans la zone de notification
 - [ ] Notifications natives du système, lancement au démarrage
 - [x] Instance unique (les autres points d'entrée transmettent leurs fichiers par named pipe)
-- [ ] ffmpeg et Ghostscript embarqués
-- [ ] Installeurs et mises à jour automatiques (Velopack)
+- [x] ffmpeg et Ghostscript embarqués (Windows)
+- [x] Installeur Windows (Velopack)
+- [ ] Mises à jour automatiques (à brancher sur GitHub Releases)
+- [ ] Signature de l'installeur Windows
+- [ ] Installeurs macOS et Linux
 - [ ] Aperçu visuel avant/après pour les images
 
 ## Licence

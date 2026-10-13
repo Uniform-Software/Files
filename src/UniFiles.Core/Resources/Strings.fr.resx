@@ -144,6 +144,8 @@
   <data name="Splash_Interface" xml:space="preserve"><value>Préparation de l'espace de travail…</value></data>
   <data name="Splash_Copyright" xml:space="preserve"><value>© 2026 Uniform Systems · Logiciel libre sous licence GPL v3</value></data>
   <data name="Splash_Credits" xml:space="preserve"><value>Construit avec .NET, Avalonia, libvips, PDFsharp, ffmpeg, LibVLC et Ghostscript.</value></data>
+  <data name="Prefs_ThirdParty" xml:space="preserve"><value>Licences tierces</value></data>
+  <data name="Prefs_Logs" xml:space="preserve"><value>Journal d'erreurs</value></data>
   <data name="Tool_ImageCompress_Name" xml:space="preserve"><value>Compresser</value></data>
   <data name="Tool_ImageCompress_Description" xml:space="preserve"><value>Alléger les images, même format</value></data>
   <data name="Tool_ImageResize_Name" xml:space="preserve"><value>Redimensionner</value></data>

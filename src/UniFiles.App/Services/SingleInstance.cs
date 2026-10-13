@@ -98,9 +98,11 @@ public static class SingleInstance
 
     private static string BuildName()
     {
-        // Per user and per session; hashed so the name is valid everywhere (Windows pipes, Unix sockets).
+        // Per user, per session and per data folder (a portable copy is a separate app);
+        // hashed so the name is valid everywhere (Windows pipes, Unix sockets).
         using var process = System.Diagnostics.Process.GetCurrentProcess();
-        var id = $"{Environment.UserName}|{process.SessionId}";
+        var dataFolder = Path.GetFullPath(UniFiles.Core.Storage.SettingsStore.AppDataDirectory).ToLowerInvariant();
+        var id = $"{Environment.UserName}|{process.SessionId}|{dataFolder}";
         var hash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(id)))[..16];
         return $"UniFiles-{hash}";
     }

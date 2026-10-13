@@ -7,9 +7,20 @@ namespace UniFiles.Core.Jobs;
 /// <summary>Turns exceptions into short explanations a non-technical user can act on.</summary>
 public static class ErrorDescriber
 {
+    /// <summary>Receives errors with no plain-language explanation, so the app can log them locally.</summary>
+    public static Action<Exception>? UnexpectedError { get; set; }
+
     private const int DiskFullHResult = unchecked((int)0x80070070);
 
-    public static string Describe(Exception exception) => exception switch
+    public static string Describe(Exception exception)
+    {
+        var message = Explain(exception);
+        if (message == Strings.Error_Unknown)
+            UnexpectedError?.Invoke(exception);
+        return message;
+    }
+
+    private static string Explain(Exception exception) => exception switch
     {
         ToolException tool => tool.Message,
         FileNotFoundException or DirectoryNotFoundException => Strings.Error_FileNotFound,
