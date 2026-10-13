@@ -1,0 +1,188 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:tools="using:UniFiles.Core.Tools"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.ActionView"
+             x:DataType="vm:ActionViewModel">
+
+  <Grid RowDefinitions="Auto,*" ColumnDefinitions="*,24,360">
+
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="12" Margin="0,0,0,20">
+      <Button Classes="icon" Command="{Binding BackCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_Back}">
+        <controls:Icon Size="20" Data="{StaticResource IconBack}" />
+      </Button>
+      <StackPanel VerticalAlignment="Center">
+        <TextBlock Classes="h1" Text="{x:Static res:Strings.Action_Title}" />
+        <TextBlock Classes="caption" Text="{Binding FilesSummary}" />
+      </StackPanel>
+    </StackPanel>
+
+    <!-- Left: tool choice and settings -->
+    <ScrollViewer Grid.Row="1" Grid.Column="0">
+      <StackPanel Spacing="20" Margin="0,0,8,32">
+        <Border Classes="banner" IsVisible="{Binding IsMixed}">
+          <TextBlock Classes="secondary" Text="{x:Static res:Strings.Action_MixedHint}" TextWrapping="Wrap" />
+        </Border>
+
+        <ListBox Classes="tools"
+                 ItemsSource="{Binding Tools}"
+                 SelectedItem="{Binding SelectedTool}"
+                 AutomationProperties.Name="{x:Static res:Strings.Action_ToolsLabel}">
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="2" />
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:ToolItemViewModel">
+              <StackPanel Spacing="4" Margin="0,0,6,0">
+                <DockPanel>
+                  <controls:ModuleBadge DockPanel.Dock="Left" Size="26" Margin="0,0,10,0" Tile="{Binding Module.Brush}" Icon="{Binding Module.Icon}" />
+                  <TextBlock Classes="label" Text="{Binding Name}" VerticalAlignment="Center" TextWrapping="Wrap" />
+                </DockPanel>
+                <TextBlock Classes="caption" Text="{Binding Description}" TextWrapping="Wrap" />
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+
+        <Border Classes="card" IsVisible="{Binding HasOptions}">
+          <StackPanel Spacing="16">
+            <TextBlock Classes="h2" Text="{x:Static res:Strings.Action_Settings}" />
+            <ItemsControl ItemsSource="{Binding Options}">
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="18" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+              <ItemsControl.DataTemplates>
+                <DataTemplate DataType="vm:ChoiceOptionViewModel">
+                  <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                    <TextBlock Classes="label" Text="{Binding Label}" />
+                    <ComboBox ItemsSource="{Binding Choices}" SelectedItem="{Binding Selected}"
+                              AutomationProperties.Name="{Binding Label}" />
+                    <TextBlock Classes="caption" Text="{Binding Hint}" IsVisible="{Binding HasHint}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </DataTemplate>
+                <DataTemplate DataType="vm:NumberOptionViewModel">
+                  <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                    <DockPanel>
+                      <TextBlock DockPanel.Dock="Right" Classes="secondary" Text="{Binding DisplayValue}" IsVisible="{Binding UseSlider}" />
+                      <TextBlock Classes="label" Text="{Binding Label}" />
+                    </DockPanel>
+                    <Slider IsVisible="{Binding UseSlider}"
+                            Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+                            Value="{Binding SliderValue}"
+                            SmallChange="1" LargeChange="10" IsSnapToTickEnabled="True" TickFrequency="1"
+                            AutomationProperties.Name="{Binding Label}" />
+                    <NumericUpDown IsVisible="{Binding !UseSlider}"
+                                   Minimum="{Binding Minimum}" Maximum="{Binding Maximum}"
+                                   Value="{Binding BoxValue}" Increment="10" FormatString="0"
+                                   HorizontalAlignment="Left" MinWidth="200"
+                                   AutomationProperties.Name="{Binding Label}" />
+                    <TextBlock Classes="caption" Text="{Binding Hint}" IsVisible="{Binding HasHint}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </DataTemplate>
+                <DataTemplate DataType="vm:BoolOptionViewModel">
+                  <StackPanel Spacing="2" IsVisible="{Binding IsVisible}">
+                    <ToggleSwitch IsChecked="{Binding IsChecked}" Content="{Binding Label}"
+                                  OnContent="" OffContent=""
+                                  AutomationProperties.Name="{Binding Label}" />
+                    <TextBlock Classes="caption" Text="{Binding Hint}" IsVisible="{Binding HasHint}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </DataTemplate>
+                <DataTemplate DataType="vm:TextOptionViewModel">
+                  <StackPanel Spacing="6" IsVisible="{Binding IsVisible}">
+                    <TextBlock Classes="label" Text="{Binding Label}" />
+                    <TextBox Text="{Binding Text}" AutomationProperties.Name="{Binding Label}" />
+                    <TextBlock Classes="caption" Text="{Binding Hint}" IsVisible="{Binding HasHint}" TextWrapping="Wrap" />
+                  </StackPanel>
+                </DataTemplate>
+              </ItemsControl.DataTemplates>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+
+        <!-- Before / after preview (rename) -->
+        <Border Classes="card" IsVisible="{Binding HasPreview}">
+          <StackPanel Spacing="12">
+            <TextBlock Classes="h2" Text="{x:Static res:Strings.Action_Preview}" />
+            <Grid ColumnDefinitions="*,32,*">
+              <TextBlock Grid.Column="0" Classes="caption" Text="{x:Static res:Strings.Action_Before}" />
+              <TextBlock Grid.Column="2" Classes="caption" Text="{x:Static res:Strings.Action_After}" />
+            </Grid>
+            <ItemsControl ItemsSource="{Binding PreviewRows}">
+              <ItemsControl.ItemTemplate>
+                <DataTemplate x:DataType="tools:PreviewRow">
+                  <Grid ColumnDefinitions="*,32,*" Margin="0,3">
+                    <TextBlock Grid.Column="0" Classes="secondary" Text="{Binding Before}" TextTrimming="CharacterEllipsis" />
+                    <controls:Icon Size="16" Grid.Column="1" Data="{StaticResource IconBack}" Foreground="{DynamicResource TextSecondaryBrush}" RenderTransform="rotate(180deg)" />
+                    <TextBlock Grid.Column="2" Classes="label" Text="{Binding After}" TextTrimming="CharacterEllipsis" />
+                  </Grid>
+                </DataTemplate>
+              </ItemsControl.ItemTemplate>
+            </ItemsControl>
+          </StackPanel>
+        </Border>
+        <TextBlock Classes="error" Text="{Binding PreviewError}" IsVisible="{Binding PreviewError, Converter={x:Static ObjectConverters.IsNotNull}}" TextWrapping="Wrap" />
+      </StackPanel>
+    </ScrollViewer>
+
+    <!-- Right: files and launch -->
+    <Border Grid.Row="1" Grid.Column="2" Classes="panel" Margin="0,0,0,32" Padding="20">
+      <DockPanel>
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+          <Button DockPanel.Dock="Right" Classes="icon" Command="{Binding AddFilesCommand}"
+                  AutomationProperties.Name="{x:Static res:Strings.Action_AddFiles}"
+                  ToolTip.Tip="{x:Static res:Strings.Action_AddFiles}">
+            <controls:Icon Size="20" Data="{StaticResource IconPlus}" />
+          </Button>
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Action_Files}" VerticalAlignment="Center" />
+        </DockPanel>
+
+        <StackPanel DockPanel.Dock="Bottom" Spacing="12" Margin="0,16,0,0">
+          <Border Classes="banner" IsVisible="{Binding HasWarning}">
+            <DockPanel>
+              <controls:Icon Size="16" DockPanel.Dock="Left" Data="{StaticResource IconAlert}" Foreground="{DynamicResource ErrorBrush}" Margin="0,2,10,0" VerticalAlignment="Top" />
+              <TextBlock Text="{Binding Warning}" TextWrapping="Wrap" />
+            </DockPanel>
+          </Border>
+          <TextBlock Classes="secondary" Text="{Binding Estimate}" IsVisible="{Binding HasEstimate}" TextWrapping="Wrap" />
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.Action_OriginalsSafe}" TextWrapping="Wrap" />
+          <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                  Command="{Binding LaunchCommand}" HotKey="Ctrl+Enter"
+                  AutomationProperties.Name="{Binding LaunchLabel}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <controls:Icon Size="16" Data="{StaticResource IconPlay}" />
+              <TextBlock Text="{Binding LaunchLabel}" />
+            </StackPanel>
+          </Button>
+        </StackPanel>
+
+        <ListBox ItemsSource="{Binding Files}" Background="Transparent"
+                 AutomationProperties.Name="{x:Static res:Strings.Action_Files}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:FileItemViewModel">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Classes="icon"
+                        Command="{Binding $parent[ListBox].((vm:ActionViewModel)DataContext).RemoveFileCommand}"
+                        CommandParameter="{Binding}"
+                        AutomationProperties.Name="{x:Static res:Strings.Action_RemoveFile}"
+                        ToolTip.Tip="{x:Static res:Strings.Action_RemoveFile}">
+                  <controls:Icon Size="16" Data="{StaticResource IconClose}" />
+                </Button>
+                <StackPanel VerticalAlignment="Center">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+                  <TextBlock Classes="caption" Text="{Binding SizeText}" />
+                </StackPanel>
+              </DockPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+    </Border>
+  </Grid>
+</UserControl>

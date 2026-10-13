@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.QueueView"
+             x:DataType="vm:QueueViewModel">
+  <DockPanel>
+    <DockPanel DockPanel.Dock="Top" Margin="0,0,0,20">
+      <Button DockPanel.Dock="Right" Classes="ghost" IsVisible="{Binding HasFinished}"
+              Command="{Binding ClearFinishedCommand}" Content="{x:Static res:Strings.Queue_ClearFinished}" />
+      <TextBlock Classes="h1" Text="{x:Static res:Strings.Nav_Queue}" VerticalAlignment="Center" />
+    </DockPanel>
+
+    <Panel>
+      <StackPanel IsVisible="{Binding IsEmpty}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Margin="0,0,0,80">
+        <controls:Icon Size="40" Data="{StaticResource IconQueue}" Foreground="{DynamicResource TextSecondaryBrush}" HorizontalAlignment="Center" />
+        <TextBlock Classes="secondary" Text="{x:Static res:Strings.Queue_Empty}" HorizontalAlignment="Center" />
+      </StackPanel>
+
+      <ScrollViewer IsVisible="{Binding !IsEmpty}">
+        <ItemsControl ItemsSource="{Binding Jobs}" Margin="0,0,0,32">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:JobViewModel">
+              <Border Classes="card" Margin="0,0,0,12">
+                <StackPanel Spacing="12">
+
+                  <!-- Title row -->
+                  <DockPanel>
+                    <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2">
+                      <Button Classes="icon" IsVisible="{Binding CanMoveUp}" Command="{Binding MoveUpCommand}"
+                              AutomationProperties.Name="{x:Static res:Strings.Queue_MoveUp}" ToolTip.Tip="{x:Static res:Strings.Queue_MoveUp}">
+                        <controls:Icon Size="16" Data="{StaticResource IconUp}" />
+                      </Button>
+                      <Button Classes="icon" IsVisible="{Binding CanMoveDown}" Command="{Binding MoveDownCommand}"
+                              AutomationProperties.Name="{x:Static res:Strings.Queue_MoveDown}" ToolTip.Tip="{x:Static res:Strings.Queue_MoveDown}">
+                        <controls:Icon Size="16" Data="{StaticResource IconDown}" />
+                      </Button>
+                      <Button Classes="icon" IsVisible="{Binding CanPause}" Command="{Binding PauseCommand}"
+                              AutomationProperties.Name="{x:Static res:Strings.Queue_Pause}" ToolTip.Tip="{x:Static res:Strings.Queue_Pause}">
+                        <controls:Icon Size="16" Data="{StaticResource IconPause}" />
+                      </Button>
+                      <Button Classes="icon" IsVisible="{Binding IsPaused}" Command="{Binding ResumeCommand}"
+                              AutomationProperties.Name="{x:Static res:Strings.Queue_Resume}" ToolTip.Tip="{x:Static res:Strings.Queue_Resume}">
+                        <controls:Icon Size="16" Data="{StaticResource IconPlay}" />
+                      </Button>
+                      <Button Classes="icon" IsVisible="{Binding IsActive}" Command="{Binding CancelCommand}"
+                              AutomationProperties.Name="{x:Static res:Strings.Queue_Cancel}" ToolTip.Tip="{x:Static res:Strings.Queue_Cancel}">
+                        <controls:Icon Size="16" Data="{StaticResource IconClose}" />
+                      </Button>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                      <controls:ActionTag Text="{Binding ToolName}" Tile="{Binding Module.Brush}" Icon="{Binding Module.Icon}" />
+                      <TextBlock Classes="caption" Text="{Binding FilesText}" VerticalAlignment="Center" />
+                      <Border Classes="chip" VerticalAlignment="Center">
+                        <TextBlock Text="{Binding StatusText}" FontSize="12.5" FontWeight="SemiBold" />
+                      </Border>
+                      <controls:Loader IsVisible="{Binding IsRunning}" />
+                    </StackPanel>
+                  </DockPanel>
+
+                  <!-- Progress -->
+                  <StackPanel Spacing="6" IsVisible="{Binding IsActive}">
+                    <ProgressBar Value="{Binding Progress}" Minimum="0" Maximum="100"
+                                 AutomationProperties.Name="{Binding ToolName}" />
+                    <TextBlock Classes="caption" Text="{Binding Detail}" TextTrimming="CharacterEllipsis" />
+                  </StackPanel>
+
+                  <!-- End of processing -->
+                  <StackPanel Spacing="12" IsVisible="{Binding IsFinished}">
+                    <TextBlock Text="{Binding Summary}" TextWrapping="Wrap" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                      <Button Classes="primary" IsVisible="{Binding HasOutputs}" Command="{Binding OpenFolderCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_OpenFolder}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <controls:Icon Size="16" Data="{StaticResource IconFolder}" />
+                          <TextBlock Text="{x:Static res:Strings.Common_OpenFolder}" />
+                        </StackPanel>
+                      </Button>
+                      <Button Classes="ghost" IsVisible="{Binding HasErrors}" Command="{Binding RetryCommand}" AutomationProperties.Name="{Binding RetryText}">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                          <controls:Icon Size="16" Data="{StaticResource IconRetry}" />
+                          <TextBlock Text="{Binding RetryText}" />
+                        </StackPanel>
+                      </Button>
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{Binding Failures}" IsVisible="{Binding HasErrors}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:FailedItemViewModel">
+                          <DockPanel Margin="0,4">
+                            <controls:Icon Size="16" DockPanel.Dock="Left" Data="{StaticResource IconAlert}"
+                                  Foreground="{DynamicResource ErrorBrush}" Margin="0,2,10,0" VerticalAlignment="Top" />
+                            <StackPanel>
+                              <TextBlock Classes="label" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                              <TextBlock Classes="secondary" Text="{Binding Error}" TextWrapping="Wrap" />
+                            </StackPanel>
+                          </DockPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Panel>
+  </DockPanel>
+</UserControl>

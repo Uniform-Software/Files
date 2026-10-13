@@ -1,0 +1,108 @@
+<!--
+  UniFiles design tokens (cahier des charges, section 6). Views use these keys through
+  DynamicResource so switching theme repaints everything; never hard-code a color in a view.
+-->
+<ResourceDictionary xmlns="https://github.com/avaloniaui"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <ResourceDictionary.ThemeDictionaries>
+    <ResourceDictionary x:Key="Dark">
+      <Color x:Key="BackgroundColor">#16130F</Color>
+      <Color x:Key="SurfaceColor">#221E19</Color>
+      <Color x:Key="SurfaceRaisedColor">#2C2721</Color>
+      <Color x:Key="BorderColor">#3A342C</Color>
+      <Color x:Key="TextColor">#F6F1E7</Color>
+      <Color x:Key="TextSecondaryColor">#B8AE9F</Color>
+      <Color x:Key="SuccessColor">#D7FF3D</Color>
+      <Color x:Key="ErrorColor">#FF8A7A</Color>
+      <Color x:Key="DropZoneHoverColor">#1FD7FF3D</Color>
+    </ResourceDictionary>
+    <ResourceDictionary x:Key="Light">
+      <Color x:Key="BackgroundColor">#F6F1E7</Color>
+      <Color x:Key="SurfaceColor">#FFFCF6</Color>
+      <Color x:Key="SurfaceRaisedColor">#EDE6D8</Color>
+      <Color x:Key="BorderColor">#DCD2BF</Color>
+      <Color x:Key="TextColor">#16130F</Color>
+      <Color x:Key="TextSecondaryColor">#5F574B</Color>
+      <Color x:Key="SuccessColor">#3F6B00</Color>
+      <Color x:Key="ErrorColor">#B42318</Color>
+      <Color x:Key="DropZoneHoverColor">#33D7FF3D</Color>
+    </ResourceDictionary>
+  </ResourceDictionary.ThemeDictionaries>
+
+  <!-- Brand colors: identical in both themes. Lemon always carries ink text, never white. -->
+  <Color x:Key="InkColor">#16130F</Color>
+  <Color x:Key="CreamColor">#F6F1E7</Color>
+  <Color x:Key="LemonColor">#D7FF3D</Color>
+  <Color x:Key="LemonHoverColor">#E2FF6E</Color>
+  <Color x:Key="LemonPressedColor">#C4EB2A</Color>
+  <Color x:Key="ImagesColor">#FF6A42</Color>
+  <Color x:Key="PdfColor">#6E8BFF</Color>
+  <Color x:Key="VideoColor">#B08CFF</Color>
+  <Color x:Key="RenameColor">#3FD8C8</Color>
+
+  <SolidColorBrush x:Key="BackgroundBrush" Color="{DynamicResource BackgroundColor}" />
+  <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
+  <SolidColorBrush x:Key="SurfaceRaisedBrush" Color="{DynamicResource SurfaceRaisedColor}" />
+  <SolidColorBrush x:Key="BorderBrush" Color="{DynamicResource BorderColor}" />
+  <SolidColorBrush x:Key="TextBrush" Color="{DynamicResource TextColor}" />
+  <SolidColorBrush x:Key="TextSecondaryBrush" Color="{DynamicResource TextSecondaryColor}" />
+  <SolidColorBrush x:Key="SuccessBrush" Color="{DynamicResource SuccessColor}" />
+  <SolidColorBrush x:Key="ErrorBrush" Color="{DynamicResource ErrorColor}" />
+  <SolidColorBrush x:Key="DropZoneHoverBrush" Color="{DynamicResource DropZoneHoverColor}" />
+  <SolidColorBrush x:Key="InkBrush" Color="{StaticResource InkColor}" />
+  <SolidColorBrush x:Key="CreamBrush" Color="{StaticResource CreamColor}" />
+  <!-- Same red as system close buttons, so the gesture reads at once. -->
+  <SolidColorBrush x:Key="CloseHoverBrush" Color="#C42B1C" />
+  <SolidColorBrush x:Key="LemonBrush" Color="{StaticResource LemonColor}" />
+  <SolidColorBrush x:Key="LemonHoverBrush" Color="{StaticResource LemonHoverColor}" />
+  <SolidColorBrush x:Key="LemonPressedBrush" Color="{StaticResource LemonPressedColor}" />
+  <SolidColorBrush x:Key="ImagesBrush" Color="{StaticResource ImagesColor}" />
+  <SolidColorBrush x:Key="PdfBrush" Color="{StaticResource PdfColor}" />
+  <SolidColorBrush x:Key="VideoBrush" Color="{StaticResource VideoColor}" />
+  <SolidColorBrush x:Key="RenameBrush" Color="{StaticResource RenameColor}" />
+
+  <!-- Window: folder tab above the sidebar -->
+  <x:Double x:Key="FolderTabWidth">264</x:Double>
+  <x:Double x:Key="FolderTabHeight">56</x:Double>
+
+  <!-- Radii -->
+  <CornerRadius x:Key="RadiusSmall">10</CornerRadius>
+  <CornerRadius x:Key="RadiusButton">14</CornerRadius>
+  <CornerRadius x:Key="RadiusCard">18</CornerRadius>
+  <CornerRadius x:Key="RadiusPanel">24</CornerRadius>
+
+  <!-- Typography: fonts are embedded, see Assets/Fonts. -->
+  <FontFamily x:Key="DisplayFont">avares://UniFiles/Assets/Fonts#Bricolage Grotesque</FontFamily>
+  <FontFamily x:Key="BodyFont">avares://UniFiles/Assets/Fonts#Figtree</FontFamily>
+
+  <!-- Icons: 24×24 outlines, drawn with a 2 px round stroke. -->
+  <StreamGeometry x:Key="IconHome">M3 10 L12 3 L21 10 V20 A1 1 0 0 1 20 21 H15 V14 H9 V21 H4 A1 1 0 0 1 3 20 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconQueue">M8 6 H21 M8 12 H21 M8 18 H21 M3 6 H3.01 M3 12 H3.01 M3 18 H3.01</StreamGeometry>
+  <StreamGeometry x:Key="IconHistory">M2 12 A10 10 0 1 0 22 12 A10 10 0 1 0 2 12 M12 6 V12 L16 14</StreamGeometry>
+  <StreamGeometry x:Key="IconSettings">M4 21 V14 M4 10 V3 M12 21 V12 M12 8 V3 M20 21 V16 M20 12 V3 M1 14 H7 M9 8 H15 M17 16 H23</StreamGeometry>
+  <StreamGeometry x:Key="IconImage">M5 3 H19 A2 2 0 0 1 21 5 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V5 A2 2 0 0 1 5 3 Z M21 15 L16 10 L5 21 M7 9 A2 2 0 1 0 11 9 A2 2 0 1 0 7 9</StreamGeometry>
+  <StreamGeometry x:Key="IconPdf">M14 2 H6 A2 2 0 0 0 4 4 V20 A2 2 0 0 0 6 22 H18 A2 2 0 0 0 20 20 V8 Z M14 2 V8 H20 M16 13 H8 M16 17 H8 M10 9 H8</StreamGeometry>
+  <StreamGeometry x:Key="IconVideo">M5 3 H19 A2 2 0 0 1 21 5 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V5 A2 2 0 0 1 5 3 Z M7 3 V21 M17 3 V21 M3 12 H21 M3 7.5 H7 M3 16.5 H7 M17 7.5 H21 M17 16.5 H21</StreamGeometry>
+  <StreamGeometry x:Key="IconRename">M12 20 H21 M16.5 3.5 A2.12 2.12 0 0 1 19.5 6.5 L7 19 L3 20 L4 16 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconFolder">M4 20 H20 A2 2 0 0 0 22 18 V8 A2 2 0 0 0 20 6 H12 L10 3 H4 A2 2 0 0 0 2 5 V18 A2 2 0 0 0 4 20 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconPause">M7 4 H10 V20 H7 Z M14 4 H17 V20 H14 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconPlay">M6 3 L20 12 L6 21 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconClose">M18 6 L6 18 M6 6 L18 18</StreamGeometry>
+  <StreamGeometry x:Key="IconUp">M18 15 L12 9 L6 15</StreamGeometry>
+  <StreamGeometry x:Key="IconDown">M6 9 L12 15 L18 9</StreamGeometry>
+  <StreamGeometry x:Key="IconRetry">M3 12 A9 9 0 1 0 6 5.3 L3 8 M3 3 V8 H8</StreamGeometry>
+  <StreamGeometry x:Key="IconUpload">M21 15 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V15 M17 8 L12 3 L7 8 M12 3 V15</StreamGeometry>
+  <StreamGeometry x:Key="IconPlus">M12 5 V19 M5 12 H19</StreamGeometry>
+  <StreamGeometry x:Key="IconBack">M19 12 H5 M12 19 L5 12 L12 5</StreamGeometry>
+  <StreamGeometry x:Key="IconCheck">M20 6 L9 17 L4 12</StreamGeometry>
+  <StreamGeometry x:Key="IconAlert">M12 9 V13 M12 17 H12.01 M10.29 3.86 L1.82 18 A2 2 0 0 0 3.53 21 H20.47 A2 2 0 0 0 22.18 18 L13.71 3.86 A2 2 0 0 0 10.29 3.86 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconScissors">M3 6 A3 3 0 1 0 9 6 A3 3 0 1 0 3 6 M3 18 A3 3 0 1 0 9 18 A3 3 0 1 0 3 18 M20 4 L8.12 15.88 M14.47 14.48 L20 20 M8.12 8.12 L12 12</StreamGeometry>
+  <StreamGeometry x:Key="IconUndo">M9 14 L4 9 L9 4 M4 9 H14.5 A5.5 5.5 0 0 1 20 14.5 A5.5 5.5 0 0 1 14.5 20 H11</StreamGeometry>
+  <StreamGeometry x:Key="IconStepBack">M11 19 L2 12 L11 5 Z M22 19 L13 12 L22 5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconStepForward">M13 19 L22 12 L13 5 Z M2 19 L11 12 L2 5 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconMinimize">M5 12 H19</StreamGeometry>
+  <StreamGeometry x:Key="IconMaximize">M7 4 H17 A3 3 0 0 1 20 7 V17 A3 3 0 0 1 17 20 H7 A3 3 0 0 1 4 17 V7 A3 3 0 0 1 7 4 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconRestore">M8 4 H18 A2 2 0 0 1 20 6 V16 M6 8 H14 A2 2 0 0 1 16 10 V18 A2 2 0 0 1 14 20 H6 A2 2 0 0 1 4 18 V10 A2 2 0 0 1 6 8 Z</StreamGeometry>
+  <StreamGeometry x:Key="IconTrash">M3 6 H21 M19 6 V20 A2 2 0 0 1 17 22 H7 A2 2 0 0 1 5 20 V6 M8 6 V4 A2 2 0 0 1 10 2 H14 A2 2 0 0 1 16 4 V6</StreamGeometry>
+</ResourceDictionary>

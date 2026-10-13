@@ -1,0 +1,194 @@
+<!--
+  Main window, shaped like a file folder: a tab on the top-left carries the name, the sidebar is the
+  folder's spine. The system title bar is replaced by our own (drag, double-click, caption buttons).
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:UniFiles.App.ViewModels"
+        xmlns:controls="using:UniFiles.App.Controls"
+        xmlns:res="using:UniFiles.Core.Resources"
+        x:Class="UniFiles.App.Views.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
+        Title="UniFiles"
+        Icon="avares://UniFiles/Assets/unifiles-icon.png"
+        Width="1200" Height="800"
+        MinWidth="980" MinHeight="660"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        DragDrop.AllowDrop="True"
+        Classes.reducedMotion="{Binding ReducedMotion}">
+
+  <Window.Styles>
+    <Style Selector="Button.caption">
+      <Setter Property="Width" Value="46" />
+      <Setter Property="Height" Value="34" />
+      <Setter Property="MinHeight" Value="34" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+    </Style>
+    <Style Selector="Button.caption:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    </Style>
+    <Style Selector="Button.caption.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{StaticResource CloseHoverBrush}" />
+      <Setter Property="Foreground" Value="{StaticResource CreamBrush}" />
+    </Style>
+    <Style Selector="Border.grip">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+  </Window.Styles>
+
+  <Panel x:Name="Frame" Margin="16">
+
+    <!-- Silhouette and shadow -->
+    <controls:FolderShape x:Name="Shape"
+                          TabWidth="{StaticResource FolderTabWidth}"
+                          TabHeight="{StaticResource FolderTabHeight}"
+                          CornerRadius="24"
+                          Fill="{DynamicResource BackgroundBrush}"
+                          TabFill="{DynamicResource SurfaceBrush}"
+                          Stroke="{DynamicResource BorderBrush}">
+      <controls:FolderShape.Effect>
+        <DropShadowEffect BlurRadius="28" OffsetX="0" OffsetY="8" Opacity="0.4" Color="#000000" />
+      </controls:FolderShape.Effect>
+    </controls:FolderShape>
+
+    <Grid x:Name="Body" RowDefinitions="Auto,*" ColumnDefinitions="Auto,*">
+
+      <!-- Tab: name of the app, drags the window -->
+      <Border Grid.Row="0" Grid.Column="0" x:Name="TabArea" Classes="grip"
+              Width="{StaticResource FolderTabWidth}" Height="{StaticResource FolderTabHeight}"
+              Padding="26,0,18,0">
+        <DockPanel>
+          <Border DockPanel.Dock="Right" Classes="chip" VerticalAlignment="Center" Padding="8,2">
+            <TextBlock Text="{x:Static res:Strings.Tab_Range}" FontSize="11.5" FontWeight="SemiBold"
+                       Foreground="{DynamicResource TextSecondaryBrush}" />
+          </Border>
+          <controls:Logo VerticalAlignment="Center" Margin="0,2,0,0" />
+        </DockPanel>
+      </Border>
+
+      <!-- Sidebar: the folder's spine -->
+      <Border Grid.Row="1" Grid.Column="0" Width="{StaticResource FolderTabWidth}" Padding="16,12,16,24">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="12,0">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <controls:ModuleBadge Size="18" Tile="{StaticResource LemonBrush}" Icon="{StaticResource IconCheck}" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Tagline_Local}" />
+          </StackPanel>
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.Tagline_OpenSource}" />
+        </StackPanel>
+
+        <ListBox Classes="nav" SelectionMode="AlwaysSelected"
+                 ItemsSource="{Binding NavItems}"
+                 SelectedItem="{Binding SelectedNav}"
+                 AutomationProperties.Name="{x:Static res:Strings.Nav_Label}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:NavItemViewModel">
+              <DockPanel>
+                <Border DockPanel.Dock="Right"
+                        IsVisible="{Binding HasBadge}"
+                        Background="{StaticResource LemonBrush}"
+                        CornerRadius="10" MinWidth="22" Height="22" Padding="6,0">
+                  <TextBlock Text="{Binding Badge}" Foreground="{StaticResource InkBrush}"
+                             FontWeight="Bold" FontSize="12"
+                             HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                  <controls:Icon Size="20" Data="{Binding Icon}" />
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                </StackPanel>
+              </DockPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+      </Border>
+
+      <!-- Folder body -->
+      <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="44,*">
+
+        <!-- Title bar: drag area and caption buttons -->
+        <DockPanel Grid.Row="0" x:Name="TitleBar" Classes="grip" Background="Transparent">
+          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2" Margin="0,6,10,0" VerticalAlignment="Top">
+            <Button Classes="caption" x:Name="MinimizeButton"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Minimize}" ToolTip.Tip="{x:Static res:Strings.Window_Minimize}">
+              <controls:Icon Size="16" Data="{StaticResource IconMinimize}" />
+            </Button>
+            <Button Classes="caption" x:Name="MaximizeButton"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Maximize}" ToolTip.Tip="{x:Static res:Strings.Window_Maximize}">
+              <controls:Icon Size="14" x:Name="MaximizeIcon" Data="{StaticResource IconMaximize}" />
+            </Button>
+            <Button Classes="caption close" x:Name="CloseButton"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Close}" ToolTip.Tip="{x:Static res:Strings.Window_Close}">
+              <controls:Icon Size="16" Data="{StaticResource IconClose}" />
+            </Button>
+          </StackPanel>
+          <Panel />
+        </DockPanel>
+
+        <!-- Current page -->
+        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" Margin="40,0,40,0" />
+
+        <!-- Notification, bottom right -->
+        <Border Grid.Row="1"
+                IsVisible="{Binding HasNotification}"
+                HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                Margin="24" MaxWidth="520"
+                Background="{DynamicResource SurfaceRaisedBrush}"
+                BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                CornerRadius="{StaticResource RadiusCard}"
+                Padding="18,12,8,12"
+                BoxShadow="0 8 32 0 #40000000">
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Classes="icon"
+                    Command="{Binding DismissNotificationCommand}"
+                    AutomationProperties.Name="{x:Static res:Strings.Common_Close}">
+              <controls:Icon Size="16" Data="{StaticResource IconClose}" />
+            </Button>
+            <Button DockPanel.Dock="Right" Classes="primary" Margin="12,0,4,0"
+                    IsVisible="{Binding CanOpenNotificationFolder}"
+                    Command="{Binding OpenNotificationFolderCommand}"
+                    Content="{x:Static res:Strings.Common_OpenFolder}" />
+            <DockPanel>
+              <controls:ModuleBadge DockPanel.Dock="Left" Size="30" Margin="0,0,12,0"
+                                    Tile="{Binding NotificationTile}" Icon="{Binding NotificationIcon}" />
+              <TextBlock Text="{Binding Notification}" TextWrapping="Wrap" VerticalAlignment="Center"
+                         Classes.error="{Binding NotificationIsError}" />
+            </DockPanel>
+          </DockPanel>
+        </Border>
+      </Grid>
+
+      <!-- Drop overlay, shown while files are dragged over the window -->
+      <Panel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" IsVisible="{Binding IsDragging}" IsHitTestVisible="False">
+        <Border Background="{DynamicResource BackgroundBrush}" Opacity="0.92" CornerRadius="0,0,24,24" />
+        <Rectangle Margin="20" RadiusX="24" RadiusY="24"
+                   Stroke="{StaticResource LemonBrush}" StrokeThickness="3" StrokeDashArray="4,3"
+                   Fill="{DynamicResource DropZoneHoverBrush}" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12">
+          <controls:Icon Size="40" Data="{StaticResource IconUpload}" Foreground="{DynamicResource TextBrush}" HorizontalAlignment="Center" />
+          <TextBlock Classes="display" Text="{x:Static res:Strings.Drop_Release}" HorizontalAlignment="Center" />
+        </StackPanel>
+      </Panel>
+    </Grid>
+
+    <!-- Resize grips along the edges (hidden when maximized) -->
+    <Grid x:Name="Grips" ColumnDefinitions="8,*,8" RowDefinitions="8,*,8" Margin="-6">
+      <Border Grid.Row="0" Grid.Column="0" Classes="grip" Tag="NorthWest" Cursor="TopLeftCorner" />
+      <Border Grid.Row="0" Grid.Column="1" Classes="grip" Tag="North" Cursor="TopSide" />
+      <Border Grid.Row="0" Grid.Column="2" Classes="grip" Tag="NorthEast" Cursor="TopRightCorner" />
+      <Border Grid.Row="1" Grid.Column="0" Classes="grip" Tag="West" Cursor="LeftSide" />
+      <Border Grid.Row="1" Grid.Column="2" Classes="grip" Tag="East" Cursor="RightSide" />
+      <Border Grid.Row="2" Grid.Column="0" Classes="grip" Tag="SouthWest" Cursor="BottomLeftCorner" />
+      <Border Grid.Row="2" Grid.Column="1" Classes="grip" Tag="South" Cursor="BottomSide" />
+      <Border Grid.Row="2" Grid.Column="2" Classes="grip" Tag="SouthEast" Cursor="BottomRightCorner" />
+    </Grid>
+  </Panel>
+</Window>

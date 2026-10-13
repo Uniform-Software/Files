@@ -1,0 +1,39 @@
+<!--
+  End-of-job notification shown when UniFiles works in the background (right-click quick actions,
+  window hidden in the notification area). Same look on Windows, macOS and Linux.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:UniFiles.App.Controls"
+        xmlns:res="using:UniFiles.Core.Resources"
+        x:Class="UniFiles.App.Views.ToastWindow"
+        Title="UniFiles"
+        Width="400" SizeToContent="Height"
+        SystemDecorations="None"
+        CanResize="False"
+        ShowInTaskbar="False"
+        ShowActivated="False"
+        Topmost="True"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent">
+  <Border Background="{DynamicResource SurfaceRaisedBrush}"
+          BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+          CornerRadius="{StaticResource RadiusCard}"
+          Padding="18,14,8,14">
+    <DockPanel>
+      <Button DockPanel.Dock="Right" Classes="icon" VerticalAlignment="Top" x:Name="CloseButton"
+              AutomationProperties.Name="{x:Static res:Strings.Common_Close}">
+        <controls:Icon Size="16" Data="{StaticResource IconClose}" />
+      </Button>
+      <StackPanel Spacing="10">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <controls:ModuleBadge x:Name="Badge" Size="28" />
+          <TextBlock Classes="label" x:Name="TitleText" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock x:Name="MessageText" TextWrapping="Wrap" />
+        <Button Classes="primary" x:Name="OpenFolderButton" HorizontalAlignment="Left"
+                Content="{x:Static res:Strings.Common_OpenFolder}" />
+      </StackPanel>
+    </DockPanel>
+  </Border>
+</Window>

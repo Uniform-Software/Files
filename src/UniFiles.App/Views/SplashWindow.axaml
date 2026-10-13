@@ -1,0 +1,73 @@
+<!--
+  Startup splash, in the spirit of creative-suite splash screens: a generative artwork made of the
+  UNI tilted squares in the module colors, the logotype, the loading step and the credits.
+  Always dark (ink), whatever the app theme.
+-->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:UniFiles.App.Controls"
+        xmlns:res="using:UniFiles.Core.Resources"
+        x:Class="UniFiles.App.Views.SplashWindow"
+        Title="UniFiles"
+        Icon="avares://UniFiles/Assets/unifiles-icon.png"
+        Width="680" Height="420"
+        WindowStartupLocation="CenterScreen"
+        SystemDecorations="None"
+        CanResize="False"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        RequestedThemeVariant="Dark">
+
+  <Window.Styles>
+    <!-- Squares fade in one after the other (see code-behind; instant when motion is reduced). -->
+    <Style Selector="Border.art">
+      <Setter Property="CornerRadius" Value="28" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.6" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+  </Window.Styles>
+
+  <Border Margin="14" CornerRadius="28" ClipToBounds="True"
+          Background="{StaticResource InkBrush}"
+          BorderBrush="#2E2923" BorderThickness="1"
+          BoxShadow="0 10 36 0 #66000000">
+    <Panel>
+      <!-- Artwork, right side, bleeding off the edges -->
+      <Canvas>
+        <Border Classes="art" Tag="0:0:0.05" Canvas.Left="420" Canvas.Top="-70" Width="230" Height="230" Background="{StaticResource ImagesBrush}" RenderTransform="rotate(14deg)" />
+        <Border Classes="art" Tag="0:0:0.15" Canvas.Left="520" Canvas.Top="150" Width="190" Height="190" Background="{StaticResource PdfBrush}" RenderTransform="rotate(-9deg)" />
+        <Border Classes="art" Tag="0:0:0.25" Canvas.Left="360" Canvas.Top="190" Width="150" Height="150" Background="{StaticResource RenameBrush}" RenderTransform="rotate(24deg)" />
+        <Border Classes="art" Tag="0:0:0.35" Canvas.Left="455" Canvas.Top="300" Width="120" Height="120" Background="{StaticResource VideoBrush}" RenderTransform="rotate(8deg)" CornerRadius="22" />
+        <Border Classes="art" Tag="0:0:0.45" Canvas.Left="370" Canvas.Top="70" Width="70" Height="70" Background="{StaticResource LemonBrush}" RenderTransform="rotate(14deg)" CornerRadius="16" />
+        <Border Classes="art" Tag="0:0:0.55" Canvas.Left="610" Canvas.Top="60" Width="34" Height="34" Background="{StaticResource CreamBrush}" RenderTransform="rotate(-20deg)" CornerRadius="8" />
+      </Canvas>
+
+      <!-- Text, left side -->
+      <Grid RowDefinitions="Auto,*,Auto" Margin="40,40,40,28" HorizontalAlignment="Left" Width="320">
+        <StackPanel Grid.Row="0" Spacing="12">
+          <Viewbox Height="58" HorizontalAlignment="Left">
+            <controls:Logo Animated="True" />
+          </Viewbox>
+          <TextBlock Text="{x:Static res:Strings.Home_Title}" FontFamily="{StaticResource DisplayFont}" FontWeight="Bold"
+                     FontSize="20" Foreground="{StaticResource CreamBrush}" TextWrapping="Wrap" />
+          <TextBlock x:Name="VersionText" FontSize="12.5" Foreground="#B8AE9F" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Spacing="14">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <controls:Loader />
+            <TextBlock x:Name="StatusText" Text="{x:Static res:Strings.Splash_Starting}" Foreground="{StaticResource CreamBrush}"
+                       FontSize="13" VerticalAlignment="Center" />
+          </StackPanel>
+          <StackPanel Spacing="2">
+            <TextBlock Text="{x:Static res:Strings.Splash_Copyright}" FontSize="11" Foreground="#B8AE9F" TextWrapping="Wrap" />
+            <TextBlock Text="{x:Static res:Strings.Splash_Credits}" FontSize="11" Foreground="#B8AE9F" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Grid>
+    </Panel>
+  </Border>
+</Window>

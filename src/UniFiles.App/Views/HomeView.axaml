@@ -1,0 +1,97 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.HomeView"
+             x:DataType="vm:HomeViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="32" MaxWidth="1040" Margin="0,0,0,40">
+
+      <!-- Drop zone -->
+      <Panel MinHeight="280">
+        <Rectangle RadiusX="24" RadiusY="24"
+                   Fill="{DynamicResource SurfaceBrush}"
+                   Stroke="{DynamicResource BorderBrush}" StrokeThickness="2" StrokeDashArray="4,3" />
+        <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10" Margin="24">
+          <controls:Logo Animated="True" HorizontalAlignment="Center" Margin="0,0,0,6" />
+          <TextBlock Classes="display" Text="{x:Static res:Strings.Home_Title}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+          <TextBlock Classes="secondary" Text="{x:Static res:Strings.Home_Subtitle}" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap" />
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center" Margin="0,12,0,0">
+            <Button Classes="primary" Command="{Binding PickFilesCommand}" AutomationProperties.Name="{x:Static res:Strings.Home_PickFiles}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <controls:Icon Size="16" Data="{StaticResource IconPlus}" />
+                <TextBlock Text="{x:Static res:Strings.Home_PickFiles}" />
+              </StackPanel>
+            </Button>
+            <Button Classes="ghost" Command="{Binding PickFolderCommand}" AutomationProperties.Name="{x:Static res:Strings.Home_PickFolder}">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <controls:Icon Size="16" Data="{StaticResource IconFolder}" />
+                <TextBlock Text="{x:Static res:Strings.Home_PickFolder}" />
+              </StackPanel>
+            </Button>
+          </StackPanel>
+        </StackPanel>
+      </Panel>
+
+      <!-- Modules -->
+      <StackPanel Spacing="14">
+        <TextBlock Classes="h2" Text="{x:Static res:Strings.Home_Modules}" />
+        <ItemsControl ItemsSource="{Binding Modules}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <UniformGrid Columns="4" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:ModuleCardViewModel">
+              <Button Margin="0,0,12,12"
+                      HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                      HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top"
+                      Padding="20" CornerRadius="{StaticResource RadiusCard}"
+                      Background="{DynamicResource SurfaceBrush}"
+                      BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                      Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).OpenModuleCommand}"
+                      CommandParameter="{Binding}"
+                      AutomationProperties.Name="{Binding Info.Name}">
+                <StackPanel Spacing="10">
+                  <controls:ModuleBadge Size="44" Tile="{Binding Info.Brush}" Icon="{Binding Info.Icon}" HorizontalAlignment="Left" Margin="0,0,0,4" />
+                  <TextBlock Classes="h2" Text="{Binding Info.Name}" />
+                  <TextBlock Classes="caption" Text="{Binding Info.Summary}" TextWrapping="Wrap" />
+                </StackPanel>
+              </Button>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+
+      <!-- Recent jobs -->
+      <StackPanel Spacing="14">
+        <TextBlock Classes="h2" Text="{x:Static res:Strings.Home_Recent}" />
+        <TextBlock Classes="secondary" Text="{x:Static res:Strings.Home_RecentEmpty}" IsVisible="{Binding !HasRecent}" />
+        <ItemsControl ItemsSource="{Binding Recent}" IsVisible="{Binding HasRecent}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:HistoryItemViewModel">
+              <Border Classes="card" Padding="16,10" Margin="0,0,0,8">
+                <DockPanel>
+                  <Button DockPanel.Dock="Right" Classes="link"
+                          Content="{x:Static res:Strings.Common_OpenFolder}"
+                          Command="{Binding $parent[ItemsControl].((vm:HomeViewModel)DataContext).OpenRecentFolderCommand}"
+                          CommandParameter="{Binding}" />
+                  <StackPanel Orientation="Horizontal" Spacing="12">
+                    <controls:ActionTag Text="{Binding ToolName}"
+                                        Tile="{Binding Module.Brush, FallbackValue={x:Null}}"
+                                        Icon="{Binding Module.Icon, FallbackValue={x:Null}}" />
+                    <TextBlock Classes="caption" Text="{Binding FilesText}" VerticalAlignment="Center" />
+                    <TextBlock Classes="caption" Text="{Binding GainText}" IsVisible="{Binding HasGain}" VerticalAlignment="Center" />
+                    <TextBlock Classes="caption" Text="{Binding DateText}" VerticalAlignment="Center" />
+                  </StackPanel>
+                </DockPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

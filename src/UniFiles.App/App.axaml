@@ -1,0 +1,29 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="using:UniFiles.App"
+             x:Class="UniFiles.App.App"
+             Name="UniFiles"
+             RequestedThemeVariant="Dark">
+
+  <Application.DataTemplates>
+    <local:ViewLocator />
+  </Application.DataTemplates>
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://UniFiles/Themes/Tokens.axaml" />
+      </ResourceDictionary.MergedDictionaries>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Dark" Accent="#D7FF3D" RegionColor="#16130F" ErrorText="#FF8A7A" />
+        <ColorPaletteResources x:Key="Light" Accent="#D7FF3D" RegionColor="#F6F1E7" ErrorText="#B42318" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://UniFiles/Themes/Controls.axaml" />
+  </Application.Styles>
+</Application>

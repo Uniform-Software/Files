@@ -1,0 +1,11 @@
+<!-- Three bouncing squares, the UniFiles loading indicator. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="UniFiles.App.Controls.Loader"
+             VerticalAlignment="Center">
+  <StackPanel Orientation="Horizontal" Height="16" VerticalAlignment="Center">
+    <Border Classes="loaderDot first" VerticalAlignment="Bottom"><Border.RenderTransform><TranslateTransform /></Border.RenderTransform></Border>
+    <Border Classes="loaderDot second" VerticalAlignment="Bottom"><Border.RenderTransform><TranslateTransform /></Border.RenderTransform></Border>
+    <Border Classes="loaderDot third" VerticalAlignment="Bottom"><Border.RenderTransform><TranslateTransform /></Border.RenderTransform></Border>
+  </StackPanel>
+</UserControl>

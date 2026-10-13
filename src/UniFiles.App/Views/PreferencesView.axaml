@@ -1,0 +1,79 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.PreferencesView"
+             x:DataType="vm:PreferencesViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="0,0,0,40">
+      <TextBlock Classes="h1" Text="{x:Static res:Strings.Nav_Preferences}" Margin="0,0,0,4" />
+
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_OutputFolder}" />
+          <TextBlock Classes="secondary" Text="{x:Static res:Strings.Prefs_OutputFolderHint}" TextWrapping="Wrap" />
+          <Border Classes="chip" Padding="12,10">
+            <TextBlock Text="{Binding OutputDirectory}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding OutputDirectory}" />
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="primary" Command="{Binding BrowseOutputCommand}" Content="{x:Static res:Strings.Prefs_Change}" />
+            <Button Classes="ghost" Command="{Binding OpenOutputCommand}" Content="{x:Static res:Strings.Common_OpenFolder}" />
+            <Button Classes="ghost" Command="{Binding ResetOutputCommand}" Content="{x:Static res:Strings.Prefs_Reset}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_Appearance}" />
+          <StackPanel Spacing="6">
+            <TextBlock Classes="label" Text="{x:Static res:Strings.Prefs_Theme}" />
+            <ComboBox ItemsSource="{Binding Themes}" SelectedItem="{Binding SelectedTheme}"
+                      AutomationProperties.Name="{x:Static res:Strings.Prefs_Theme}" />
+          </StackPanel>
+          <StackPanel Spacing="2">
+            <ToggleSwitch IsChecked="{Binding ReduceMotion}" Content="{x:Static res:Strings.Prefs_ReduceMotion}"
+                          OnContent="" OffContent="" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_ReduceMotionHint}" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_System}" />
+          <StackPanel Spacing="2">
+            <ToggleSwitch IsChecked="{Binding ContextMenuEnabled}" IsEnabled="{Binding IsContextMenuSupported}"
+                          Content="{x:Static res:Strings.Prefs_ContextMenu}" OnContent="" OffContent="" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_ContextMenuHint}" TextWrapping="Wrap" IsVisible="{Binding IsContextMenuSupported}" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_ContextMenuUnsupported}" TextWrapping="Wrap" IsVisible="{Binding !IsContextMenuSupported}" />
+            <TextBlock Classes="error" Text="{Binding ContextMenuError}" TextWrapping="Wrap" IsVisible="{Binding HasContextMenuError}" />
+          </StackPanel>
+          <StackPanel Spacing="2">
+            <ToggleSwitch IsChecked="{Binding KeepInTray}" Content="{x:Static res:Strings.Prefs_KeepInTray}" OnContent="" OffContent="" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_KeepInTrayHint}" TextWrapping="Wrap" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_Language}" />
+          <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"
+                    AutomationProperties.Name="{x:Static res:Strings.Prefs_Language}" />
+          <TextBlock Classes="secondary" Text="{x:Static res:Strings.Prefs_RestartNeeded}" IsVisible="{Binding NeedsRestart}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <controls:Logo HorizontalAlignment="Left" />
+          <TextBlock Classes="secondary" Text="{Binding Version}" />
+          <TextBlock Text="{x:Static res:Strings.Prefs_About}" TextWrapping="Wrap" />
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_Licenses}" TextWrapping="Wrap" />
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

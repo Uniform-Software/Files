@@ -1,0 +1,48 @@
+<!--
+  Logotype "unifiles": lowercase Bricolage Grotesque 800, tight tracking, the dots of the i are
+  lemon rounded squares tilted 14°. With Animated, the squares drop in when shown.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="UniFiles.App.Controls.Logo"
+             AutomationProperties.Name="UniFiles">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.logo">
+      <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+      <Setter Property="FontWeight" Value="ExtraBold" />
+      <Setter Property="FontSize" Value="30" />
+      <Setter Property="LetterSpacing" Value="-0.9" />
+      <Setter Property="VerticalAlignment" Value="Bottom" />
+    </Style>
+    <Style Selector="Border.logoDot">
+      <Setter Property="Width" Value="6" />
+      <Setter Property="Height" Value="6" />
+      <Setter Property="CornerRadius" Value="1.5" />
+      <Setter Property="Background" Value="{StaticResource LemonBrush}" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+      <Setter Property="Margin" Value="0,4,0,0" />
+      <Setter Property="RenderTransform" Value="rotate(14deg)" />
+    </Style>
+  </UserControl.Styles>
+
+  <StackPanel Orientation="Horizontal" x:Name="Letters">
+    <TextBlock Classes="logo" Text="un" />
+    <Panel>
+      <TextBlock Classes="logo" Text="ı" />
+      <Panel Classes="logoDrop" x:Name="FirstDot" VerticalAlignment="Top" HorizontalAlignment="Center">
+        <Panel.RenderTransform><TranslateTransform /></Panel.RenderTransform>
+        <Border Classes="logoDot" />
+      </Panel>
+    </Panel>
+    <TextBlock Classes="logo" Text="f" />
+    <Panel>
+      <TextBlock Classes="logo" Text="ı" />
+      <Panel Classes="logoDrop" x:Name="SecondDot" VerticalAlignment="Top" HorizontalAlignment="Center">
+        <Panel.RenderTransform><TranslateTransform /></Panel.RenderTransform>
+        <Border Classes="logoDot" />
+      </Panel>
+    </Panel>
+    <TextBlock Classes="logo" Text="les" />
+  </StackPanel>
+</UserControl>

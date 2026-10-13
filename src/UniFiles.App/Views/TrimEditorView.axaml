@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.TrimEditorView"
+             x:DataType="vm:TrimEditorViewModel">
+
+  <!-- Editing shortcuts, as in video editors. Left/Right/Home/End move the playhead (timeline). -->
+  <UserControl.KeyBindings>
+    <KeyBinding Gesture="Space" Command="{Binding PlayPauseCommand}" />
+    <KeyBinding Gesture="S" Command="{Binding SplitCommand}" />
+    <KeyBinding Gesture="Delete" Command="{Binding ToggleSegmentCommand}" />
+    <KeyBinding Gesture="Back" Command="{Binding ToggleSegmentCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+  </UserControl.KeyBindings>
+
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,24">
+
+    <!-- Header -->
+    <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="12" Margin="0,0,0,16">
+      <Button Classes="icon" Command="{Binding BackCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_Back}">
+        <controls:Icon Size="20" Data="{StaticResource IconBack}" />
+      </Button>
+      <StackPanel VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="10">
+          <controls:ModuleBadge Size="34" Tile="{StaticResource VideoBrush}" Icon="{StaticResource IconScissors}" />
+          <TextBlock Classes="h1" Text="{x:Static res:Strings.Editor_Title}" VerticalAlignment="Center" />
+        </StackPanel>
+        <TextBlock Classes="caption" Text="{Binding FileName}" />
+      </StackPanel>
+    </StackPanel>
+
+    <!-- Video -->
+    <Border Grid.Row="1" Background="{StaticResource InkBrush}" CornerRadius="{StaticResource RadiusCard}" ClipToBounds="True" MinHeight="200">
+      <Panel>
+        <Image x:Name="VideoImage" Source="{Binding Frame}" Stretch="Uniform" />
+        <StackPanel IsVisible="{Binding IsLoading}" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="10">
+          <controls:Loader HorizontalAlignment="Center" />
+          <TextBlock Text="{x:Static res:Strings.Editor_Loading}" Foreground="{StaticResource LemonBrush}" HorizontalAlignment="Center" />
+        </StackPanel>
+        <Border IsVisible="{Binding HasPlayerError}" Classes="banner" HorizontalAlignment="Center" VerticalAlignment="Center" MaxWidth="520" Margin="24">
+          <TextBlock Text="{Binding PlayerError}" TextWrapping="Wrap" />
+        </Border>
+      </Panel>
+    </Border>
+
+    <!-- Transport and editing tools -->
+    <DockPanel Grid.Row="2" Margin="0,14,0,8">
+      <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="4">
+        <Button Classes="icon" Command="{Binding StepCommand}" CommandParameter="back"
+                AutomationProperties.Name="{x:Static res:Strings.Editor_StepBack}" ToolTip.Tip="{x:Static res:Strings.Editor_StepBack}">
+          <controls:Icon Size="18" Data="{StaticResource IconStepBack}" />
+        </Button>
+        <Button Classes="primary" Command="{Binding PlayPauseCommand}" Width="56" Padding="0" HorizontalContentAlignment="Center"
+                AutomationProperties.Name="{Binding PlayPauseLabel}" ToolTip.Tip="{Binding PlayPauseLabel}">
+          <Panel>
+            <controls:Icon Size="18" Data="{StaticResource IconPlay}" IsVisible="{Binding !IsPlaying}" />
+            <controls:Icon Size="18" Data="{StaticResource IconPause}" IsVisible="{Binding IsPlaying}" />
+          </Panel>
+        </Button>
+        <Button Classes="icon" Command="{Binding StepCommand}" CommandParameter="forward"
+                AutomationProperties.Name="{x:Static res:Strings.Editor_StepForward}" ToolTip.Tip="{x:Static res:Strings.Editor_StepForward}">
+          <controls:Icon Size="18" Data="{StaticResource IconStepForward}" />
+        </Button>
+        <TextBlock Text="{Binding PositionText}" VerticalAlignment="Center" Margin="12,0,0,0" FontWeight="SemiBold" />
+      </StackPanel>
+
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+        <Button Classes="ghost" Command="{Binding SplitCommand}" ToolTip.Tip="S"
+                AutomationProperties.Name="{x:Static res:Strings.Editor_Split}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <controls:Icon Size="16" Data="{StaticResource IconScissors}" />
+            <TextBlock Text="{x:Static res:Strings.Editor_Split}" />
+          </StackPanel>
+        </Button>
+        <Button Classes="ghost" Command="{Binding ToggleSegmentCommand}" ToolTip.Tip="Suppr"
+                AutomationProperties.Name="{Binding ToggleLabel}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <controls:Icon Size="16" Data="{StaticResource IconTrash}" IsVisible="{Binding CurrentSegmentKept}" />
+            <controls:Icon Size="16" Data="{StaticResource IconPlus}" IsVisible="{Binding !CurrentSegmentKept}" />
+            <TextBlock Text="{Binding ToggleLabel}" />
+          </StackPanel>
+        </Button>
+        <Button Classes="icon" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z"
+                AutomationProperties.Name="{x:Static res:Strings.Editor_Undo}">
+          <controls:Icon Size="18" Data="{StaticResource IconUndo}" />
+        </Button>
+        <Button Classes="link" Command="{Binding ResetCommand}" Content="{x:Static res:Strings.Editor_Reset}" />
+      </StackPanel>
+    </DockPanel>
+
+    <!-- Timeline -->
+    <controls:Timeline Grid.Row="3" x:Name="TimelineControl"
+                       Duration="{Binding Duration}"
+                       Position="{Binding Position}"
+                       Segments="{Binding Segments}"
+                       Thumbnails="{Binding Thumbnails}"
+                       ThumbnailVersion="{Binding ThumbnailVersion}"
+                       AutomationProperties.Name="{x:Static res:Strings.Editor_Timeline}"
+                       Margin="0,4,0,12" />
+
+    <!-- Summary and export -->
+    <DockPanel Grid.Row="4">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16">
+        <StackPanel IsVisible="{Binding CanExportFast}" VerticalAlignment="Center">
+          <ToggleSwitch IsChecked="{Binding ExportFast}" Content="{x:Static res:Strings.Editor_Fast}" OnContent="" OffContent=""
+                        ToolTip.Tip="{x:Static res:Strings.Hint_PreciseCut}" />
+        </StackPanel>
+        <Button Classes="primary" Command="{Binding ExportCommand}" HotKey="Ctrl+Enter"
+                AutomationProperties.Name="{x:Static res:Strings.Editor_Export}">
+          <StackPanel Orientation="Horizontal" Spacing="8">
+            <controls:Icon Size="16" Data="{StaticResource IconCheck}" />
+            <TextBlock Text="{x:Static res:Strings.Editor_Export}" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
+      <StackPanel VerticalAlignment="Center" Spacing="2">
+        <TextBlock Classes="label" Text="{Binding Summary}" />
+        <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_Help}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DockPanel>
+  </Grid>
+</UserControl>
