@@ -1,0 +1,109 @@
+# Builds every installer when a version tag is pushed (v0.2.0, v0.2.0-beta...) and publishes them
+# on a GitHub release, with the Velopack update packages the app downloads its updates from.
+# Tags with a suffix (v0.2.0-beta) become pre-releases.
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build (e.g. v0.2.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  DOTNET_NOLOGO: 1
+  TAG: ${{ github.event.inputs.tag || github.ref_name }}
+
+jobs:
+  windows:
+    name: Windows installer
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Ghostscript 10.08.0 (bundled in the installer)
+        shell: pwsh
+        run: |
+          $installer = "$env:RUNNER_TEMP\gs10080w64.exe"
+          Invoke-WebRequest "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $installer
+          $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne "52a91b8bf09298788d7a57b9206127026c23eacd75405f0a131e26dc381dce50") { throw "Ghostscript installer checksum mismatch ($hash)." }
+          Start-Process $installer -ArgumentList "/S" -Wait
+
+      - name: Build the release
+        shell: pwsh
+        run: ./build/release-windows.ps1 -Version $env:TAG.TrimStart('v') -Rebuild
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-win
+          path: artifacts/releases/*
+          if-no-files-found: error
+
+  macos:
+    name: macOS installer (${{ matrix.arch }})
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Rosetta (smoke test of the Intel ffmpeg)
+        if: matrix.arch == 'x64'
+        run: softwareupdate --install-rosetta --agree-to-license || true
+
+      - name: Build the release
+        run: ./build/release-macos.sh "${TAG#v}" --arch ${{ matrix.arch }} --rebuild
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-osx-${{ matrix.arch }}
+          path: artifacts/releases/osx-${{ matrix.arch }}/*
+          if-no-files-found: error
+
+  publish:
+    name: GitHub release
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TAG }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+
+      - name: Create or update the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#v}"
+          notes="build/release-notes/$version.md"
+          [[ -f "$notes" ]] || notes=/dev/null
+          prerelease=""
+          [[ "$version" == *-* ]] && prerelease="--prerelease"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "UniFiles $version" --notes-file "$notes" $prerelease --verify-tag
+          fi
+          gh release upload "$TAG" dist/* --clobber
