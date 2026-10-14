@@ -100,6 +100,7 @@
   <data name="Tray_ResumeAll" xml:space="preserve"><value>Tout reprendre</value></data>
   <data name="Tray_OpenOutput" xml:space="preserve"><value>Ouvrir le dossier de sortie</value></data>
   <data name="Tray_Quit" xml:space="preserve"><value>Quitter UniFiles</value></data>
+  <data name="Menu_Preferences" xml:space="preserve"><value>Préférences…</value></data>
   <data name="Tray_Tooltip" xml:space="preserve"><value>UniFiles</value></data>
   <data name="Tray_TooltipActive" xml:space="preserve"><value>UniFiles · {0} en cours</value></data>
   <data name="ContextMenu_MoreOptions" xml:space="preserve"><value>Plus d'options…</value></data>

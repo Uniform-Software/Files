@@ -177,6 +177,8 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void ShowQueue() => SelectedNav = NavItems[1];
 
+    public void ShowPreferences() => SelectedNav = NavItems[3];
+
     public void ShowNotification(string text, bool isError = false, string? folder = null, ToolModule? module = null)
     {
         (NotificationTile, NotificationIcon) = Badge(isError, module);

@@ -39,6 +39,33 @@
       <Setter Property="Background" Value="{StaticResource CloseHoverBrush}" />
       <Setter Property="Foreground" Value="{StaticResource CreamBrush}" />
     </Style>
+    <!-- macOS: traffic lights in the tab; their glyphs appear when the pointer is over the group. -->
+    <Style Selector="Button.traffic">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+      <Setter Property="MinHeight" Value="20" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Template">
+        <ControlTemplate>
+          <Border Width="13" Height="13" CornerRadius="7" Background="{TemplateBinding Background}"
+                  BorderBrush="{StaticResource MacButtonRimBrush}" BorderThickness="0.5">
+            <ContentPresenter Content="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+          </Border>
+        </ControlTemplate>
+      </Setter>
+    </Style>
+    <Style Selector="Button.traffic Path">
+      <Setter Property="Width" Value="7" />
+      <Setter Property="Height" Value="7" />
+      <Setter Property="Stretch" Value="Uniform" />
+      <Setter Property="Stroke" Value="{StaticResource InkBrush}" />
+      <Setter Property="StrokeThickness" Value="1.4" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="StackPanel#MacCaption:pointerover Button.traffic Path">
+      <Setter Property="Opacity" Value="0.65" />
+    </Style>
     <Style Selector="Border.grip">
       <Setter Property="Background" Value="Transparent" />
     </Style>
@@ -66,7 +93,22 @@
               Width="{StaticResource FolderTabWidth}" Height="{StaticResource FolderTabHeight}"
               Padding="26,0,18,0">
         <DockPanel>
-          <Border DockPanel.Dock="Right" Classes="chip" VerticalAlignment="Center" Padding="8,2">
+          <StackPanel DockPanel.Dock="Right" x:Name="MacCaption" IsVisible="False"
+                      Orientation="Horizontal" VerticalAlignment="Center" Margin="0,2,0,0">
+            <Button Classes="traffic" x:Name="MacCloseButton" Background="{StaticResource MacCloseBrush}"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Close}" ToolTip.Tip="{x:Static res:Strings.Window_Close}">
+              <Path Data="{StaticResource IconClose}" />
+            </Button>
+            <Button Classes="traffic" x:Name="MacMinimizeButton" Background="{StaticResource MacMinimizeBrush}"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Minimize}" ToolTip.Tip="{x:Static res:Strings.Window_Minimize}">
+              <Path Data="{StaticResource IconMinimize}" />
+            </Button>
+            <Button Classes="traffic" x:Name="MacZoomButton" Background="{StaticResource MacZoomBrush}"
+                    AutomationProperties.Name="{x:Static res:Strings.Window_Maximize}" ToolTip.Tip="{x:Static res:Strings.Window_Maximize}">
+              <Path Data="{StaticResource IconZoom}" />
+            </Button>
+          </StackPanel>
+          <Border DockPanel.Dock="Right" x:Name="RangeChip" Classes="chip" VerticalAlignment="Center" Padding="8,2">
             <TextBlock Text="{x:Static res:Strings.Tab_Range}" FontSize="11.5" FontWeight="SemiBold"
                        Foreground="{DynamicResource TextSecondaryBrush}" />
           </Border>
@@ -116,7 +158,7 @@
 
         <!-- Title bar: drag area and caption buttons -->
         <DockPanel Grid.Row="0" x:Name="TitleBar" Classes="grip" Background="Transparent">
-          <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="2" Margin="0,6,10,0" VerticalAlignment="Top">
+          <StackPanel DockPanel.Dock="Right" x:Name="WindowsCaption" Orientation="Horizontal" Spacing="2" Margin="0,6,10,0" VerticalAlignment="Top">
             <Button Classes="caption" x:Name="MinimizeButton"
                     AutomationProperties.Name="{x:Static res:Strings.Window_Minimize}" ToolTip.Tip="{x:Static res:Strings.Window_Minimize}">
               <controls:Icon Size="16" Data="{StaticResource IconMinimize}" />

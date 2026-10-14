@@ -2,3 +2,5 @@
 *.png binary
 *.ico binary
 *.ttf binary
+*.sh text eol=lf
+*.icns binary

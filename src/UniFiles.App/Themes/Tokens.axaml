@@ -54,6 +54,11 @@
   <SolidColorBrush x:Key="CreamBrush" Color="{StaticResource CreamColor}" />
   <!-- Same red as system close buttons, so the gesture reads at once. -->
   <SolidColorBrush x:Key="CloseHoverBrush" Color="#C42B1C" />
+  <!-- macOS window buttons: the system's own colors, so they read as the usual traffic lights. -->
+  <SolidColorBrush x:Key="MacCloseBrush" Color="#FF5F57" />
+  <SolidColorBrush x:Key="MacMinimizeBrush" Color="#FEBC2E" />
+  <SolidColorBrush x:Key="MacZoomBrush" Color="#28C840" />
+  <SolidColorBrush x:Key="MacButtonRimBrush" Color="#26000000" />
   <SolidColorBrush x:Key="LemonBrush" Color="{StaticResource LemonColor}" />
   <SolidColorBrush x:Key="LemonHoverBrush" Color="{StaticResource LemonHoverColor}" />
   <SolidColorBrush x:Key="LemonPressedBrush" Color="{StaticResource LemonPressedColor}" />
@@ -102,6 +107,7 @@
   <StreamGeometry x:Key="IconStepBack">M11 19 L2 12 L11 5 Z M22 19 L13 12 L22 5 Z</StreamGeometry>
   <StreamGeometry x:Key="IconStepForward">M13 19 L22 12 L13 5 Z M2 19 L11 12 L2 5 Z</StreamGeometry>
   <StreamGeometry x:Key="IconMinimize">M5 12 H19</StreamGeometry>
+  <StreamGeometry x:Key="IconZoom">M12 5 V19 M5 12 H19</StreamGeometry>
   <StreamGeometry x:Key="IconMaximize">M7 4 H17 A3 3 0 0 1 20 7 V17 A3 3 0 0 1 17 20 H7 A3 3 0 0 1 4 17 V7 A3 3 0 0 1 7 4 Z</StreamGeometry>
   <StreamGeometry x:Key="IconRestore">M8 4 H18 A2 2 0 0 1 20 6 V16 M6 8 H14 A2 2 0 0 1 16 10 V18 A2 2 0 0 1 14 20 H6 A2 2 0 0 1 4 18 V10 A2 2 0 0 1 6 8 Z</StreamGeometry>
   <StreamGeometry x:Key="IconTrash">M3 6 H21 M19 6 V20 A2 2 0 0 1 17 22 H7 A2 2 0 0 1 5 20 V6 M8 6 V4 A2 2 0 0 1 10 2 H14 A2 2 0 0 1 16 4 V6</StreamGeometry>

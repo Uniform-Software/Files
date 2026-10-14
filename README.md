@@ -46,9 +46,23 @@ Pour désinstaller : Paramètres Windows → Applications → UniFiles. Le menu 
 
 L'installeur Windows embarque ffmpeg 9.0.2, Ghostscript 10.08.0 et LibVLC : rien d'autre à installer.
 
+## Installer (macOS)
+
+macOS 14 (Sonoma) ou plus récent. Deux versions : `osx-arm64` pour les Mac Apple Silicon (M1 et suivants), `osx-x64` pour les Mac Intel.
+
+1. Télécharge `UniFiles-osx-arm64.dmg` (ou `UniFiles-osx-x64.dmg`) depuis la page des versions.
+2. Ouvre-le et glisse UniFiles sur le raccourci Applications.
+3. Lance UniFiles. Cette version n'est pas encore signée par Apple, donc macOS refuse d'abord de l'ouvrir : va dans Réglages Système → Confidentialité et sécurité, clique sur « Ouvrir quand même », puis relance l'appli.
+
+Sont aussi disponibles un installeur (`UniFiles-osx-arm64-Setup.pkg`, même manipulation au premier lancement) et une version portable (`UniFiles-osx-arm64-Portable.zip`).
+
+- Ouvre des fichiers depuis le Finder avec « Ouvrir avec → UniFiles », ou glisse-les sur l'icône du Dock.
+- Fermer la fenêtre garde UniFiles actif dans la barre des menus ; un clic sur l'icône du Dock la rouvre. Cmd+Q quitte.
+- ffmpeg 9.0.2 et LibVLC sont inclus. Ghostscript ne l'est pas (il n'existe pas de version officielle pour Mac) : pour **Compresser un PDF**, installe-le avec [Homebrew](https://brew.sh) (`brew install ghostscript`).
+
 ## Programmes externes
 
-Les modules **Vidéo / audio** et **Compresser un PDF** s'appuient sur [ffmpeg](https://ffmpeg.org) et [Ghostscript](https://ghostscript.com). Pour l'instant, ils ne sont pas inclus dans l'appli. UniFiles les cherche, dans cet ordre :
+Les modules **Vidéo / audio** et **Compresser un PDF** s'appuient sur [ffmpeg](https://ffmpeg.org) et [Ghostscript](https://ghostscript.com). Les installeurs les embarquent (sauf Ghostscript sur macOS) ; en développement, ils ne sont pas inclus. UniFiles les cherche, dans cet ordre :
 
 1. dans un dossier `tools/` à côté de l'exécutable ;
 2. dans le `PATH` ;
@@ -81,6 +95,14 @@ Options de ligne de commande : `UniFiles fichiers…` (ouvre l'appli sur ces fic
 ```
 
 Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (build BtbN figé et vérifié par SHA-256) et Ghostscript avec leurs licences, puis crée l'installeur et les paquets de mise à jour avec [Velopack](https://velopack.io) dans `artifacts/releases`. Les notes de version sont lues dans `build/release-notes/<version>.md`. Prérequis : Ghostscript 10.08.0 installé sur la machine de build.
+
+### Publier une version macOS
+
+```bash
+./build/release-macos.sh 0.2.0 --arch arm64
+```
+
+À lancer sur un Mac, une fois par architecture (`--arch arm64` ou `--arch x64`, par défaut celle de la machine). Le script lance les tests, publie l'appli (autonome, `osx-arm64` ou `osx-x64`), ajoute ffmpeg et ffprobe (builds statiques de Martin Riedl, figés et vérifiés par SHA-256), crée l'icône et l'`Info.plist` (types de fichiers acceptés par le Finder), puis le `.pkg`, la version portable et les paquets de mise à jour avec Velopack, et enfin une image disque `.dmg` (l'appli et un raccourci vers Applications), dans `artifacts/releases/osx-<arch>`. Les versions suivent SemVer : `0.2.0`, ou `0.2.0-alpha` pour une préversion. Chaque architecture a son propre canal de mise à jour. Sans certificat, l'appli reçoit une signature ad hoc ; avec un compte Apple Developer, passe `--sign-app "Developer ID Application: …"`, `--sign-installer "Developer ID Installer: …"` et `--notary-profile <profil notarytool>` pour signer et notariser.
 
 Pour utiliser l'appli en mode portable ou en développement sans toucher à tes préférences, définis `UNIFILES_DATA_DIR` vers un autre dossier : les préférences et l'historique y seront stockés.
 
@@ -117,11 +139,14 @@ Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.A
 - [x] Icône et menu dans la zone de notification
 - [ ] Notifications natives du système, lancement au démarrage
 - [x] Instance unique (les autres points d'entrée transmettent leurs fichiers par named pipe)
-- [x] ffmpeg et Ghostscript embarqués (Windows)
+- [x] ffmpeg et Ghostscript embarqués (Windows), ffmpeg embarqué (macOS)
 - [x] Installeur Windows (Velopack)
 - [ ] Mises à jour automatiques (à brancher sur GitHub Releases)
 - [ ] Signature de l'installeur Windows
-- [ ] Installeurs macOS et Linux
+- [x] Installeur macOS (Velopack, Apple Silicon et Intel)
+- [ ] Signature et notarisation Apple
+- [ ] Ghostscript embarqué sous macOS
+- [ ] Installeur Linux
 - [ ] Aperçu visuel avant/après pour les images
 
 ## Licence

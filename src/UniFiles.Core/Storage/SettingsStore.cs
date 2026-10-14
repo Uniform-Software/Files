@@ -50,11 +50,14 @@ public sealed class SettingsStore
 
     /// <summary>
     /// Where preferences and history live. UNIFILES_DATA_DIR overrides it (portable use, development).
+    /// On macOS, LocalApplicationData is ~/Library/Application Support (ApplicationData would be ~/.config).
     /// </summary>
     public static string AppDataDirectory =>
         Environment.GetEnvironmentVariable("UNIFILES_DATA_DIR") is { Length: > 0 } custom
             ? custom
-            : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "UniFiles");
+            : Path.Combine(Environment.GetFolderPath(OperatingSystem.IsMacOS()
+                ? Environment.SpecialFolder.LocalApplicationData
+                : Environment.SpecialFolder.ApplicationData), "UniFiles");
 
     public string FilePath { get; }
 

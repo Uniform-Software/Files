@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Threading;
+using CommunityToolkit.Mvvm.Input;
 using UniFiles.App.Controls;
 using UniFiles.App.Services;
 using UniFiles.Core.Resources;
@@ -37,6 +38,20 @@ public partial class MainWindow : Window
         foreach (var grip in Grips.Children.OfType<Border>())
             grip.PointerPressed += OnGripPressed;
         Body.SizeChanged += (_, _) => ClipBody();
+
+        // macOS: window buttons in the tab, where the range chip sits elsewhere; and the usual
+        // window shortcuts, which the system doesn't provide without its own title bar.
+        if (OperatingSystem.IsMacOS())
+        {
+            RangeChip.IsVisible = false;
+            WindowsCaption.IsVisible = false;
+            MacCaption.IsVisible = true;
+            MacCloseButton.Click += (_, _) => Close();
+            MacMinimizeButton.Click += (_, _) => WindowState = WindowState.Minimized;
+            MacZoomButton.Click += (_, _) => ToggleMaximized();
+            KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.W, KeyModifiers.Meta), Command = new RelayCommand(Close) });
+            KeyBindings.Add(new KeyBinding { Gesture = new KeyGesture(Key.M, KeyModifiers.Meta), Command = new RelayCommand(() => WindowState = WindowState.Minimized) });
+        }
 
         AddHandler(DragDrop.DragEnterEvent, OnDragEnter);
         AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -82,6 +97,8 @@ public partial class MainWindow : Window
         var label = maximized ? Strings.Window_Restore : Strings.Window_Maximize;
         AutomationProperties.SetName(MaximizeButton, label);
         ToolTip.SetTip(MaximizeButton, label);
+        AutomationProperties.SetName(MacZoomButton, label);
+        ToolTip.SetTip(MacZoomButton, label);
     }
 
     /// <summary>Keeps scrolling content inside the folder's rounded outline.</summary>

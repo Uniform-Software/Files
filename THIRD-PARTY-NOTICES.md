@@ -7,8 +7,9 @@ It is built on, and ships with, the following components. Each keeps its own lic
 
 | Component | Version | License | Source code |
 | --- | --- | --- | --- |
-| FFmpeg (ffmpeg, ffprobe and their libraries), build by BtbN/FFmpeg-Builds, GPL variant | 9.0.2-27-g7e93014c5b | GNU GPL v3 or later (with x264 and other GPL libraries) — full text in `tools/ffmpeg-LICENSE.txt` | https://github.com/FFmpeg/FFmpeg/tree/n9.0.2 · build scripts: https://github.com/BtbN/FFmpeg-Builds |
-| Ghostscript (gswin64c, gsdll64) | 10.08.0 | GNU AGPL v3 — full text in `tools/ghostscript-COPYING.txt` | https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/tag/gs10080 |
+| FFmpeg (ffmpeg, ffprobe and their libraries), Windows build by BtbN/FFmpeg-Builds, GPL variant | 9.0.2-27-g7e93014c5b | GNU GPL v3 or later (with x264 and other GPL libraries) — full text in `tools/ffmpeg-LICENSE.txt` | https://github.com/FFmpeg/FFmpeg/tree/n9.0.2 · build scripts: https://github.com/BtbN/FFmpeg-Builds |
+| FFmpeg (ffmpeg, ffprobe), macOS static build by Martin Riedl | 9.0.2 | GNU GPL v3 or later (with x264 and other GPL libraries) — full text in `tools/ffmpeg-LICENSE.txt` | https://github.com/FFmpeg/FFmpeg/tree/n9.0.2 · build scripts: https://git.martin-riedl.de/ffmpeg/build-script |
+| Ghostscript (gswin64c, gsdll64), Windows only | 10.08.0 | GNU AGPL v3 — full text in `tools/ghostscript-COPYING.txt` | https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/tag/gs10080 |
 
 These programs are unmodified. As required by their licenses, their complete corresponding source code is available at the addresses above; on request, Uniform Systems will also provide a copy.
 
@@ -25,7 +26,7 @@ These programs are unmodified. As required by their licenses, their complete cor
 | PDFsharp | MIT | https://github.com/empira/PDFsharp |
 | FFMpegCore | MIT | https://github.com/rosenbjerg/FFMpegCore |
 | LibVLCSharp | LGPL 2.1 or later | https://code.videolan.org/videolan/LibVLCSharp |
-| LibVLC (VideoLAN.LibVLC.Windows) | LGPL 2.1 or later | https://code.videolan.org/videolan/vlc |
+| LibVLC (VideoLAN.LibVLC.Windows, VideoLAN.LibVLC.Mac) | LGPL 2.1 or later | https://code.videolan.org/videolan/vlc |
 | Microsoft.Data.Sqlite, SQLitePCLRaw | MIT / Apache 2.0 | https://github.com/dotnet/efcore · https://github.com/ericsink/SQLitePCL.raw |
 | SQLite | Public domain | https://sqlite.org |
 | Velopack (installer and updates) | MIT | https://github.com/velopack/velopack |

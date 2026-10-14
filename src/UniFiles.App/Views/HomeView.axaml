@@ -55,7 +55,7 @@
                       CommandParameter="{Binding}"
                       AutomationProperties.Name="{Binding Info.Name}">
                 <StackPanel Spacing="10">
-                  <controls:ModuleBadge Size="44" Tile="{Binding Info.Brush}" Icon="{Binding Info.Icon}" HorizontalAlignment="Left" Margin="0,0,0,4" />
+                  <controls:ModuleBadge Size="44" Mosaic="True" Tile="{Binding Info.Brush}" Icon="{Binding Info.Icon}" HorizontalAlignment="Left" Margin="0,0,0,4" />
                   <TextBlock Classes="h2" Text="{Binding Info.Name}" />
                   <TextBlock Classes="caption" Text="{Binding Info.Summary}" TextWrapping="Wrap" />
                 </StackPanel>

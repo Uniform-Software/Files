@@ -2,8 +2,10 @@ using System.Diagnostics;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using Avalonia.Platform;
+using Avalonia.Platform.Storage;
 using Avalonia.Styling;
 using Avalonia.Threading;
 using UniFiles.App.Platform;
@@ -20,7 +22,8 @@ namespace UniFiles.App;
 /// <summary>
 /// Application lifetime: UniFiles keeps running in the notification area so jobs continue and
 /// right-click actions start instantly. It quits from the tray menu (or on close, if the user
-/// turned that preference off).
+/// turned that preference off). On macOS the Dock icon also brings the window back, and files
+/// opened from the Finder (Open With, drop on the Dock icon) arrive as activation events, not arguments.
 /// </summary>
 public partial class App : Application
 {
@@ -35,6 +38,9 @@ public partial class App : Application
     private bool _trayDirty;
     private bool _quitting;
 
+    // Requests received from the system before the main window is ready (macOS file activation).
+    private List<LaunchRequest>? _early = [];
+
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
@@ -47,6 +53,13 @@ public partial class App : Application
             _desktop = desktop;
             CrashLog.InstallForDispatcher();
             var initial = Program.InitialRequest;
+
+            // Cmd+Q, logout: quit for real, the window must not hide itself instead.
+            desktop.ShutdownRequested += (_, _) => PrepareQuit();
+            if (this.TryGetFeature<IActivatableLifetime>() is { } activatable)
+                activatable.Activated += OnActivated;
+            if (OperatingSystem.IsMacOS())
+                SetUpMacMenu();
 
             // The splash greets interactive launches; right-click actions stay in the background.
             SplashWindow? splash = null;
@@ -92,6 +105,10 @@ public partial class App : Application
         Handle(initial);
         splash?.Close();
 
+        var early = _early!;
+        _early = null;
+        early.ForEach(Handle);
+
         SingleInstance.Attach(request => Dispatcher.UIThread.Post(() => Handle(request)));
 
         // Once the window is up and idle, get the video player ready.
@@ -117,6 +134,23 @@ public partial class App : Application
                     _viewModel.OpenFiles(request.Files);
                 break;
         }
+    }
+
+    /// <summary>macOS: files opened from the Finder, or a click on the Dock icon while the window is hidden.</summary>
+    private void OnActivated(object? sender, ActivatedEventArgs e)
+    {
+        LaunchRequest? request = e switch
+        {
+            FileActivatedEventArgs files => new(LaunchMode.Open, files.Files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList()),
+            { Kind: ActivationKind.Reopen } => new(LaunchMode.Open, []),
+            _ => null,
+        };
+        if (request is null)
+            return;
+        if (_early is not null)
+            _early.Add(request);
+        else
+            Handle(request);
     }
 
     private void ShowMainWindow()
@@ -152,11 +186,37 @@ public partial class App : Application
 
     private void Quit()
     {
-        _quitting = true;
-        foreach (var job in _services.Queue.Jobs.Where(j => !j.IsFinished))
-            _services.Queue.Cancel(job);
-        _tray?.Dispose();
+        PrepareQuit();
         _desktop.Shutdown();
+    }
+
+    private void PrepareQuit()
+    {
+        _quitting = true;
+        if (_services is not null)
+        {
+            foreach (var job in _services.Queue.Jobs.Where(j => !j.IsFinished))
+                _services.Queue.Cancel(job);
+        }
+        _tray?.Dispose();
+        _tray = null;
+    }
+
+    /// <summary>
+    /// macOS application menu: "Preferences…" (Cmd+,) above the standard items (Hide, Quit…),
+    /// in place of Avalonia's default "About Avalonia".
+    /// </summary>
+    private void SetUpMacMenu()
+    {
+        var preferences = new NativeMenuItem(Strings.Menu_Preferences) { Gesture = new KeyGesture(Key.OemComma, KeyModifiers.Meta) };
+        preferences.Click += (_, _) =>
+        {
+            if (_early is not null)
+                return;
+            ShowMainWindow();
+            _viewModel.ShowPreferences();
+        };
+        NativeMenu.SetMenu(this, new NativeMenu { Items = { preferences } });
     }
 
     /// <summary>Re-applies the right-click menu if enabled, so labels and the executable path stay current.</summary>
@@ -178,13 +238,18 @@ public partial class App : Application
 
     private void SetUpTray()
     {
+        // macOS menu bar: the mark alone as a template image, which the system tints like its own
+        // icons (white on a dark menu bar, black on a light one).
+        var icon = OperatingSystem.IsMacOS() ? "unifiles-tray-mac.png" : "unifiles-icon.png";
         _tray = new TrayIcon
         {
-            Icon = new WindowIcon(AssetLoader.Open(new Uri("avares://UniFiles/Assets/unifiles-icon.png"))),
+            Icon = new WindowIcon(AssetLoader.Open(new Uri($"avares://UniFiles/Assets/{icon}"))),
             ToolTipText = Strings.Tray_Tooltip,
             Menu = new NativeMenu(),
             IsVisible = true,
         };
+        if (OperatingSystem.IsMacOS())
+            MacOSProperties.SetIsTemplateIcon(_tray, true);
         _tray.Clicked += (_, _) => ShowMainWindow();
         TrayIcon.SetIcons(this, [_tray]);
 
