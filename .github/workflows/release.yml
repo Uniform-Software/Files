@@ -34,6 +34,8 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # The official installer hangs when run silently on a runner: open it as an archive instead
+      # (7-Zip is preinstalled), which gives the same bin and doc folders.
       - name: Ghostscript 10.08.0 (bundled in the installer)
         timeout-minutes: 10
         shell: pwsh
@@ -42,17 +44,17 @@ jobs:
           Invoke-WebRequest "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $installer
           $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($hash -ne "52a91b8bf09298788d7a57b9206127026c23eacd75405f0a131e26dc381dce50") { throw "Ghostscript installer checksum mismatch ($hash)." }
-          # Wait for the installer only: "Start-Process -Wait" also waits for whatever it opens at the
-          # end (readme...), which never closes on a runner.
-          $process = Start-Process $installer -ArgumentList "/S" -PassThru
-          if (-not $process.WaitForExit(300000)) { $process.Kill(); throw "Ghostscript installer timed out." }
-          $gs = "C:\Program Files\gs\gs10.08.0\bin\gswin64c.exe"
-          if (-not (Test-Path $gs)) { throw "Ghostscript was not installed ($gs missing)." }
-          & $gs --version
+          $command = Get-Command 7z -ErrorAction SilentlyContinue
+          $sevenZip = if ($command) { $command.Source } else { "C:\Program Files\7-Zip\7z.exe" }
+          & $sevenZip x -y "-o$env:RUNNER_TEMP\gs" $installer | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw "Could not extract the Ghostscript installer." }
+          $bin = "$env:RUNNER_TEMP\gs\bin"
+          & "$bin\gswin64c.exe" --version
+          "GS_BIN=$bin" >> $env:GITHUB_ENV
 
       - name: Build the release
         shell: pwsh
-        run: ./build/release-windows.ps1 -Version $env:TAG.TrimStart('v') -Rebuild
+        run: ./build/release-windows.ps1 -Version $env:TAG.TrimStart('v') -Rebuild -GhostscriptBin $env:GS_BIN
 
       - uses: actions/upload-artifact@v5
         with:
