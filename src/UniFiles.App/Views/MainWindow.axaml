@@ -120,6 +120,15 @@
       <Border Grid.Row="1" Grid.Column="0" Width="{StaticResource FolderTabWidth}" Padding="16,12,16,24">
       <DockPanel>
         <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="12,0">
+          <!-- A downloaded update, one click away -->
+          <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="-12,0,-12,14"
+                  IsVisible="{Binding ShowUpdateButton}" Command="{Binding InstallUpdateCommand}"
+                  ToolTip.Tip="{x:Static res:Strings.Update_ButtonHint}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <controls:Icon Size="16" Data="{StaticResource IconUpload}" />
+              <TextBlock Text="{Binding UpdateButtonText}" TextWrapping="Wrap" />
+            </StackPanel>
+          </Button>
           <StackPanel Orientation="Horizontal" Spacing="8">
             <controls:ModuleBadge Size="18" Tile="{StaticResource LemonBrush}" Icon="{StaticResource IconCheck}" />
             <TextBlock Classes="caption" Text="{x:Static res:Strings.Tagline_Local}" />

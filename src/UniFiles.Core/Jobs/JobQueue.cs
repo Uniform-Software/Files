@@ -161,6 +161,24 @@ public sealed class JobQueue
         }
     }
 
+    /// <summary>
+    /// A compression that made the file heavier (already optimized, or a target above its size):
+    /// the original goes to the output instead, under the result's name and the original's extension.
+    /// </summary>
+    private static void KeepOriginalIfLarger(Job job, WorkItem item)
+    {
+        if (item.Inputs.Count != 1 || item.Outputs.Count != 1 || item.OutputBytes <= item.InputBytes)
+            return;
+        var original = item.Inputs[0];
+        var heavier = item.Outputs[0];
+        OutputFolder.Release(heavier);
+        var kept = job.Output.Reserve(Path.GetFileNameWithoutExtension(heavier) + Path.GetExtension(original));
+        File.Copy(original, kept, overwrite: true);
+        item.Outputs = [kept];
+        item.OutputBytes = item.InputBytes;
+        item.KeptOriginal = true;
+    }
+
     private static async ValueTask ProcessAsync(Job job, WorkItem item, CancellationToken cancellationToken)
     {
         await job.Gate.WaitAsync(cancellationToken);
@@ -187,6 +205,8 @@ public sealed class JobQueue
         {
             item.Outputs = await job.Tool.ExecuteAsync(context, cancellationToken);
             item.OutputBytes = item.Outputs.Sum(SizeOf);
+            if (job.Tool.KeepsOriginalIfLarger)
+                KeepOriginalIfLarger(job, item);
             item.Status = WorkStatus.Done;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

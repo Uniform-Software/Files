@@ -95,6 +95,28 @@ public class JobQueueTests
     }
 
     [Fact]
+    public async Task A_compression_that_grows_the_file_keeps_the_original()
+    {
+        using var temp = new TempFolder();
+        // Already squeezed (quality 30): recompressing at 95 can only make it heavier.
+        var input = temp.File("small.jpg");
+        using (var noise = NetVips.Image.Gaussnoise(400, 300, mean: 128, sigma: 40))
+            noise.Cast(NetVips.Enums.BandFormat.Uchar).WriteToFile(input, new NetVips.VOption { { "Q", 30 } });
+        var settings = new ToolSettings(new Dictionary<string, object?> { ["mode"] = "quality", ["quality"] = 95, ["strip"] = true });
+
+        var job = new JobQueue().Enqueue(new UniFiles.Core.Tools.Images.ImageCompressTool(), [input], settings, new OutputFolder(temp.Sub("out")));
+        await job.Completion.WaitAsync(TimeSpan.FromSeconds(10));
+
+        var item = Assert.Single(job.Items);
+        Assert.Equal(JobStatus.Completed, job.Status);
+        Assert.True(item.KeptOriginal);
+        Assert.Equal(1, job.KeptOriginalCount);
+        var output = Assert.Single(Directory.GetFiles(temp.Sub("out")));
+        Assert.Equal(TempFolder.Hash(input), TempFolder.Hash(output));
+        Assert.Equal(job.InputBytes, job.OutputBytes);
+    }
+
+    [Fact]
     public async Task Pause_holds_the_next_files_until_resumed()
     {
         using var temp = new TempFolder();

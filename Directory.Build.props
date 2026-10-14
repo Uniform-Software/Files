@@ -7,7 +7,7 @@
     <Authors>Entony</Authors>
     <Company>Uniform Systems</Company>
     <Product>UniFiles</Product>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
   </PropertyGroup>
 </Project>

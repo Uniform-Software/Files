@@ -26,6 +26,8 @@ public abstract class FileToolBase : IFileTool
 
     public virtual bool ShowsSizeChange => true;
 
+    public virtual bool KeepsOriginalIfLarger => false;
+
     public virtual int MaxParallelism => 1;
 
     public abstract IReadOnlyList<ToolOption> Options { get; }

@@ -184,6 +184,8 @@ public partial class JobViewModel : ObservableObject
             var parts = new List<string> { string.Format(Strings.Queue_Processed, Format.Files(Job.DoneCount)) };
             if (Job.Tool.ShowsSizeChange && Job.InputBytes != Job.OutputBytes && Format.Gain(Job.InputBytes, Job.OutputBytes) is { } gain)
                 parts.Add(gain);
+            if (Format.KeptOriginals(Job.KeptOriginalCount) is { } kept)
+                parts.Add(kept);
             if (Job.FinishedAt - Job.StartedAt is { } elapsed)
                 parts.Add(string.Format(Strings.Queue_Elapsed, elapsed.TotalSeconds < 60 ? $"{elapsed.TotalSeconds:0.#} s" : $"{elapsed:m\\:ss}"));
             Summary = string.Join(" · ", parts);

@@ -180,7 +180,7 @@ public partial class PreferencesViewModel : PageViewModel
     private Task CheckUpdates() => Updater.CheckAsync();
 
     [RelayCommand]
-    private void InstallUpdate() => Updater.RestartNow();
+    private void InstallUpdate() => _main.InstallUpdate();
 
     partial void OnContextMenuEnabledChanged(bool value)
     {

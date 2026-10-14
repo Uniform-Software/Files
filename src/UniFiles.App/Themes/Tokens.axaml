@@ -60,6 +60,10 @@
   <SolidColorBrush x:Key="MacZoomBrush" Color="#28C840" />
   <SolidColorBrush x:Key="MacButtonRimBrush" Color="#26000000" />
   <SolidColorBrush x:Key="LemonBrush" Color="{StaticResource LemonColor}" />
+  <!-- Switches: on, the track turns lemon, so its knob is ink (never white on lemon). -->
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOn" Color="{StaticResource InkColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPointerOver" Color="{StaticResource InkColor}" />
+  <SolidColorBrush x:Key="ToggleSwitchKnobFillOnPressed" Color="{StaticResource InkColor}" />
   <SolidColorBrush x:Key="LemonHoverBrush" Color="{StaticResource LemonHoverColor}" />
   <SolidColorBrush x:Key="LemonPressedBrush" Color="{StaticResource LemonPressedColor}" />
   <SolidColorBrush x:Key="ImagesBrush" Color="{StaticResource ImagesColor}" />

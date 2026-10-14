@@ -3,6 +3,7 @@
              xmlns:vm="using:UniFiles.App.ViewModels"
              xmlns:controls="using:UniFiles.App.Controls"
              xmlns:res="using:UniFiles.Core.Resources"
+             xmlns:services="using:UniFiles.App.Services"
              x:Class="UniFiles.App.Views.PreferencesView"
              x:DataType="vm:PreferencesViewModel">
   <ScrollViewer>
@@ -57,7 +58,7 @@
                        IsVisible="{Binding EncoderStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
           </StackPanel>
           <StackPanel Spacing="2">
-            <ToggleSwitch IsChecked="{Binding KeepInTray}" Content="{x:Static res:Strings.Prefs_KeepInTray}" OnContent="" OffContent="" />
+            <ToggleSwitch IsChecked="{Binding KeepInTray}" Content="{x:Static services:PlatformText.KeepInTray}" OnContent="" OffContent="" />
             <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_KeepInTrayHint}" TextWrapping="Wrap" />
           </StackPanel>
         </StackPanel>

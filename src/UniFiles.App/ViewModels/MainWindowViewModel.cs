@@ -75,6 +75,13 @@ public partial class MainWindowViewModel : ObservableObject
         _quickActionTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(800) };
         _quickActionTimer.Tick += (_, _) => RunQuickActions();
 
+        Updater = services.Updater;
+        Updater.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(ShowUpdateButton));
+            OnPropertyChanged(nameof(UpdateButtonText));
+        };
+
         services.Queue.JobsChanged += (_, _) => Dispatcher.UIThread.Post(UpdateQueueBadge);
         services.Queue.JobFinished += (_, job) => Dispatcher.UIThread.Post(() => OnJobFinished(job));
     }
@@ -121,6 +128,42 @@ public partial class MainWindowViewModel : ObservableObject
     public bool IsWindowActive { get; set; }
 
     public INotifier? BackgroundNotifier { get; set; }
+
+    // ---- Update button (sidebar) ----------------------------------------------------------
+
+    public Updater Updater { get; }
+
+    /// <summary>Set by the app: installs the update and relaunches.</summary>
+    public Action? RestartForUpdate { get; set; }
+
+    /// <summary>The user asked for the update while files were being processed: it waits for them.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UpdateButtonText))]
+    [NotifyCanExecuteChangedFor(nameof(InstallUpdateCommand))]
+    private bool _updateWhenIdle;
+
+    public bool ShowUpdateButton => Updater.State == UpdateState.Ready;
+
+    public string UpdateButtonText => UpdateWhenIdle
+        ? Strings.Update_AfterJobsButton
+        : string.Format(Strings.Update_Button, Updater.AvailableVersion);
+
+    private bool HasActiveJobs => _services.Queue.Jobs.Any(j => !j.IsFinished);
+
+    private bool CanInstallUpdate() => !UpdateWhenIdle;
+
+    /// <summary>Installs now, or right after the files being processed (never interrupts them).</summary>
+    [RelayCommand(CanExecute = nameof(CanInstallUpdate))]
+    public void InstallUpdate()
+    {
+        if (HasActiveJobs)
+        {
+            UpdateWhenIdle = true;
+            ShowNotification(Strings.Update_AfterJobs);
+            return;
+        }
+        RestartForUpdate?.Invoke();
+    }
 
     partial void OnSelectedNavChanged(NavItemViewModel? value)
     {
@@ -285,6 +328,11 @@ public partial class MainWindowViewModel : ObservableObject
     private void OnJobFinished(Job job)
     {
         UpdateQueueBadge();
+        if (UpdateWhenIdle && !HasActiveJobs)
+        {
+            RestartForUpdate?.Invoke();
+            return;
+        }
         Home.Refresh();
         if (CurrentPage == History)
             History.Refresh();
@@ -300,6 +348,8 @@ public partial class MainWindowViewModel : ObservableObject
         };
         if (job.Status == JobStatus.Completed && job.Tool.ShowsSizeChange && Format.Gain(job.InputBytes, job.OutputBytes) is { } gain && job.InputBytes != job.OutputBytes)
             text += " · " + gain;
+        if (Format.KeptOriginals(job.KeptOriginalCount) is { } kept)
+            text += " · " + kept;
 
         Notify(text, isError: job.Status != JobStatus.Completed, folder: job.DoneCount > 0 ? job.Output.Path : null, module: job.Tool.Module);
     }

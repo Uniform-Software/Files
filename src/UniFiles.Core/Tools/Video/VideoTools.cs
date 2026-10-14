@@ -128,6 +128,7 @@ public abstract class VideoToolBase : FileToolBase
 public sealed class VideoCompressTool : VideoToolBase
 {
     public override string Id => "video.compress";
+    public override bool KeepsOriginalIfLarger => true;
     public override string Name => Strings.Tool_VideoCompress_Name;
     public override string Description => Strings.Tool_VideoCompress_Description;
 

@@ -234,6 +234,7 @@ public sealed record ImagePlan(string Format, int Quality, int MaxWidth, int Max
 public sealed class ImageCompressTool : ImageToolBase
 {
     public override string Id => "image.compress";
+    public override bool KeepsOriginalIfLarger => true;
     public override string Name => Strings.Tool_ImageCompress_Name;
     public override string Description => Strings.Tool_ImageCompress_Description;
 

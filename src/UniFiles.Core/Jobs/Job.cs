@@ -53,6 +53,9 @@ public sealed class WorkItem
     public long InputBytes { get; internal set; }
 
     public long OutputBytes { get; internal set; }
+
+    /// <summary>The result was heavier than the original, so the original was copied instead.</summary>
+    public bool KeptOriginal { get; internal set; }
 }
 
 /// <summary>A tool applied to a set of files, as shown in the queue.</summary>
@@ -99,6 +102,9 @@ public sealed class Job
     public int DoneCount => Items.Count(i => i.Status == WorkStatus.Done);
 
     public int FailedCount => Items.Count(i => i.Status == WorkStatus.Failed);
+
+    /// <summary>Files already as light as they can be: their original was kept.</summary>
+    public int KeptOriginalCount => Items.Count(i => i.KeptOriginal);
 
     public string? CurrentItem => Items.FirstOrDefault(i => i.Status == WorkStatus.Running)?.DisplayName;
 

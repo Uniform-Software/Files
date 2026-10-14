@@ -7,6 +7,7 @@
              xmlns:vm="using:UniFiles.App.ViewModels"
              xmlns:controls="using:UniFiles.App.Controls"
              xmlns:res="using:UniFiles.Core.Resources"
+             xmlns:services="using:UniFiles.App.Services"
              x:Class="UniFiles.App.Views.PdfOrganizerView"
              x:DataType="vm:PdfOrganizerViewModel">
 
@@ -129,7 +130,7 @@
 
     <!-- Summary and export -->
     <DockPanel Grid.Row="2" Margin="0,16,0,0">
-      <Button DockPanel.Dock="Right" Classes="primary" Command="{Binding ExportCommand}" HotKey="Ctrl+Enter"
+      <Button DockPanel.Dock="Right" Classes="primary" Command="{Binding ExportCommand}" HotKey="{OnPlatform Ctrl+Enter, macOS=Meta+Enter}" ToolTip.Tip="{x:Static services:PlatformText.LaunchShortcut}"
               AutomationProperties.Name="{x:Static res:Strings.Organizer_Export}">
         <StackPanel Orientation="Horizontal" Spacing="8">
           <controls:Icon Size="16" Data="{StaticResource IconCheck}" />

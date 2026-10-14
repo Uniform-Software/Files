@@ -117,6 +117,7 @@ public partial class App : Application
 
         _services.Updater.UpdateReady += (_, _) =>
             _viewModel.Notify(string.Format(Strings.Update_ReadyNotification, _services.Updater.AvailableVersion));
+        _viewModel.RestartForUpdate = RestartForUpdate;
         if (_services.Settings.CheckForUpdates)
             DispatcherTimer.RunOnce(() => _ = _services.Updater.CheckAsync(), TimeSpan.FromSeconds(8));
     }
@@ -196,9 +197,19 @@ public partial class App : Application
         _desktop.Shutdown();
     }
 
+    /// <summary>Installs the downloaded update now and relaunches UniFiles (nothing is running).</summary>
+    private void RestartForUpdate()
+    {
+        _quitting = true;
+        _tray?.Dispose();
+        _tray = null;
+        _services.Updater.RestartNow();
+    }
+
     private void PrepareQuit()
     {
         _quitting = true;
+        _services?.Updater.ApplyOnExit();
         if (_services is not null)
         {
             foreach (var job in _services.Queue.Jobs.Where(j => !j.IsFinished))

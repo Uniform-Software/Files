@@ -51,7 +51,36 @@ public sealed class PresetItemViewModel(ToolPreset preset, IFileTool tool)
 
     public string ToolName => Tool.Name;
 
+    /// <summary>The action and its settings, for the tooltip: "Resize · Max width: 1600 px · Quality: 82 %".</summary>
+    public string Details => string.Join(Environment.NewLine, [ToolName, .. Describe(Tool, Preset)]);
+
     public override string ToString() => $"{Name}. {ToolName}";
+
+    private static IEnumerable<string> Describe(IFileTool tool, ToolPreset preset)
+    {
+        var settings = AppServices.SettingsFrom(tool, preset.Values);
+        foreach (var option in tool.Options)
+        {
+            // Options hidden by another one (quality when compressing to a size) don't apply.
+            if (option.VisibleWhenKey is { } key
+                && !string.Equals(settings[key]?.ToString(), option.VisibleWhenValue ?? bool.TrueString, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+            var value = settings[option.Key];
+            var text = option switch
+            {
+                ChoiceOption choice => choice.Choices.FirstOrDefault(c => c.Value == value?.ToString())?.Label,
+                NumberOption number => number.Unit is null ? $"{value}" : $"{value} {number.Unit}",
+                BoolOption => null,
+                _ => value?.ToString() is { Length: > 0 } t ? t : null,
+            };
+            if (option is BoolOption && value is true)
+                yield return option.Label;
+            else if (text is not null)
+                yield return string.Format(Strings.Preset_Detail, option.Label, text);
+        }
+    }
 }
 
 /// <summary>"Réglages d'une action": choose a tool or a preset, tune it, see the estimate, launch.</summary>
@@ -109,7 +138,11 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     public bool CanCompare => SelectedTool?.Tool is { Module: ToolModule.Images, CombinesInputs: false } && ComparisonFile is not null;
 
-    public string? ComparisonSizes => Comparison is { } c ? Format.Gain(c.BeforeBytes, c.AfterBytes) : null;
+    public string? ComparisonSizes => Comparison is { } c
+        ? SelectedTool?.Tool.KeepsOriginalIfLarger == true && c.AfterBytes > c.BeforeBytes
+            ? $"{Format.Gain(c.BeforeBytes, c.AfterBytes)} · {Strings.Compare_KeepsOriginal}"
+            : Format.Gain(c.BeforeBytes, c.AfterBytes)
+        : null;
 
     partial void OnComparisonFileChanged(FileItemViewModel? value) => ScheduleComparison();
 
@@ -217,6 +250,18 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SavePresetCommand))]
     private string _presetName = "";
+
+    /// <summary>The preset being renamed, or null when saving a new one.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PresetFormLabel), nameof(PresetFormHint))]
+    private PresetItemViewModel? _renamingPreset;
+
+    [ObservableProperty]
+    private string? _presetError;
+
+    public string PresetFormLabel => RenamingPreset is null ? Strings.Preset_NameLabel : Strings.Preset_RenameLabel;
+
+    public string PresetFormHint => RenamingPreset is null ? Strings.Preset_SaveHint : Strings.Preset_RenameHint;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasTool), nameof(LaunchLabel), nameof(HasOptions))]
@@ -363,12 +408,29 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     [RelayCommand]
     private void StartSavingPreset()
     {
+        RenamingPreset = null;
+        PresetError = null;
         PresetName = ActivePreset?.Name ?? "";
         IsSavingPreset = true;
     }
 
+    /// <summary>Shows the preset (its tool and settings), with its name ready to edit.</summary>
     [RelayCommand]
-    private void CancelSavingPreset() => IsSavingPreset = false;
+    private void StartRenamingPreset(PresetItemViewModel preset)
+    {
+        ApplyPreset(preset);
+        RenamingPreset = preset;
+        PresetError = null;
+        PresetName = preset.Name;
+        IsSavingPreset = true;
+    }
+
+    [RelayCommand]
+    private void CancelSavingPreset()
+    {
+        IsSavingPreset = false;
+        RenamingPreset = null;
+    }
 
     private bool CanSavePreset() => !string.IsNullOrWhiteSpace(PresetName);
 
@@ -378,8 +440,23 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         if (SelectedTool?.Tool is not { } tool)
             return;
         var name = PresetName.Trim();
-        var saved = _services.SavePreset(tool, name, CurrentSettings());
+        ToolPreset saved;
+        if (RenamingPreset is { } renamed)
+        {
+            if (!_services.RenamePreset(renamed.Preset, name))
+            {
+                PresetError = Strings.Preset_NameTaken;
+                return;
+            }
+            saved = renamed.Preset;
+        }
+        else
+        {
+            saved = _services.SavePreset(tool, name, CurrentSettings());
+        }
         IsSavingPreset = false;
+        RenamingPreset = null;
+        PresetError = null;
         RefreshPresets();
         ActivePreset = Presets.FirstOrDefault(p => p.Preset == saved);
         _main.ShowNotification(string.Format(Strings.Preset_Saved, name));

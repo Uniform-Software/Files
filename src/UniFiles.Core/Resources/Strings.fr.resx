@@ -246,10 +246,10 @@
   <data name="Update_Checking" xml:space="preserve"><value>Recherche d'une nouvelle version…</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>UniFiles est à jour.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Téléchargement de la version {0}… {1} %</value></data>
-  <data name="Update_Ready" xml:space="preserve"><value>La version {0} est prête. Elle s'installera quand tu quitteras UniFiles.</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>La version {0} est prête. Installe-la avec le bouton de la barre latérale, ou elle s'installera quand tu quitteras UniFiles.</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>Impossible de vérifier les mises à jour (pas de connexion ?). UniFiles réessaiera au prochain lancement.</value></data>
   <data name="Update_Unsupported" xml:space="preserve"><value>Les mises à jour automatiques ne fonctionnent qu'avec un UniFiles empaqueté (installeur, image disque ou version portable), pas avec une version de développement.</value></data>
-  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} est prête : elle s'installera quand tu quitteras l'appli.</value></data>
+  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} est prête : mets à jour depuis la barre latérale, ou elle s'installera quand tu quitteras l'appli.</value></data>
   <data name="Tool_ImageHeic_Name" xml:space="preserve"><value>Convertir des photos iPhone (HEIC)</value></data>
   <data name="Tool_ImageHeic_Description" xml:space="preserve"><value>HEIC vers JPG ou PNG, lisibles par toutes les applis et tous les sites</value></data>
   <data name="Option_CompressMode" xml:space="preserve"><value>Compresser</value></data>
@@ -309,4 +309,18 @@
   <data name="Prefs_ContextMenuMac" xml:space="preserve"><value>Actions rapides du Finder</value></data>
   <data name="Prefs_ContextMenuHintMac" xml:space="preserve"><value>Ajoute les actions UniFiles et tes préréglages au clic droit du Finder, dans « Actions rapides ». Tu peux afficher ou masquer chacune dans Réglages Système › Clavier › Raccourcis clavier › Services.</value></data>
   <data name="Unit_Fps" xml:space="preserve"><value>{0} img/s</value></data>
+  <data name="Format_KeptOriginalOne" xml:space="preserve"><value>1 fichier déjà optimisé : original gardé</value></data>
+  <data name="Format_KeptOriginals" xml:space="preserve"><value>{0} fichiers déjà optimisés : originaux gardés</value></data>
+  <data name="Compare_KeepsOriginal" xml:space="preserve"><value>plus lourd que l'original, qui sera gardé tel quel</value></data>
+  <data name="Prefs_KeepInTrayMac" xml:space="preserve"><value>Garder UniFiles dans la barre des menus à la fermeture</value></data>
+  <data name="Editor_HelpMac" xml:space="preserve"><value>Espace : lecture/pause · S : couper à la tête de lecture · ⌫ : retirer ou garder le passage · ⌘Z : annuler · flèches : ±1 s (⇧ : 0,1 s)</value></data>
+  <data name="Preset_Rename" xml:space="preserve"><value>Renommer ce préréglage</value></data>
+  <data name="Preset_RenameLabel" xml:space="preserve"><value>Nouveau nom</value></data>
+  <data name="Preset_RenameHint" xml:space="preserve"><value>Seul le nom change. Pour modifier les réglages, ajuste-les et enregistre sous le même nom.</value></data>
+  <data name="Preset_NameTaken" xml:space="preserve"><value>Un autre préréglage de cette action porte déjà ce nom.</value></data>
+  <data name="Preset_Detail" xml:space="preserve"><value>{0} : {1}</value></data>
+  <data name="Update_Button" xml:space="preserve"><value>Mettre à jour vers {0}</value></data>
+  <data name="Update_ButtonHint" xml:space="preserve"><value>Installe la nouvelle version et redémarre UniFiles. Si des fichiers sont en cours de traitement, elle attend qu'ils soient finis.</value></data>
+  <data name="Update_AfterJobsButton" xml:space="preserve"><value>Mise à jour après les traitements…</value></data>
+  <data name="Update_AfterJobs" xml:space="preserve"><value>La mise à jour s'installera dès que les traitements en cours seront finis.</value></data>
 </root>

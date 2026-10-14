@@ -29,4 +29,12 @@ public static class Format
 
     public static string Files(int count) =>
         string.Format(count == 1 ? Strings.Format_OneFile : Strings.Format_Files, count);
+
+    /// <summary>"2 files already optimized, originals kept", or null when there are none.</summary>
+    public static string? KeptOriginals(int count) => count switch
+    {
+        0 => null,
+        1 => Strings.Format_KeptOriginalOne,
+        _ => string.Format(Strings.Format_KeptOriginals, count),
+    };
 }

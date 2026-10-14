@@ -246,10 +246,10 @@
   <data name="Update_Checking" xml:space="preserve"><value>Looking for a new version…</value></data>
   <data name="Update_UpToDate" xml:space="preserve"><value>UniFiles is up to date.</value></data>
   <data name="Update_Downloading" xml:space="preserve"><value>Downloading version {0}… {1} %</value></data>
-  <data name="Update_Ready" xml:space="preserve"><value>Version {0} is ready. It will be installed when you quit UniFiles.</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Version {0} is ready. Install it with the button in the sidebar, or it will be installed when you quit UniFiles.</value></data>
   <data name="Update_Failed" xml:space="preserve"><value>Couldn't check for updates (no connection?). UniFiles will try again at the next launch.</value></data>
   <data name="Update_Unsupported" xml:space="preserve"><value>Automatic updates only work with a packaged UniFiles (installer, disk image or portable package), not with a development build.</value></data>
-  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} is ready: it will be installed when you quit the app.</value></data>
+  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} is ready: update from the sidebar, or it will be installed when you quit.</value></data>
   <data name="Tool_ImageHeic_Name" xml:space="preserve"><value>Convert iPhone photos (HEIC)</value></data>
   <data name="Tool_ImageHeic_Description" xml:space="preserve"><value>HEIC to JPG or PNG, which every app and website opens</value></data>
   <data name="Option_CompressMode" xml:space="preserve"><value>Compress</value></data>
@@ -309,4 +309,18 @@
   <data name="Prefs_ContextMenuMac" xml:space="preserve"><value>Finder Quick Actions</value></data>
   <data name="Prefs_ContextMenuHintMac" xml:space="preserve"><value>Adds UniFiles actions and your presets to the Finder's right-click menu, under Quick Actions. You can show or hide each one in System Settings › Keyboard › Keyboard Shortcuts › Services.</value></data>
   <data name="Unit_Fps" xml:space="preserve"><value>{0} fps</value></data>
+  <data name="Format_KeptOriginalOne" xml:space="preserve"><value>1 file was already optimized: original kept</value></data>
+  <data name="Format_KeptOriginals" xml:space="preserve"><value>{0} files were already optimized: originals kept</value></data>
+  <data name="Compare_KeepsOriginal" xml:space="preserve"><value>heavier than the original, which will be kept as is</value></data>
+  <data name="Prefs_KeepInTrayMac" xml:space="preserve"><value>Keep UniFiles in the menu bar when the window is closed</value></data>
+  <data name="Editor_HelpMac" xml:space="preserve"><value>Space: play/pause · S: cut at the playhead · ⌫: remove or keep the passage · ⌘Z: undo · arrows: move by 1 s (⇧: 0.1 s)</value></data>
+  <data name="Preset_Rename" xml:space="preserve"><value>Rename this preset</value></data>
+  <data name="Preset_RenameLabel" xml:space="preserve"><value>New name</value></data>
+  <data name="Preset_RenameHint" xml:space="preserve"><value>Only the name changes. To change the settings, adjust them and save under the same name.</value></data>
+  <data name="Preset_NameTaken" xml:space="preserve"><value>Another preset of this action already has that name.</value></data>
+  <data name="Preset_Detail" xml:space="preserve"><value>{0}: {1}</value></data>
+  <data name="Update_Button" xml:space="preserve"><value>Update to {0}</value></data>
+  <data name="Update_ButtonHint" xml:space="preserve"><value>Installs the new version and restarts UniFiles. If files are being processed, it waits for them to finish.</value></data>
+  <data name="Update_AfterJobsButton" xml:space="preserve"><value>Updating after the current jobs…</value></data>
+  <data name="Update_AfterJobs" xml:space="preserve"><value>The update will be installed as soon as the current jobs are done.</value></data>
 </root>

@@ -4,6 +4,7 @@
              xmlns:controls="using:UniFiles.App.Controls"
              xmlns:tools="using:UniFiles.Core.Tools"
              xmlns:res="using:UniFiles.Core.Resources"
+             xmlns:services="using:UniFiles.App.Services"
              x:Class="UniFiles.App.Views.ActionView"
              x:DataType="vm:ActionViewModel">
 
@@ -43,11 +44,17 @@
                     <Button Classes="ghost" Padding="8,4"
                             Command="{Binding $parent[ItemsControl].((vm:ActionViewModel)DataContext).ApplyPresetCommand}"
                             CommandParameter="{Binding}"
-                            AutomationProperties.Name="{Binding}" ToolTip.Tip="{Binding ToolName}">
+                            AutomationProperties.Name="{Binding}" ToolTip.Tip="{Binding Details}">
                       <StackPanel Orientation="Horizontal" Spacing="8">
                         <controls:ModuleBadge Size="18" Tile="{Binding Module.Brush}" Icon="{Binding Module.Icon}" />
                         <TextBlock Classes="label" Text="{Binding Name}" VerticalAlignment="Center" />
                       </StackPanel>
+                    </Button>
+                    <Button Classes="icon" MinWidth="28" MinHeight="28" Width="28" Height="28" Padding="0"
+                            Command="{Binding $parent[ItemsControl].((vm:ActionViewModel)DataContext).StartRenamingPresetCommand}"
+                            CommandParameter="{Binding}"
+                            AutomationProperties.Name="{x:Static res:Strings.Preset_Rename}" ToolTip.Tip="{x:Static res:Strings.Preset_Rename}">
+                      <controls:Icon Size="13" Data="{StaticResource IconRename}" />
                     </Button>
                     <Button Classes="icon" MinWidth="28" MinHeight="28" Width="28" Height="28" Padding="0"
                             Command="{Binding $parent[ItemsControl].((vm:ActionViewModel)DataContext).DeletePresetCommand}"
@@ -97,15 +104,17 @@
             </DockPanel>
             <Border Classes="banner" IsVisible="{Binding IsSavingPreset}">
               <StackPanel Spacing="10">
-                <TextBlock Classes="label" Text="{x:Static res:Strings.Preset_NameLabel}" />
+                <TextBlock Classes="label" Text="{Binding PresetFormLabel}" />
                 <TextBox Text="{Binding PresetName}" Watermark="{x:Static res:Strings.Preset_NameExample}"
-                         AutomationProperties.Name="{x:Static res:Strings.Preset_NameLabel}">
+                         AutomationProperties.Name="{Binding PresetFormLabel}">
                   <TextBox.KeyBindings>
                     <KeyBinding Gesture="Enter" Command="{Binding SavePresetCommand}" />
                     <KeyBinding Gesture="Escape" Command="{Binding CancelSavingPresetCommand}" />
                   </TextBox.KeyBindings>
                 </TextBox>
-                <TextBlock Classes="caption" Text="{x:Static res:Strings.Preset_SaveHint}" TextWrapping="Wrap" />
+                <TextBlock Classes="error" Text="{Binding PresetError}" TextWrapping="Wrap"
+                           IsVisible="{Binding PresetError, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                <TextBlock Classes="caption" Text="{Binding PresetFormHint}" TextWrapping="Wrap" />
                 <StackPanel Orientation="Horizontal" Spacing="10">
                   <Button Classes="primary" Command="{Binding SavePresetCommand}" Content="{x:Static res:Strings.Preset_SaveConfirm}" />
                   <Button Classes="ghost" Command="{Binding CancelSavingPresetCommand}" Content="{x:Static res:Strings.Common_Cancel}" />
@@ -252,7 +261,7 @@
           <TextBlock Classes="secondary" Text="{Binding Estimate}" IsVisible="{Binding HasEstimate}" TextWrapping="Wrap" />
           <TextBlock Classes="caption" Text="{x:Static res:Strings.Action_OriginalsSafe}" TextWrapping="Wrap" />
           <Button Classes="primary" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                  Command="{Binding LaunchCommand}" HotKey="Ctrl+Enter"
+                  Command="{Binding LaunchCommand}" HotKey="{OnPlatform Ctrl+Enter, macOS=Meta+Enter}" ToolTip.Tip="{x:Static services:PlatformText.LaunchShortcut}"
                   AutomationProperties.Name="{Binding LaunchLabel}">
             <StackPanel Orientation="Horizontal" Spacing="8">
               <controls:Icon Size="16" Data="{StaticResource IconPlay}" />

@@ -46,6 +46,12 @@ public interface IFileTool
     /// </summary>
     bool ShowsSizeChange { get; }
 
+    /// <summary>
+    /// For tools whose only purpose is a smaller file (compression): when the result is heavier than
+    /// the original, the original is copied to the output instead.
+    /// </summary>
+    bool KeepsOriginalIfLarger { get; }
+
     /// <summary>How many files of the same job may be processed at once.</summary>
     int MaxParallelism { get; }
 

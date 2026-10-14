@@ -13,7 +13,7 @@ public enum UpdateState
     UpToDate,
     Downloading,
 
-    /// <summary>Downloaded: installed when UniFiles quits, or right away with <see cref="Updater.RestartNow"/>.</summary>
+    /// <summary>Downloaded: installed when UniFiles quits (<see cref="Updater.ApplyOnExit"/>) or right away (<see cref="Updater.RestartNow"/>).</summary>
     Ready,
     Failed,
 }
@@ -93,8 +93,6 @@ public sealed partial class Updater : ObservableObject
             await _manager.DownloadUpdatesAsync(update, percent => Dispatcher.UIThread.Post(() => Progress = percent));
 
             _update = update;
-            // Installed silently once UniFiles quits (tray "Quit", Cmd+Q, logout).
-            _manager.WaitExitThenApplyUpdates(update.TargetFullRelease, silent: true, restart: false);
             State = UpdateState.Ready;
             UpdateReady?.Invoke(this, EventArgs.Empty);
         }
@@ -106,10 +104,33 @@ public sealed partial class Updater : ObservableObject
         }
     }
 
-    /// <summary>Installs the downloaded update and restarts UniFiles.</summary>
+    /// <summary>
+    /// Called when UniFiles quits (tray "Quit", Cmd+Q, logout): the downloaded update is installed
+    /// silently once the process has exited. Only one updater is ever started.
+    /// </summary>
+    public void ApplyOnExit()
+    {
+        if (_manager is null || _update is null || _applying)
+            return;
+        _applying = true;
+        try
+        {
+            _manager.WaitExitThenApplyUpdates(_update.TargetFullRelease, silent: true, restart: false);
+        }
+        catch (Exception ex)
+        {
+            CrashLog.Write("Updater", ex);
+        }
+    }
+
+    /// <summary>Installs the downloaded update and restarts UniFiles (the process exits).</summary>
     public void RestartNow()
     {
-        if (_manager is not null && _update is not null)
-            _manager.ApplyUpdatesAndRestart(_update.TargetFullRelease);
+        if (_manager is null || _update is null || _applying)
+            return;
+        _applying = true;
+        _manager.ApplyUpdatesAndRestart(_update.TargetFullRelease);
     }
+
+    private bool _applying;
 }

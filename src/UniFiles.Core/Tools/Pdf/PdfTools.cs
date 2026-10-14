@@ -272,6 +272,7 @@ public sealed class ImagesToPdfTool : PdfToolBase
 public sealed class PdfCompressTool : PdfToolBase
 {
     public override string Id => "pdf.compress";
+    public override bool KeepsOriginalIfLarger => true;
     public override string Name => Strings.Tool_PdfCompress_Name;
     public override string Description => Strings.Tool_PdfCompress_Description;
 

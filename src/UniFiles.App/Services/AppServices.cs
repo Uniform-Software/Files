@@ -107,6 +107,17 @@ public sealed class AppServices
         return preset;
     }
 
+    /// <summary>Renames a preset; false if another preset of the same tool already has that name.</summary>
+    public bool RenamePreset(ToolPreset preset, string name)
+    {
+        if (Settings.Presets.Any(p => p != preset && p.ToolId == preset.ToolId && string.Equals(p.Name, name, StringComparison.CurrentCultureIgnoreCase)))
+            return false;
+        preset.Name = name;
+        SaveSettings();
+        PresetsChanged?.Invoke(this, EventArgs.Empty);
+        return true;
+    }
+
     public void DeletePreset(ToolPreset preset)
     {
         if (Settings.Presets.Remove(preset))

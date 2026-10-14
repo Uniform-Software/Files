@@ -3,6 +3,7 @@
              xmlns:vm="using:UniFiles.App.ViewModels"
              xmlns:controls="using:UniFiles.App.Controls"
              xmlns:res="using:UniFiles.Core.Resources"
+             xmlns:services="using:UniFiles.App.Services"
              x:Class="UniFiles.App.Views.TrimEditorView"
              x:DataType="vm:TrimEditorViewModel">
 
@@ -12,7 +13,7 @@
     <KeyBinding Gesture="S" Command="{Binding SplitCommand}" />
     <KeyBinding Gesture="Delete" Command="{Binding ToggleSegmentCommand}" />
     <KeyBinding Gesture="Back" Command="{Binding ToggleSegmentCommand}" />
-    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="{OnPlatform Ctrl+Z, macOS=Meta+Z}" Command="{Binding UndoCommand}" />
   </UserControl.KeyBindings>
 
   <Grid RowDefinitions="Auto,*,Auto,Auto,Auto" Margin="0,0,0,24">
@@ -82,7 +83,7 @@
             <TextBlock Text="{Binding ToggleLabel}" />
           </StackPanel>
         </Button>
-        <Button Classes="icon" Command="{Binding UndoCommand}" ToolTip.Tip="Ctrl+Z"
+        <Button Classes="icon" Command="{Binding UndoCommand}" ToolTip.Tip="{x:Static services:PlatformText.UndoShortcut}"
                 AutomationProperties.Name="{x:Static res:Strings.Editor_Undo}">
           <controls:Icon Size="18" Data="{StaticResource IconUndo}" />
         </Button>
@@ -116,7 +117,7 @@
           <ToggleSwitch IsChecked="{Binding ExportFast}" Content="{x:Static res:Strings.Editor_Fast}" OnContent="" OffContent=""
                         ToolTip.Tip="{x:Static res:Strings.Hint_PreciseCut}" />
         </StackPanel>
-        <Button Classes="primary" Command="{Binding ExportCommand}" HotKey="Ctrl+Enter"
+        <Button Classes="primary" Command="{Binding ExportCommand}" HotKey="{OnPlatform Ctrl+Enter, macOS=Meta+Enter}" ToolTip.Tip="{x:Static services:PlatformText.LaunchShortcut}"
                 AutomationProperties.Name="{x:Static res:Strings.Editor_Export}">
           <StackPanel Orientation="Horizontal" Spacing="8">
             <controls:Icon Size="16" Data="{StaticResource IconCheck}" />
@@ -126,7 +127,7 @@
       </StackPanel>
       <StackPanel VerticalAlignment="Center" Spacing="2">
         <TextBlock Classes="label" Text="{Binding Summary}" />
-        <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_Help}" TextWrapping="Wrap" IsVisible="{Binding !IsGif}" />
+        <TextBlock Classes="caption" Text="{x:Static services:PlatformText.EditorHelp}" TextWrapping="Wrap" IsVisible="{Binding !IsGif}" />
         <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_GifHint}" TextWrapping="Wrap" IsVisible="{Binding IsGif}" />
       </StackPanel>
     </DockPanel>
