@@ -62,9 +62,13 @@ public class VideoToolTests
 
         var hardware = await VideoEncoder.DetectHardwareAsync();
 
-        // Apple Silicon always has VideoToolbox; elsewhere it depends on the machine (CI has no GPU).
-        if (OperatingSystem.IsMacOS() && System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
-            Assert.Equal("h264_videotoolbox", hardware?.Id);
+        // Depends on the machine (virtual machines such as CI runners have no video chip): only check
+        // that what was found is a hardware encoder meant for this system.
+        if (hardware is not null)
+        {
+            Assert.True(hardware.IsHardware);
+            Assert.Equal(OperatingSystem.IsMacOS(), hardware.Id == "h264_videotoolbox");
+        }
         Assert.Same(hardware, await VideoEncoder.DetectHardwareAsync());
     }
 
