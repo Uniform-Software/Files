@@ -206,7 +206,7 @@
             <Button DockPanel.Dock="Right" Classes="primary" Margin="12,0,4,0"
                     IsVisible="{Binding CanOpenNotificationFolder}"
                     Command="{Binding OpenNotificationFolderCommand}"
-                    Content="{x:Static res:Strings.Common_OpenFolder}" />
+                    Content="{Binding NotificationActionLabel}" />
             <DockPanel>
               <controls:ModuleBadge DockPanel.Dock="Left" Size="30" Margin="0,0,12,0"
                                     Tile="{Binding NotificationTile}" Icon="{Binding NotificationIcon}" />

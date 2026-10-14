@@ -323,4 +323,9 @@
   <data name="Update_ButtonHint" xml:space="preserve"><value>Installe la nouvelle version et redémarre UniFiles. Si des fichiers sont en cours de traitement, elle attend qu'ils soient finis.</value></data>
   <data name="Update_AfterJobsButton" xml:space="preserve"><value>Mise à jour après les traitements…</value></data>
   <data name="Update_AfterJobs" xml:space="preserve"><value>La mise à jour s'installera dès que les traitements en cours seront finis.</value></data>
+  <data name="Common_ShowInFinder" xml:space="preserve"><value>Afficher dans le Finder</value></data>
+  <data name="Common_ShowInExplorer" xml:space="preserve"><value>Afficher dans l'Explorateur</value></data>
+  <data name="Queue_Drag" xml:space="preserve"><value>Glisser les {0} fichiers</value></data>
+  <data name="Queue_DragHint" xml:space="preserve"><value>Fais glisser les résultats dans un e-mail, une discussion ou un autre dossier. Les fichiers restent dans le dossier de sortie.</value></data>
+  <data name="Queue_DragOne" xml:space="preserve"><value>Glisser le fichier</value></data>
 </root>

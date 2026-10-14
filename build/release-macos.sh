@@ -87,7 +87,11 @@ step "ffmpeg $ffmpeg_version ($arch)"
 mkdir -p "$tools"
 for program in ffmpeg ffprobe; do
     zip="$cache/$program-$ffmpeg_version-macos-$arch.zip"
-    [[ -f "$zip" ]] || curl -fsSL "$ffmpeg_base/$program.zip" -o "$zip"
+    if [[ ! -f "$zip" ]]; then
+        # Retries cover dropped connections; the temporary name keeps a partial download from being reused.
+        curl -fsSL --retry 5 --retry-delay 5 --retry-all-errors "$ffmpeg_base/$program.zip" -o "$zip.part"
+        mv "$zip.part" "$zip"
+    fi
     expected="$ffmpeg_sha256"
     [[ "$program" == "ffprobe" ]] && expected="$ffprobe_sha256"
     actual="$(shasum -a 256 "$zip" | cut -d' ' -f1)"
@@ -107,11 +111,11 @@ echo "Published size: $(du -sh "$publish" | cut -f1)"
 step "App bundle resources"
 bundle="$artifacts/bundle-$rid"
 rm -rf "$bundle" && mkdir -p "$bundle/UniFiles.iconset"
-icon="$root/src/UniFiles.App/Assets/unifiles-icon.png"
+# Drawn on Apple's icon grid (margin around the tile), 1024 px: see build/icons/make-icons.cs.
+icon="$root/src/UniFiles.App/Assets/unifiles-macos.png"
 for size in 16 32 128 256 512; do
     sips -z $size $size "$icon" --out "$bundle/UniFiles.iconset/icon_${size}x${size}.png" >/dev/null
-    double=$((size * 2))
-    [[ $double -le 512 ]] && sips -z $double $double "$icon" --out "$bundle/UniFiles.iconset/icon_${size}x${size}@2x.png" >/dev/null
+    sips -z $((size * 2)) $((size * 2)) "$icon" --out "$bundle/UniFiles.iconset/icon_${size}x${size}@2x.png" >/dev/null
 done
 iconutil -c icns "$bundle/UniFiles.iconset" -o "$bundle/UniFiles.icns"
 

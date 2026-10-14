@@ -41,7 +41,7 @@ jobs:
         shell: pwsh
         run: |
           $installer = "$env:RUNNER_TEMP\gs10080w64.exe"
-          Invoke-WebRequest "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $installer
+          Invoke-WebRequest "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $installer -MaximumRetryCount 5 -RetryIntervalSec 5
           $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($hash -ne "52a91b8bf09298788d7a57b9206127026c23eacd75405f0a131e26dc381dce50") { throw "Ghostscript installer checksum mismatch ($hash)." }
           $command = Get-Command 7z -ErrorAction SilentlyContinue
@@ -51,6 +51,11 @@ jobs:
           $bin = "$env:RUNNER_TEMP\gs\bin"
           & "$bin\gswin64c.exe" --version
           "GS_BIN=$bin" >> $env:GITHUB_ENV
+
+      - uses: actions/cache@v4
+        with:
+          path: build/cache/*.zip
+          key: ffmpeg-windows-${{ hashFiles('build/release-windows.ps1') }}
 
       - name: Build the release
         shell: pwsh
@@ -67,6 +72,8 @@ jobs:
     runs-on: macos-latest
     timeout-minutes: 45
     strategy:
+      # One architecture failing must not cancel the other.
+      fail-fast: false
       matrix:
         arch: [arm64, x64]
     steps:
@@ -77,6 +84,12 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           dotnet-version: 10.0.x
+
+      # Pinned downloads (ffmpeg), reused between releases while the script doesn't change.
+      - uses: actions/cache@v4
+        with:
+          path: build/cache/*.zip
+          key: ffmpeg-macos-${{ matrix.arch }}-${{ hashFiles('build/release-macos.sh') }}
 
       - name: Rosetta (smoke test of the Intel ffmpeg)
         if: matrix.arch == 'x64'

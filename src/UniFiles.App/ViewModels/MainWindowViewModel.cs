@@ -232,12 +232,16 @@ public partial class MainWindowViewModel : ObservableObject
         Notification = text;
         NotificationIsError = isError;
         _notificationFolder = folder;
+        OnPropertyChanged(nameof(NotificationActionLabel));
         OnPropertyChanged(nameof(CanOpenNotificationFolder));
         _notificationTimer.Stop();
         _notificationTimer.Start();
     }
 
     public bool CanOpenNotificationFolder => _notificationFolder is not null;
+
+    /// <summary>"Show in Finder" for a result file, "Open folder" for a folder.</summary>
+    public string NotificationActionLabel => PlatformText.ShowLabel(_notificationFolder);
 
     /// <summary>In the window when the user is looking at it, as a desktop notification otherwise.</summary>
     public void Notify(string text, bool isError = false, string? folder = null, ToolModule? module = null)
@@ -318,7 +322,7 @@ public partial class MainWindowViewModel : ObservableObject
     private async Task OpenNotificationFolder()
     {
         if (_notificationFolder is not null)
-            await DialogService.OpenFolderAsync(_notificationFolder);
+            await DialogService.ShowAsync(_notificationFolder);
         DismissNotification();
     }
 
@@ -351,6 +355,7 @@ public partial class MainWindowViewModel : ObservableObject
         if (Format.KeptOriginals(job.KeptOriginalCount) is { } kept)
             text += " · " + kept;
 
-        Notify(text, isError: job.Status != JobStatus.Completed, folder: job.DoneCount > 0 ? job.Output.Path : null, module: job.Tool.Module);
+        // The button shows the first result selected in its folder.
+        Notify(text, isError: job.Status != JobStatus.Completed, folder: job.DoneCount > 0 ? job.FirstOutput ?? job.Output.Path : null, module: job.Tool.Module);
     }
 }

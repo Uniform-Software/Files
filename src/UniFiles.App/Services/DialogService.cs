@@ -30,6 +30,37 @@ public static class DialogService
         return folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
     }
 
+    /// <summary>
+    /// Opens the folder of a file with the file selected (Finder, Explorer); other systems just
+    /// open the folder. A folder path opens the folder.
+    /// </summary>
+    public static async Task ShowAsync(string path, TopLevel? from = null)
+    {
+        if (!File.Exists(path))
+        {
+            await OpenFolderAsync(path, from);
+            return;
+        }
+        try
+        {
+            if (OperatingSystem.IsMacOS())
+            {
+                Process.Start(new ProcessStartInfo("open") { ArgumentList = { "-R", path }, UseShellExecute = false })?.Dispose();
+                return;
+            }
+            if (OperatingSystem.IsWindows())
+            {
+                Process.Start(new ProcessStartInfo("explorer.exe", $"/select,\"{path}\"") { UseShellExecute = false })?.Dispose();
+                return;
+            }
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // Fall back to the folder below.
+        }
+        await OpenFolderAsync(Path.GetDirectoryName(path)!, from);
+    }
+
     /// <param name="from">Window to launch from when the main window isn't open (notifications).</param>
     public static async Task OpenFolderAsync(string path, TopLevel? from = null)
     {

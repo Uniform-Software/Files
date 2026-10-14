@@ -17,4 +17,12 @@ public static class PlatformText
     public static string UndoShortcut => Mac ? "⌘Z" : "Ctrl+Z";
 
     public static string LaunchShortcut => Mac ? "⌘↩" : "Ctrl+Enter";
+
+    /// <summary>"Show in Finder" / "Show in Explorer": opens the folder with the file selected.</summary>
+    public static string ShowInFolder => Mac ? Strings.Common_ShowInFinder
+        : OperatingSystem.IsWindows() ? Strings.Common_ShowInExplorer
+        : Strings.Common_OpenFolder;
+
+    /// <summary>Label for a button opening <paramref name="path"/>: a file is shown in its folder.</summary>
+    public static string ShowLabel(string? path) => path is not null && File.Exists(path) ? ShowInFolder : Strings.Common_OpenFolder;
 }

@@ -59,7 +59,19 @@ if ($LASTEXITCODE -ne 0) { throw "Publish failed." }
 Step "ffmpeg $($ffmpeg.Name)"
 $zip = Join-Path $cache "$($ffmpeg.Name).zip"
 if (-not (Test-Path $zip)) {
-    Invoke-WebRequest -Uri $ffmpeg.Url -OutFile $zip
+    # Retries cover dropped connections; the temporary name keeps a partial download from being reused.
+    for ($attempt = 1; ; $attempt++) {
+        try {
+            Invoke-WebRequest -Uri $ffmpeg.Url -OutFile "$zip.part"
+            break
+        }
+        catch {
+            if ($attempt -ge 5) { throw }
+            Write-Host "Download failed ($($_.Exception.Message)), retrying..."
+            Start-Sleep -Seconds 5
+        }
+    }
+    Move-Item "$zip.part" $zip -Force
 }
 $hash = (Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($hash -ne $ffmpeg.Sha256) { throw "ffmpeg archive checksum mismatch ($hash)." }

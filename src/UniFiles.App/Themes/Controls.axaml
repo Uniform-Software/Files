@@ -261,15 +261,4 @@
       </Animation>
     </Style.Animations>
   </Style>
-
-  <!-- Logo: the square drops into the u when the home screen opens. -->
-  <Style Selector="Window:not(.reducedMotion) Panel.logoDrop.drop">
-    <Style.Animations>
-      <Animation Duration="0:0:0.7" Easing="BounceEaseOut" FillMode="Forward">
-        <KeyFrame Cue="0%"><Setter Property="TranslateTransform.Y" Value="-28" /><Setter Property="Opacity" Value="0" /></KeyFrame>
-        <KeyFrame Cue="40%"><Setter Property="Opacity" Value="1" /></KeyFrame>
-        <KeyFrame Cue="100%"><Setter Property="TranslateTransform.Y" Value="0" /><Setter Property="Opacity" Value="1" /></KeyFrame>
-      </Animation>
-    </Style.Animations>
-  </Style>
 </Styles>

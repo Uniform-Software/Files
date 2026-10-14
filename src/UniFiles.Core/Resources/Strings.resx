@@ -323,4 +323,9 @@
   <data name="Update_ButtonHint" xml:space="preserve"><value>Installs the new version and restarts UniFiles. If files are being processed, it waits for them to finish.</value></data>
   <data name="Update_AfterJobsButton" xml:space="preserve"><value>Updating after the current jobs…</value></data>
   <data name="Update_AfterJobs" xml:space="preserve"><value>The update will be installed as soon as the current jobs are done.</value></data>
+  <data name="Common_ShowInFinder" xml:space="preserve"><value>Show in Finder</value></data>
+  <data name="Common_ShowInExplorer" xml:space="preserve"><value>Show in Explorer</value></data>
+  <data name="Queue_Drag" xml:space="preserve"><value>Drag the {0} files</value></data>
+  <data name="Queue_DragHint" xml:space="preserve"><value>Drag the results into an e-mail, a chat or another folder. The files stay in the output folder.</value></data>
+  <data name="Queue_DragOne" xml:space="preserve"><value>Drag the file</value></data>
 </root>

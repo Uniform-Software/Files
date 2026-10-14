@@ -160,6 +160,11 @@ public partial class JobViewModel : ObservableObject
         IsFinished = Job.IsFinished;
         Progress = Job.Progress * 100;
         HasOutputs = Job.DoneCount > 0;
+        if (IsFinished)
+        {
+            OnPropertyChanged(nameof(OpenLabel));
+            OnPropertyChanged(nameof(DragText));
+        }
 
         StatusText = status switch
         {
@@ -229,6 +234,15 @@ public partial class JobViewModel : ObservableObject
     [RelayCommand]
     private void Retry() => _queue.RetryFailed(Job);
 
+    public string OpenLabel => PlatformText.ShowLabel(Job.FirstOutput);
+
+    /// <summary>Every file the job wrote that still exists, for dragging them out.</summary>
+    public IReadOnlyList<string> Outputs => Job.Items.Where(i => i.Status == WorkStatus.Done).SelectMany(i => i.Outputs).Where(File.Exists).ToList();
+
+    public string DragText => Job.Items.Where(i => i.Status == WorkStatus.Done).Sum(i => i.Outputs.Count) is var count && count == 1
+        ? Strings.Queue_DragOne
+        : string.Format(Strings.Queue_Drag, count);
+
     [RelayCommand]
-    private Task OpenFolder() => DialogService.OpenFolderAsync(Job.Output.Path);
+    private Task OpenFolder() => DialogService.ShowAsync(Job.FirstOutput ?? Job.Output.Path);
 }

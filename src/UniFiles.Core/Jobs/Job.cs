@@ -103,6 +103,9 @@ public sealed class Job
 
     public int FailedCount => Items.Count(i => i.Status == WorkStatus.Failed);
 
+    /// <summary>The first file written by the job, to show it in its folder; null if none.</summary>
+    public string? FirstOutput => Items.Where(i => i.Status == WorkStatus.Done).SelectMany(i => i.Outputs).FirstOrDefault(File.Exists);
+
     /// <summary>Files already as light as they can be: their original was kept.</summary>
     public int KeptOriginalCount => Items.Count(i => i.KeptOriginal);
 

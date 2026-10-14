@@ -142,6 +142,7 @@ public partial class PreferencesViewModel : PageViewModel
     {
         _services.Settings.OutputDirectory = value;
         _services.SaveSettings();
+        FolderIcon.Apply(value);
     }
 
     partial void OnSelectedThemeChanged(ThemeChoice value)

@@ -94,6 +94,7 @@ public partial class App : Application
         _viewModel = new MainWindowViewModel(_services) { BackgroundNotifier = new ToastNotifier() };
         SetUpTray();
         RefreshContextMenu();
+        FolderIcon.Apply(_services.Settings.OutputDirectory);
         _services.PresetsChanged += (_, _) => RefreshContextMenu();
 
         // Long enough to be seen and read, never longer than needed beyond that.

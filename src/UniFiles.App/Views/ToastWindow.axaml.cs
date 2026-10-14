@@ -38,11 +38,13 @@ public partial class ToastWindow : Window
         toast.MessageText.Classes.Set("error", isError);
         toast.Badge.Tile = accent;
         toast.Badge.Icon = icon;
+        // A file is shown selected in its folder, a folder is opened.
         toast.OpenFolderButton.IsVisible = folder is not null;
+        toast.OpenFolderButton.Content = PlatformText.ShowLabel(folder);
         toast.OpenFolderButton.Click += async (_, _) =>
         {
             if (folder is not null)
-                await DialogService.OpenFolderAsync(folder, toast);
+                await DialogService.ShowAsync(folder, toast);
             toast.Close();
         };
 
