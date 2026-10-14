@@ -24,6 +24,7 @@ jobs:
   windows:
     name: Windows installer
     runs-on: windows-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
         with:
@@ -34,13 +35,20 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Ghostscript 10.08.0 (bundled in the installer)
+        timeout-minutes: 10
         shell: pwsh
         run: |
           $installer = "$env:RUNNER_TEMP\gs10080w64.exe"
           Invoke-WebRequest "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10080/gs10080w64.exe" -OutFile $installer
           $hash = (Get-FileHash $installer -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($hash -ne "52a91b8bf09298788d7a57b9206127026c23eacd75405f0a131e26dc381dce50") { throw "Ghostscript installer checksum mismatch ($hash)." }
-          Start-Process $installer -ArgumentList "/S" -Wait
+          # Wait for the installer only: "Start-Process -Wait" also waits for whatever it opens at the
+          # end (readme...), which never closes on a runner.
+          $process = Start-Process $installer -ArgumentList "/S" -PassThru
+          if (-not $process.WaitForExit(300000)) { $process.Kill(); throw "Ghostscript installer timed out." }
+          $gs = "C:\Program Files\gs\gs10.08.0\bin\gswin64c.exe"
+          if (-not (Test-Path $gs)) { throw "Ghostscript was not installed ($gs missing)." }
+          & $gs --version
 
       - name: Build the release
         shell: pwsh
@@ -55,6 +63,7 @@ jobs:
   macos:
     name: macOS installer (${{ matrix.arch }})
     runs-on: macos-latest
+    timeout-minutes: 45
     strategy:
       matrix:
         arch: [arm64, x64]
@@ -84,6 +93,7 @@ jobs:
     name: GitHub release
     needs: [windows, macos]
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
         with:
