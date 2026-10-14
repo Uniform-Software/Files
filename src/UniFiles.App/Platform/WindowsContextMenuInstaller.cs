@@ -2,6 +2,7 @@ using System.Runtime.Versioning;
 using Microsoft.Win32;
 using UniFiles.Core;
 using UniFiles.Core.Resources;
+using UniFiles.Core.Storage;
 using UniFiles.Core.Tools;
 
 namespace UniFiles.App.Platform;
@@ -34,17 +35,17 @@ internal sealed class WindowsContextMenuInstaller : IContextMenuInstaller
         }
     }
 
-    public void Install(string executablePath, ToolCatalog catalog)
+    public void Install(string executablePath, ToolCatalog catalog, IReadOnlyList<ToolPreset> presets)
     {
         Uninstall();
         var exe = Quote(executablePath);
         var icon = $"{executablePath},0";
 
-        foreach (var (kind, extensions) in ExplorerMenu.Extensions)
+        foreach (var extensions in ExplorerMenu.Extensions.Values)
         {
-            var tools = ExplorerMenu.QuickActionsFor(catalog, kind).ToList();
             foreach (var extension in extensions)
             {
+                var tools = ExplorerMenu.QuickActionsFor(catalog, extension).ToList();
                 using var verb = Registry.CurrentUser.CreateSubKey($@"{ClassesRoot}\SystemFileAssociations\{extension}\shell\{VerbName}");
                 verb.SetValue("MUIVerb", "UniFiles");
                 verb.SetValue("Icon", icon);
@@ -54,6 +55,12 @@ internal sealed class WindowsContextMenuInstaller : IContextMenuInstaller
                 // Sub-verbs are sorted by key name: the numeric prefix keeps the catalog order.
                 for (var i = 0; i < tools.Count; i++)
                     AddCommand(verb, $"{i:00}_{tools[i].Id}", tools[i].Name, $"{exe} --action {tools[i].Id} \"%1\"", icon);
+                var first = true;
+                foreach (var preset in ExplorerMenu.PresetsFor(catalog, presets, extension))
+                {
+                    AddCommand(verb, $"50_preset_{preset.Id}", preset.Name, $"{exe} --preset {preset.Id} \"%1\"", icon, first ? SeparatorBefore : 0);
+                    first = false;
+                }
                 AddCommand(verb, "99_more", Strings.ContextMenu_MoreOptions, $"{exe} --open \"%1\"", icon, SeparatorBefore);
             }
         }

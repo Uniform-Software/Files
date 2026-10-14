@@ -19,11 +19,14 @@ public enum LaunchMode
 
 /// <summary>
 /// What a launch asks for, parsed from the command line:
-/// <c>UniFiles [files]</c>, <c>UniFiles --action &lt;tool id&gt; files</c>,
+/// <c>UniFiles [files]</c>, <c>UniFiles --action &lt;tool id&gt; files</c>, <c>UniFiles --preset &lt;preset id&gt; files</c>,
 /// <c>UniFiles --register</c>, <c>UniFiles --unregister</c>.
 /// </summary>
+/// A preset quick action carries <see cref="PresetPrefix"/> + the preset id as <see cref="ToolId"/>.
 public sealed record LaunchRequest(LaunchMode Mode, IReadOnlyList<string> Files, string? ToolId = null)
 {
+    public const string PresetPrefix = "preset:";
+
     public static LaunchRequest Parse(IReadOnlyList<string> args)
     {
         if (args.Count > 0)
@@ -36,6 +39,8 @@ public sealed record LaunchRequest(LaunchMode Mode, IReadOnlyList<string> Files,
                     return new(LaunchMode.Unregister, []);
                 case "--action" when args.Count >= 2:
                     return new(LaunchMode.QuickAction, Absolute(args.Skip(2)), args[1]);
+                case "--preset" when args.Count >= 2:
+                    return new(LaunchMode.QuickAction, Absolute(args.Skip(2)), PresetPrefix + args[1]);
                 case "--open":
                     return new(LaunchMode.Open, Absolute(args.Skip(1)));
             }

@@ -5,6 +5,7 @@ using UniFiles.App.Platform;
 using UniFiles.App.Services;
 using UniFiles.Core.Resources;
 using UniFiles.Core.Storage;
+using UniFiles.Core.Tools.Video;
 
 namespace UniFiles.App.ViewModels;
 
@@ -36,6 +37,15 @@ public partial class PreferencesViewModel : PageViewModel
         _selectedLanguage = Languages.FirstOrDefault(l => l.Value == settings.Language) ?? Languages[0];
         _reduceMotion = settings.ReduceMotion;
         _keepInTray = settings.KeepInTray;
+        _checkForUpdates = settings.CheckForUpdates;
+        _hardwareAcceleration = settings.HardwareAcceleration;
+        _ = DetectEncoderAsync();
+        Updater = services.Updater;
+        Updater.PropertyChanged += (_, _) =>
+        {
+            OnPropertyChanged(nameof(UpdateStatus));
+            OnPropertyChanged(nameof(IsUpdateReady));
+        };
         // The registry is the truth: the menu may have been removed by an uninstaller.
         _contextMenuEnabled = ExplorerMenu.Installer.IsSupported && ExplorerMenu.Installer.IsInstalled;
     }
@@ -73,10 +83,53 @@ public partial class PreferencesViewModel : PageViewModel
     private bool _contextMenuEnabled;
 
     [ObservableProperty]
+    private bool _checkForUpdates;
+
+    [ObservableProperty]
+    private bool _hardwareAcceleration;
+
+    /// <summary>Which video chip was found, once the (background) test is over.</summary>
+    [ObservableProperty]
+    private string? _encoderStatus;
+
+    private async Task DetectEncoderAsync()
+    {
+        var hardware = await VideoEncoder.DetectHardwareAsync();
+        EncoderStatus = hardware is null
+            ? Strings.Prefs_HardwareNone
+            : string.Format(Strings.Prefs_HardwareFound, hardware.DisplayName);
+    }
+
+    partial void OnHardwareAccelerationChanged(bool value)
+    {
+        _services.Settings.HardwareAcceleration = value;
+        VideoEncoder.HardwareEnabled = value;
+        _services.SaveSettings();
+    }
+
+    public Updater Updater { get; }
+
+    public bool IsUpdateReady => Updater.State == UpdateState.Ready;
+
+    public string UpdateStatus => Updater.State switch
+    {
+        UpdateState.Checking => Strings.Update_Checking,
+        UpdateState.UpToDate => Strings.Update_UpToDate,
+        UpdateState.Downloading => string.Format(Strings.Update_Downloading, Updater.AvailableVersion, Updater.Progress),
+        UpdateState.Ready => string.Format(Strings.Update_Ready, Updater.AvailableVersion),
+        UpdateState.Failed => Strings.Update_Failed,
+        _ => "",
+    };
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasContextMenuError))]
     private string? _contextMenuError;
 
     public bool IsContextMenuSupported => ExplorerMenu.Installer.IsSupported;
+
+    public string ContextMenuLabel => OperatingSystem.IsMacOS() ? Strings.Prefs_ContextMenuMac : Strings.Prefs_ContextMenu;
+
+    public string ContextMenuHint => OperatingSystem.IsMacOS() ? Strings.Prefs_ContextMenuHintMac : Strings.Prefs_ContextMenuHint;
 
     public bool HasContextMenuError => ContextMenuError is not null;
 
@@ -117,13 +170,25 @@ public partial class PreferencesViewModel : PageViewModel
         _services.SaveSettings();
     }
 
+    partial void OnCheckForUpdatesChanged(bool value)
+    {
+        _services.Settings.CheckForUpdates = value;
+        _services.SaveSettings();
+    }
+
+    [RelayCommand]
+    private Task CheckUpdates() => Updater.CheckAsync();
+
+    [RelayCommand]
+    private void InstallUpdate() => Updater.RestartNow();
+
     partial void OnContextMenuEnabledChanged(bool value)
     {
         ContextMenuError = null;
         try
         {
             if (value && Environment.ProcessPath is { } exe)
-                ExplorerMenu.Installer.Install(exe, _services.Catalog);
+                ExplorerMenu.Installer.Install(exe, _services.Catalog, _services.Settings.Presets);
             else
                 ExplorerMenu.Installer.Uninstall();
             _services.Settings.ContextMenuEnabled = value;

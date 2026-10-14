@@ -8,6 +8,7 @@ using UniFiles.App.Services;
 using UniFiles.Core;
 using UniFiles.Core.Jobs;
 using UniFiles.Core.Resources;
+using UniFiles.Core.Tools.Pdf;
 using UniFiles.Core.Tools.Video;
 
 namespace UniFiles.App.ViewModels;
@@ -169,6 +170,9 @@ public partial class MainWindowViewModel : ObservableObject
     public void OpenTrimEditor(VideoTrimTool tool, string file, PageViewModel back) =>
         ShowPage(new TrimEditorViewModel(this, _services, tool, file, back));
 
+    public void OpenPdfOrganizer(PdfOrganizeTool tool, string file, PageViewModel back) =>
+        ShowPage(new PdfOrganizerViewModel(this, _services, tool, file, back));
+
     public void GoHome()
     {
         SelectedNav = NavItems[0];
@@ -226,11 +230,15 @@ public partial class MainWindowViewModel : ObservableObject
 
         foreach (var (toolId, paths) in batches)
         {
-            if (_services.Catalog.Find(toolId) is not { } tool)
+            // A tool with its last settings, or a preset (tool and saved settings).
+            var resolved = toolId.StartsWith(LaunchRequest.PresetPrefix, StringComparison.Ordinal)
+                ? _services.ResolvePreset(toolId[LaunchRequest.PresetPrefix.Length..])
+                : _services.Catalog.Find(toolId) is { } found ? (found, _services.LoadToolSettings(found)) : null;
+            if (resolved is not var (tool, settings))
                 continue;
 
             var files = FileKindDetector.ExpandPaths(paths)
-                .Where(f => tool.AcceptedKinds.Count == 0 || tool.AcceptedKinds.Contains(FileKindDetector.Detect(f)))
+                .Where(tool.Accepts)
                 // Explorer starts the processes in no particular order: sort by name (matters for merges).
                 .OrderBy(Path.GetFileName, StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
@@ -245,7 +253,7 @@ public partial class MainWindowViewModel : ObservableObject
                 continue;
             }
 
-            var job = _services.Queue.Enqueue(tool, files, _services.LoadToolSettings(tool), _services.OutputFolder);
+            var job = _services.Queue.Enqueue(tool, files, settings, _services.OutputFolder);
 
             // Quick jobs end with a notification; long ones also say they started.
             DispatcherTimer.RunOnce(() =>

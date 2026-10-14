@@ -238,4 +238,75 @@
   <data name="Error_InvalidTime" xml:space="preserve"><value>« {0} » n'est pas un temps valide. Écris des secondes ou minutes:secondes, par ex. 1:30.</value></data>
   <data name="Error_EndBeforeStart" xml:space="preserve"><value>La fin doit être après le début.</value></data>
   <data name="Error_ProgramMissing" xml:space="preserve"><value>{0} est introuvable sur cet ordinateur. Installe-le, ou place-le dans le dossier « tools » à côté d'UniFiles.</value></data>
+  <data name="Update_Title" xml:space="preserve"><value>Mises à jour</value></data>
+  <data name="Update_Auto" xml:space="preserve"><value>Rechercher les mises à jour au démarrage</value></data>
+  <data name="Update_AutoHint" xml:space="preserve"><value>UniFiles demande la dernière version à GitHub, puis la télécharge en arrière-plan. Elle s'installe quand tu quittes UniFiles. Rien d'autre n'est jamais envoyé.</value></data>
+  <data name="Update_CheckNow" xml:space="preserve"><value>Rechercher maintenant</value></data>
+  <data name="Update_RestartNow" xml:space="preserve"><value>Redémarrer et mettre à jour</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Recherche d'une nouvelle version…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>UniFiles est à jour.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Téléchargement de la version {0}… {1} %</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>La version {0} est prête. Elle s'installera quand tu quitteras UniFiles.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Impossible de vérifier les mises à jour (pas de connexion ?). UniFiles réessaiera au prochain lancement.</value></data>
+  <data name="Update_Unsupported" xml:space="preserve"><value>Les mises à jour automatiques ne fonctionnent qu'avec un UniFiles empaqueté (installeur, image disque ou version portable), pas avec une version de développement.</value></data>
+  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} est prête : elle s'installera quand tu quitteras l'appli.</value></data>
+  <data name="Tool_ImageHeic_Name" xml:space="preserve"><value>Convertir des photos iPhone (HEIC)</value></data>
+  <data name="Tool_ImageHeic_Description" xml:space="preserve"><value>HEIC vers JPG ou PNG, lisibles par toutes les applis et tous les sites</value></data>
+  <data name="Option_CompressMode" xml:space="preserve"><value>Compresser</value></data>
+  <data name="Choice_ByQuality" xml:space="preserve"><value>Selon une qualité</value></data>
+  <data name="Choice_BySize" xml:space="preserve"><value>Pour une taille cible</value></data>
+  <data name="Option_TargetSize" xml:space="preserve"><value>Taille maximale par fichier</value></data>
+  <data name="Hint_TargetSizeImage" xml:space="preserve"><value>UniFiles trouve la meilleure qualité sous cette taille, et ne réduit les dimensions que si c'est nécessaire.</value></data>
+  <data name="Choice_Target10" xml:space="preserve"><value>10 Mo (Discord)</value></data>
+  <data name="Choice_Target25" xml:space="preserve"><value>25 Mo (e-mail)</value></data>
+  <data name="Choice_Target100" xml:space="preserve"><value>100 Mo (WhatsApp)</value></data>
+  <data name="Hint_TargetSizeVideo" xml:space="preserve"><value>UniFiles répartit la taille sur toute la vidéo et baisse la résolution si besoin pour garder une image nette. Prend environ deux fois plus de temps.</value></data>
+  <data name="Error_TargetTooSmall" xml:space="preserve"><value>Cette vidéo est trop longue pour cette taille. Choisis au moins {0} Mo, ou coupe-la d'abord.</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Preset_Title" xml:space="preserve"><value>Mes préréglages</value></data>
+  <data name="Preset_Save" xml:space="preserve"><value>Enregistrer comme préréglage</value></data>
+  <data name="Preset_SaveConfirm" xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="Preset_NameLabel" xml:space="preserve"><value>Nom du préréglage</value></data>
+  <data name="Preset_NameExample" xml:space="preserve"><value>ex. Site web 1600 px</value></data>
+  <data name="Preset_SaveHint" xml:space="preserve"><value>L'action et ces réglages, en un clic ici et dans le menu clic droit. Un préréglage du même nom est remplacé.</value></data>
+  <data name="Preset_Saved" xml:space="preserve"><value>Préréglage « {0} » enregistré</value></data>
+  <data name="Preset_Active" xml:space="preserve"><value>Préréglage : {0}</value></data>
+  <data name="Preset_Delete" xml:space="preserve"><value>Supprimer ce préréglage</value></data>
+  <data name="Option_ExportAs" xml:space="preserve"><value>Exporter en</value></data>
+  <data name="Choice_Video" xml:space="preserve"><value>Vidéo</value></data>
+  <data name="Choice_Gif" xml:space="preserve"><value>GIF animé</value></data>
+  <data name="Option_Width" xml:space="preserve"><value>Largeur</value></data>
+  <data name="Option_Fps" xml:space="preserve"><value>Images par seconde</value></data>
+  <data name="Editor_GifHint" xml:space="preserve"><value>Un GIF n'a pas de son et devient vite lourd : vise moins de 10 secondes.</value></data>
+  <data name="Prefs_Hardware" xml:space="preserve"><value>Encodage vidéo matériel</value></data>
+  <data name="Prefs_HardwareHint" xml:space="preserve"><value>Utilise la puce vidéo de ton ordinateur pour compresser, convertir et couper les vidéos plusieurs fois plus vite. Les fichiers sont un peu plus lourds. Les tailles cibles et le WebM passent toujours par le processeur.</value></data>
+  <data name="Prefs_HardwareFound" xml:space="preserve"><value>Puce vidéo détectée : {0}.</value></data>
+  <data name="Prefs_HardwareNone" xml:space="preserve"><value>Aucune puce vidéo compatible trouvée : les vidéos sont encodées par le processeur (x264).</value></data>
+  <data name="Compare_Title" xml:space="preserve"><value>Avant / après</value></data>
+  <data name="Compare_ActualPixels" xml:space="preserve"><value>100 %</value></data>
+  <data name="Compare_ActualPixelsHint" xml:space="preserve"><value>Montrer le centre de l'image en taille réelle, pour juger les détails</value></data>
+  <data name="Compare_Help" xml:space="preserve"><value>Fais glisser la poignée (ou utilise les flèches) pour comparer. Clique sur un fichier de la liste pour l'afficher. Le poids indiqué est celui du vrai résultat.</value></data>
+  <data name="Error_PdfProtected" xml:space="preserve"><value>Ce PDF est protégé par un mot de passe. Retire d'abord le mot de passe, puis réessaie.</value></data>
+  <data name="Tool_PdfOrganize_Name" xml:space="preserve"><value>Organiser les pages</value></data>
+  <data name="Tool_PdfOrganize_Description" xml:space="preserve"><value>Réordonner, faire pivoter ou retirer des pages</value></data>
+  <data name="Suffix_Organized" xml:space="preserve"><value>organisé</value></data>
+  <data name="Error_NoPages" xml:space="preserve"><value>Garde au moins une page.</value></data>
+  <data name="Organizer_Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Organizer_Pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="Organizer_Remove" xml:space="preserve"><value>Retirer cette page</value></data>
+  <data name="Organizer_Restore" xml:space="preserve"><value>Remettre cette page</value></data>
+  <data name="Organizer_Removed" xml:space="preserve"><value>Retirée</value></data>
+  <data name="Organizer_MoveLeft" xml:space="preserve"><value>Déplacer avant</value></data>
+  <data name="Organizer_MoveRight" xml:space="preserve"><value>Déplacer après</value></data>
+  <data name="Organizer_RotateLeft" xml:space="preserve"><value>Pivoter à gauche</value></data>
+  <data name="Organizer_RotateRight" xml:space="preserve"><value>Pivoter à droite</value></data>
+  <data name="Organizer_RotateAll" xml:space="preserve"><value>Tout pivoter</value></data>
+  <data name="Organizer_Reset" xml:space="preserve"><value>Tout annuler</value></data>
+  <data name="Organizer_Export" xml:space="preserve"><value>Créer le PDF</value></data>
+  <data name="Organizer_Summary" xml:space="preserve"><value>{0} pages gardées sur {1}</value></data>
+  <data name="Organizer_Help" xml:space="preserve"><value>Fais glisser une page sur une autre pour la déplacer à sa place. Les pages retirées restent visibles jusqu'à la création du PDF.</value></data>
+  <data name="ContextMenu_MacItem" xml:space="preserve"><value>UniFiles · {0}</value></data>
+  <data name="Prefs_ContextMenuMac" xml:space="preserve"><value>Actions rapides du Finder</value></data>
+  <data name="Prefs_ContextMenuHintMac" xml:space="preserve"><value>Ajoute les actions UniFiles et tes préréglages au clic droit du Finder, dans « Actions rapides ». Tu peux afficher ou masquer chacune dans Réglages Système › Clavier › Raccourcis clavier › Services.</value></data>
+  <data name="Unit_Fps" xml:space="preserve"><value>{0} img/s</value></data>
 </root>

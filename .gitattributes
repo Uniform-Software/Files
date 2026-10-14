@@ -4,3 +4,4 @@
 *.ttf binary
 *.sh text eol=lf
 *.icns binary
+*.heic binary

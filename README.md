@@ -15,22 +15,29 @@ UniFiles remplace les sites de conversion en ligne par une application de bureau
 
 *English: UniFiles is a free, open-source desktop app that resizes, compresses and converts images, PDFs, videos and file names locally. Nothing leaves your computer. The interface is available in French and English.*
 
-## Ce que fait la v0.1
+## Ce que fait la v0.2
 
 | Module | Actions |
 | --- | --- |
-| **Images** | Compresser · Redimensionner · Convertir (PNG, JPG, WebP, AVIF) · Supprimer les métadonnées |
+| **Images** | Compresser (selon une qualité ou pour une taille cible) · Redimensionner · Convertir (PNG, JPG, WebP, AVIF) · Convertir des photos iPhone (HEIC) · Supprimer les métadonnées |
 | **Renommage** | Renommer un lot par modèle (`{name}`, `{n}`, `{date}`, `{ext}`) avec aperçu avant/après |
-| **PDF** | Fusionner · Découper (par page ou par plages) · Images vers PDF · Compresser |
-| **Vidéo / audio** | Couper (éditeur de montage simplifié) · Compresser · Convertir (MP4, WebM, MOV, MKV) · Extraire / convertir l'audio |
+| **PDF** | Fusionner · Découper (par page ou par plages) · Organiser les pages (réordonner, pivoter, retirer) · Images vers PDF · Compresser |
+| **Vidéo / audio** | Couper (éditeur de montage simplifié, export en vidéo ou en GIF animé) · Compresser (selon une qualité ou pour une taille cible : 10 Mo pour Discord, 25 Mo pour un e-mail…) · Convertir (MP4, WebM, MOV, MKV) · Extraire / convertir l'audio |
+
+**Nouveau en 0.2** : préréglages, tailles cibles, HEIC, aperçu avant/après des images, organisation des pages PDF, GIF animé, encodage vidéo matériel, Actions rapides du Finder et mises à jour automatiques.
 
 - Glisser-déposer de fichiers ou de dossiers entiers, ou fichiers passés en ligne de commande (dépôt sur l'icône du bureau).
-- **Clic droit dans l'explorateur** (Windows, à activer dans les Préférences) : sous-menu « UniFiles » avec des actions rapides, lancées en arrière-plan avec les derniers réglages utilisés, et une entrée « Plus d'options… » qui ouvre l'appli. Sous Windows 11, il se trouve dans « Afficher plus d'options ».
+- **Préréglages** : enregistre une action et ses réglages sous un nom (« Site web 1600 px »), puis relance-les en un clic depuis l'écran d'action ou le clic droit.
+- **Aperçu avant/après des images** : le vrai résultat sur un fichier, avec une poignée à faire glisser, le poids réel et un mode 100 % pour juger les détails.
+- **Clic droit dans l'explorateur** (à activer dans les Préférences) : sous Windows, sous-menu « UniFiles » avec des actions rapides (et tes préréglages), lancées en arrière-plan avec les derniers réglages utilisés, et une entrée « Plus d'options… » qui ouvre l'appli ; sous Windows 11, il se trouve dans « Afficher plus d'options ». Sous macOS, les mêmes actions apparaissent dans « Actions rapides » du clic droit du Finder.
+- **Encodage vidéo matériel** : la puce vidéo de l'ordinateur (Apple VideoToolbox, NVIDIA NVENC, Intel Quick Sync, AMD AMF) compresse, convertit et coupe plusieurs fois plus vite ; UniFiles teste la puce au démarrage et repasse sur x264 si elle échoue.
+- **Mises à jour automatiques** depuis les versions GitHub : téléchargées en arrière-plan, installées quand on quitte l'appli (désactivable dans les Préférences). C'est le seul accès réseau de UniFiles.
 - **Zone de notification** : fermer la fenêtre garde UniFiles actif. Le menu de l'icône affiche les lots en cours et permet de tout mettre en pause, tout reprendre, ouvrir le dossier de sortie ou quitter. Une notification s'affiche à la fin des traitements faits en arrière-plan.
 - Instance unique : les lancements suivants (clic droit sur 20 fichiers = 20 lancements) transmettent leurs fichiers à l'appli déjà ouverte par un canal local (named pipe), qui en fait un seul lot.
 - L'appli ne propose que les actions compatibles avec les fichiers déposés.
 - File d'attente en arrière-plan : progression, pause, annulation, réordonnancement. Un fichier en échec n'arrête pas le lot, et il peut être relancé avec « Réessayer ».
-- **Éditeur de coupe vidéo** : lecteur avec le son, pellicule de vignettes, tête de lecture. On coupe à la tête de lecture (`S`), on retire ou garde chaque passage (`Suppr`), on annule (`Ctrl+Z`). L'aperçu saute les passages retirés, et l'export recolle les passages gardés (coupe précise, ou export rapide sans réencodage pour un seul passage).
+- **Éditeur de coupe vidéo** : lecteur avec le son, pellicule de vignettes, tête de lecture. On coupe à la tête de lecture (`S`), on retire ou garde chaque passage (`Suppr`), on annule (`Ctrl+Z`). L'aperçu saute les passages retirés, et l'export recolle les passages gardés (coupe précise, ou export rapide sans réencodage pour un seul passage), en vidéo ou en GIF animé (palette calculée pour le clip, largeur et images par seconde au choix).
+- **Organiseur de pages PDF** : vignettes de toutes les pages, à déplacer par glisser-déposer ou avec les boutons, à faire pivoter ou retirer, puis un nouveau PDF.
 - Estimation du gain de place avant de lancer, résumé à la fin.
 - Historique des traitements, préférences (dossier de sortie, thème sombre ou clair, langue, animations réduites).
 - Accessibilité : navigation au clavier, libellés pour les lecteurs d'écran, cibles de 44 px, animations désactivables.
@@ -102,9 +109,19 @@ Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (bu
 ./build/release-macos.sh 0.2.0 --arch arm64
 ```
 
-À lancer sur un Mac, une fois par architecture (`--arch arm64` ou `--arch x64`, par défaut celle de la machine). Le script lance les tests, publie l'appli (autonome, `osx-arm64` ou `osx-x64`), ajoute ffmpeg et ffprobe (builds statiques de Martin Riedl, figés et vérifiés par SHA-256), crée l'icône et l'`Info.plist` (types de fichiers acceptés par le Finder), puis le `.pkg`, la version portable et les paquets de mise à jour avec Velopack, et enfin une image disque `.dmg` (l'appli et un raccourci vers Applications), dans `artifacts/releases/osx-<arch>`. Les versions suivent SemVer : `0.2.0`, ou `0.2.0-alpha` pour une préversion. Chaque architecture a son propre canal de mise à jour. Sans certificat, l'appli reçoit une signature ad hoc ; avec un compte Apple Developer, passe `--sign-app "Developer ID Application: …"`, `--sign-installer "Developer ID Installer: …"` et `--notary-profile <profil notarytool>` pour signer et notariser.
+À lancer sur un Mac, une fois par architecture (`--arch arm64` ou `--arch x64`, par défaut celle de la machine). Le script lance les tests, publie l'appli (autonome, `osx-arm64` ou `osx-x64`), ajoute ffmpeg et ffprobe (builds statiques de Martin Riedl, figés et vérifiés par SHA-256), crée l'icône et l'`Info.plist` (types de fichiers acceptés par le Finder), puis le `.pkg`, la version portable et les paquets de mise à jour avec Velopack, et enfin une image disque `.dmg` mise en forme (fond et flèche de `build/dmg`, l'appli et un raccourci vers Applications, via [dmgbuild](https://github.com/dmgbuild/dmgbuild), installé automatiquement ; prérequis : `python3`), dans `artifacts/releases/osx-<arch>`. Les versions suivent SemVer : `0.2.0`, ou `0.2.0-alpha` pour une préversion. Chaque architecture a son propre canal de mise à jour. Sans certificat, l'appli reçoit une signature ad hoc ; avec un compte Apple Developer, passe `--sign-app "Developer ID Application: …"`, `--sign-installer "Developer ID Installer: …"` et `--notary-profile <profil notarytool>` pour signer et notariser.
 
-Pour utiliser l'appli en mode portable ou en développement sans toucher à tes préférences, définis `UNIFILES_DATA_DIR` vers un autre dossier : les préférences et l'historique y seront stockés.
+### Publier avec GitHub Actions
+
+Chaque push et chaque pull request lancent les tests sous Windows, macOS et Linux (`.github/workflows/ci.yml`). Pour publier une version, pousse un tag :
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+`.github/workflows/release.yml` construit alors l'installeur Windows et les deux versions macOS (DMG, `.pkg`, versions portables), puis crée la version GitHub avec les notes de `build/release-notes/<version>.md` et les paquets de mise à jour. Un tag avec suffixe (`v0.3.0-beta`) devient une préversion, proposée en mise à jour seulement à ceux qui utilisent déjà une préversion.
+
+Pour utiliser l'appli en mode portable ou en développement sans toucher à tes préférences, définis `UNIFILES_DATA_DIR` vers un autre dossier : les préférences et l'historique y seront stockés. Pour tester les mises à jour sans GitHub, définis `UNIFILES_UPDATE_URL` vers un dossier (ou une adresse web) contenant les paquets produits par les scripts de publication.
 
 ## Architecture
 
@@ -135,19 +152,22 @@ Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.A
 ## Feuille de route
 
 - [x] Menu clic droit sous Windows
-- [ ] Menu clic droit sous macOS (actions rapides du Finder) et Linux (Dolphin, Nautilus)
+- [x] Actions rapides du Finder (macOS)
+- [ ] Menu clic droit sous Linux (Dolphin, Nautilus)
 - [x] Icône et menu dans la zone de notification
 - [ ] Notifications natives du système, lancement au démarrage
 - [x] Instance unique (les autres points d'entrée transmettent leurs fichiers par named pipe)
 - [x] ffmpeg et Ghostscript embarqués (Windows), ffmpeg embarqué (macOS)
 - [x] Installeur Windows (Velopack)
-- [ ] Mises à jour automatiques (à brancher sur GitHub Releases)
+- [x] Mises à jour automatiques (GitHub Releases, Velopack)
+- [x] Publication automatique par GitHub Actions
 - [ ] Signature de l'installeur Windows
 - [x] Installeur macOS (Velopack, Apple Silicon et Intel)
 - [ ] Signature et notarisation Apple
 - [ ] Ghostscript embarqué sous macOS
 - [ ] Installeur Linux
-- [ ] Aperçu visuel avant/après pour les images
+- [x] Aperçu visuel avant/après pour les images
+- [x] Préréglages, tailles cibles, HEIC, organisation des pages PDF, GIF, encodage matériel
 
 ## Licence
 

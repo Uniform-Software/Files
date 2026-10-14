@@ -54,6 +54,65 @@ public class VideoToolTests
         Assert.Equal(240, info.Height);
     }
 
+    [Fact]
+    public async Task Hardware_detection_finds_a_working_encoder_or_none()
+    {
+        if (ExternalTools.FindFfmpeg() is null)
+            return;
+
+        var hardware = await VideoEncoder.DetectHardwareAsync();
+
+        // Apple Silicon always has VideoToolbox; elsewhere it depends on the machine (CI has no GPU).
+        if (OperatingSystem.IsMacOS() && System.Runtime.InteropServices.RuntimeInformation.OSArchitecture == System.Runtime.InteropServices.Architecture.Arm64)
+            Assert.Equal("h264_videotoolbox", hardware?.Id);
+        Assert.Same(hardware, await VideoEncoder.DetectHardwareAsync());
+    }
+
+    [Fact]
+    public async Task Compress_to_a_target_size_stays_under_it()
+    {
+        using var temp = new TempFolder();
+        if (ExternalTools.FindFfmpeg() is not { } ffmpeg)
+            return;
+        // Noise at crf 10: a few MB for 6 seconds, well above the 1 MB target.
+        var clip = temp.File("noisy.mp4");
+        var (exitCode, errors) = await ExternalTools.RunAsync(ffmpeg,
+        [
+            "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=25:duration=6,noise=alls=30:allf=t",
+            "-f", "lavfi", "-i", "sine=frequency=440:duration=6",
+            "-c:v", "libx264", "-crf", "10", "-pix_fmt", "yuv420p", "-c:a", "aac", "-shortest", clip,
+        ], CancellationToken.None);
+        Assert.True(exitCode == 0, errors);
+        const long target = 1L << 20;
+        Assert.True(new FileInfo(clip).Length > 2 * target);
+
+        var output = await Run(new VideoCompressTool(), clip, temp.Sub("out"), s =>
+        {
+            s["mode"] = "size";
+            s["targetMb"] = "1";
+        });
+
+        Assert.InRange(new FileInfo(output).Length, target / 2, target);
+    }
+
+    [Theory]
+    [InlineData(25L << 20, 600, 1080, 0, 360)]   // 10 min in 25 MB: low bitrate, 360p
+    [InlineData(25L << 20, 60, 1080, 0, 0)]      // 1 min in 25 MB: plenty, keep 1080p
+    [InlineData(25L << 20, 60, 1080, 480, 480)]  // the user's cap wins
+    [InlineData(10L << 20, 120, 360, 0, 0)]      // never upscale a 360p source
+    public void Size_plan_picks_a_resolution_for_the_bitrate(long target, double seconds, int sourceHeight, int maxHeight, int expectedHeight)
+    {
+        var plan = SizePlan.For(target, seconds, sourceHeight, maxHeight, hasAudio: true);
+
+        Assert.Equal(expectedHeight, plan.Height);
+        Assert.True((plan.VideoKbps + plan.AudioKbps) * 1000.0 / 8 * seconds <= target);
+    }
+
+    [Fact]
+    public void Size_plan_refuses_an_impossible_target() =>
+        Assert.Throws<ToolException>(() => SizePlan.For(1L << 20, 3600, 1080, 0, hasAudio: true));
+
     [Theory]
     [InlineData("webm")]
     [InlineData("mkv")]

@@ -334,3 +334,70 @@ public sealed class PdfCompressTool : PdfToolBase
         return [output];
     }
 }
+
+/// <summary>A page of the organized PDF: which source page, turned by how much (0, 90, 180, 270).</summary>
+public readonly record struct PageChoice(int SourceIndex, int Rotation);
+
+/// <summary>
+/// Reorders, rotates and removes pages. Set up in the page organizer, which stores the result in
+/// the "pages" setting: source page indexes (from 0) in their new order, each with its added
+/// rotation ("2:0,0:90,1:0"). Pages left out are removed.
+/// </summary>
+public sealed class PdfOrganizeTool : PdfToolBase
+{
+    public const string PagesKey = "pages";
+
+    public override string Id => "pdf.organize";
+    public override string Name => Strings.Tool_PdfOrganize_Name;
+    public override string Description => Strings.Tool_PdfOrganize_Description;
+    public override int MaximumInputs => 1;
+    public override bool NeedsEditor => true;
+    public override bool ShowsSizeChange => false;
+
+    public override IReadOnlyList<ToolOption> Options { get; } = [];
+
+    public static string FormatPages(IEnumerable<PageChoice> pages) =>
+        string.Join(",", pages.Select(p => $"{p.SourceIndex}:{p.Rotation}"));
+
+    public static List<PageChoice> ParsePages(string text)
+    {
+        var pages = new List<PageChoice>();
+        foreach (var part in text.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            var bits = part.Split(':');
+            if (bits.Length != 2 || !int.TryParse(bits[0], out var index) || !int.TryParse(bits[1], out var rotation)
+                || index < 0 || rotation % 90 != 0)
+            {
+                throw new ToolException(Strings.Error_NoPages);
+            }
+            pages.Add(new PageChoice(index, ((rotation % 360) + 360) % 360));
+        }
+        if (pages.Count == 0)
+            throw new ToolException(Strings.Error_NoPages);
+        return pages;
+    }
+
+    public override async Task<IReadOnlyList<string>> ExecuteAsync(ToolContext context, CancellationToken cancellationToken)
+    {
+        var input = context.Inputs[0];
+        var pages = ParsePages(context.Settings.GetString(PagesKey));
+
+        var output = await WriteOutputAsync(context.Output, OutputName(input, ".pdf", " - " + Strings.Suffix_Organized), path => Task.Run(() =>
+        {
+            using var source = OpenForImport(input);
+            using var organized = new PdfDocument();
+            foreach (var choice in pages)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (choice.SourceIndex >= source.PageCount)
+                    throw new ToolException(Strings.Error_NoPages);
+                var page = organized.AddPage(source.Pages[choice.SourceIndex]);
+                page.Rotate = (page.Rotate + choice.Rotation) % 360;
+            }
+            Save(organized, path);
+        }, cancellationToken));
+
+        context.Progress.Report(1);
+        return [output];
+    }
+}

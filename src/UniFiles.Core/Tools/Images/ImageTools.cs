@@ -37,10 +37,19 @@ public abstract class ImageToolBase : FileToolBase
     {
         var input = context.Inputs[0];
         var plan = Plan(input, context.Settings);
-        var output = await WriteOutputAsync(context.Output, OutputName(input, "." + plan.Format), path =>
-            Task.Run(() => Process(input, path, plan), cancellationToken));
-        context.Progress.Report(1);
-        return [output];
+        var decoded = HeifDecoder.IsHeif(input) ? await HeifDecoder.DecodeAsync(input, cancellationToken) : null;
+        try
+        {
+            var output = await WriteOutputAsync(context.Output, OutputName(input, "." + plan.Format), path =>
+                Task.Run(() => Process(decoded ?? input, path, plan, metadataFrom: decoded is null ? null : input), cancellationToken));
+            context.Progress.Report(1);
+            return [output];
+        }
+        finally
+        {
+            if (decoded is not null)
+                OutputFolder.Release(decoded);
+        }
     }
 
     /// <summary>Turns the user settings into concrete encoding choices for one file.</summary>
@@ -59,7 +68,8 @@ public abstract class ImageToolBase : FileToolBase
         };
     }
 
-    internal static void Process(string input, string output, ImagePlan plan)
+    /// <param name="metadataFrom">Original file whose metadata goes with the pixels of <paramref name="input"/> (decoded HEIC).</param>
+    internal static void Process(string input, string output, ImagePlan plan, string? metadataFrom = null)
     {
         Image image;
         try
@@ -75,51 +85,108 @@ public abstract class ImageToolBase : FileToolBase
             throw new ToolException(Strings.Error_ImageUnreadable, ex);
         }
 
+        if (metadataFrom is not null)
+        {
+            using var pixels = image;
+            image = HeifDecoder.WithMetadataOf(pixels, metadataFrom);
+        }
+
         using (image)
         {
-            // Keep the color profile so colors stay right; drop EXIF, GPS, XMP and IPTC when asked.
-            var keep = plan.StripMetadata ? Enums.ForeignKeep.Icc : Enums.ForeignKeep.All;
-            var options = new VOption { { "keep", keep } };
-
-            var encoded = image;
-            switch (plan.Format)
-            {
-                case "jpg":
-                    options.Add("Q", plan.Quality);
-                    options.Add("optimize_coding", true);
-                    // JPEG has no transparency: flatten on white instead of black.
-                    if (image.HasAlpha())
-                        encoded = image.Flatten(background: [255, 255, 255]);
-                    break;
-                case "png":
-                    options.Add("compression", 9);
-                    if (plan.Quality < 100)
-                    {
-                        // Palette quantization, as online "PNG compressors" do.
-                        options.Add("palette", true);
-                        options.Add("Q", plan.Quality);
-                    }
-                    break;
-                case "webp":
-                case "avif":
-                    options.Add("Q", plan.Quality);
-                    break;
-            }
-
             try
             {
-                encoded.WriteToFile(output, options);
+                if (plan.TargetBytes > 0)
+                    File.WriteAllBytes(output, EncodeToFit(image, plan));
+                else
+                    Encode(image, plan, plan.Quality, (img, options) => { img.WriteToFile(output, options); return 0; });
             }
             catch (VipsException ex)
             {
                 throw new ToolException(Strings.Error_ImageWrite, ex);
             }
-            finally
-            {
-                if (!ReferenceEquals(encoded, image))
-                    encoded.Dispose();
-            }
         }
+    }
+
+    /// <summary>Encodes with the plan's format and metadata policy at the given quality.</summary>
+    private static T Encode<T>(Image image, ImagePlan plan, int quality, Func<Image, VOption, T> write)
+    {
+        // Keep the color profile so colors stay right; drop EXIF, GPS, XMP and IPTC when asked.
+        var keep = plan.StripMetadata ? Enums.ForeignKeep.Icc : Enums.ForeignKeep.All;
+        var options = new VOption { { "keep", keep } };
+
+        var encoded = image;
+        switch (plan.Format)
+        {
+            case "jpg":
+                options.Add("Q", quality);
+                options.Add("optimize_coding", true);
+                // JPEG has no transparency: flatten on white instead of black.
+                if (image.HasAlpha())
+                    encoded = image.Flatten(background: [255, 255, 255]);
+                break;
+            case "png":
+                options.Add("compression", 9);
+                if (quality < 100)
+                {
+                    // Palette quantization, as online "PNG compressors" do.
+                    options.Add("palette", true);
+                    options.Add("Q", quality);
+                }
+                break;
+            case "webp":
+            case "avif":
+                options.Add("Q", quality);
+                break;
+        }
+
+        try
+        {
+            return write(encoded, options);
+        }
+        finally
+        {
+            if (!ReferenceEquals(encoded, image))
+                encoded.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// Target size: the best quality that fits (binary search, at most the plan's quality), then
+    /// smaller dimensions if even a low quality is too heavy. Returns the smallest result if nothing fits.
+    /// </summary>
+    internal static byte[] EncodeToFit(Image image, ImagePlan plan)
+    {
+        const int LowestQuality = 30;
+        byte[]? smallest = null;
+        var scale = 1.0;
+        for (var attempt = 0; attempt < 8; attempt++, scale *= 0.8)
+        {
+            using var scaled = scale < 1 ? image.Resize(scale, kernel: Enums.Kernel.Lanczos3) : image.Copy();
+            byte[] EncodeAt(int quality) => Encode(scaled, plan, quality, (img, options) => img.WriteToBuffer("." + plan.Format, options));
+
+            var low = LowestQuality;
+            var high = Math.Max(plan.Quality, LowestQuality);
+            byte[]? best = null;
+            while (low <= high)
+            {
+                var quality = (low + high) / 2;
+                var bytes = EncodeAt(quality);
+                if (smallest is null || bytes.Length < smallest.Length)
+                    smallest = bytes;
+                if (bytes.Length <= plan.TargetBytes)
+                {
+                    best = bytes;
+                    low = quality + 1;
+                }
+                else
+                {
+                    high = quality - 1;
+                }
+            }
+            if (best is not null)
+                return best;
+        }
+        return smallest!;
     }
 
     private static Image LoadUpright(string input)
@@ -161,7 +228,8 @@ public abstract class ImageToolBase : FileToolBase
     }
 }
 
-public sealed record ImagePlan(string Format, int Quality, int MaxWidth, int MaxHeight, bool StripMetadata);
+/// <param name="TargetBytes">Maximum output size, or 0 to encode once at <paramref name="Quality"/>.</param>
+public sealed record ImagePlan(string Format, int Quality, int MaxWidth, int MaxHeight, bool StripMetadata, long TargetBytes = 0);
 
 public sealed class ImageCompressTool : ImageToolBase
 {
@@ -171,12 +239,30 @@ public sealed class ImageCompressTool : ImageToolBase
 
     public override IReadOnlyList<ToolOption> Options { get; } =
     [
-        QualityOption(75),
+        new ChoiceOption("mode", Strings.Option_CompressMode,
+        [
+            new Choice("quality", Strings.Choice_ByQuality),
+            new Choice("size", Strings.Choice_BySize),
+        ], "quality"),
+        QualityOption(75) with { VisibleWhenKey = "mode", VisibleWhenValue = "quality" },
+        new NumberOption("targetKb", Strings.Option_TargetSize, 20, 50_000, 500, Strings.Unit_KB)
+        {
+            Hint = Strings.Hint_TargetSizeImage,
+            VisibleWhenKey = "mode",
+            VisibleWhenValue = "size",
+        },
         StripOption(true),
     ];
 
-    protected override ImagePlan Plan(string input, ToolSettings settings) =>
-        new(SourceFormat(input), settings.GetInt("quality", 75), 0, 0, settings.GetBool("strip", true));
+    private static bool BySize(ToolSettings settings) => settings.GetString("mode", "quality") == "size";
+
+    protected override ImagePlan Plan(string input, ToolSettings settings) => BySize(settings)
+        ? new(SourceFormat(input), 90, 0, 0, settings.GetBool("strip", true), settings.GetInt("targetKb", 500) * 1024L)
+        : new(SourceFormat(input), settings.GetInt("quality", 75), 0, 0, settings.GetBool("strip", true));
+
+    public override long? EstimateOutputSize(IReadOnlyList<string> inputs, ToolSettings settings) => BySize(settings)
+        ? inputs.Where(File.Exists).Sum(i => Math.Min(new FileInfo(i).Length, settings.GetInt("targetKb", 500) * 1024L))
+        : base.EstimateOutputSize(inputs, settings);
 }
 
 public sealed class ImageResizeTool : ImageToolBase
@@ -235,4 +321,37 @@ public sealed class ImageStripMetadataTool : ImageToolBase
         new(SourceFormat(input), SourceFormat(input) == "png" ? 100 : 95, 0, 0, StripMetadata: true);
 
     public override long? EstimateOutputSize(IReadOnlyList<string> inputs, ToolSettings settings) => TotalSize(inputs);
+}
+
+/// <summary>iPhone photos (HEIC/HEIF) to JPG or PNG, which every app and website opens.</summary>
+public sealed class ImageFromHeicTool : ImageToolBase
+{
+    public override string Id => "image.heic";
+    public override string Name => Strings.Tool_ImageHeic_Name;
+    public override string Description => Strings.Tool_ImageHeic_Description;
+
+    public override bool Accepts(string path) =>
+        Path.GetExtension(path).ToLowerInvariant() is ".heic" or ".heif";
+
+    public override IReadOnlyList<ToolOption> Options { get; } =
+    [
+        new ChoiceOption("format", Strings.Option_Format,
+        [
+            new Choice("jpg", "JPG"),
+            new Choice("png", "PNG"),
+        ], "jpg"),
+        QualityOption(90),
+        StripOption(false),
+    ];
+
+    protected override ImagePlan Plan(string input, ToolSettings settings) => new(
+        settings.GetString("format", "jpg"),
+        settings.GetInt("quality", 90),
+        0,
+        0,
+        settings.GetBool("strip"));
+
+    // HEIC is about twice as efficient as JPG at the same quality.
+    public override long? EstimateOutputSize(IReadOnlyList<string> inputs, ToolSettings settings) =>
+        (long)(TotalSize(inputs) * (settings.GetString("format", "jpg") == "png" ? 6 : 1.8));
 }

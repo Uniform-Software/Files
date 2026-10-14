@@ -1,5 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="FFMpegCore" Version="5.5.0" />
@@ -7,6 +11,13 @@
     <PackageReference Include="NetVips" Version="3.2.0" />
     <PackageReference Include="NetVips.Native" Version="8.18.7" />
     <PackageReference Include="PDFsharp" Version="6.2.4" />
+  </ItemGroup>
+
+  <!-- PDFium (BSD-3 / Apache 2.0), to draw PDF pages (page organizer thumbnails). Only the natives of the published runtime ship. -->
+  <ItemGroup>
+    <PackageReference Include="bblanchon.PDFium.Win32" Version="156.0.8076" />
+    <PackageReference Include="bblanchon.PDFium.macOS" Version="156.0.8076" />
+    <PackageReference Include="bblanchon.PDFium.Linux" Version="156.0.8076" />
   </ItemGroup>
 
   <!-- All UI and tool texts. Strings.resx is English (fallback), Strings.fr.resx is French. -->

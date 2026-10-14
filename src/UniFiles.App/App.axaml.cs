@@ -94,6 +94,7 @@ public partial class App : Application
         _viewModel = new MainWindowViewModel(_services) { BackgroundNotifier = new ToastNotifier() };
         SetUpTray();
         RefreshContextMenu();
+        _services.PresetsChanged += (_, _) => RefreshContextMenu();
 
         // Long enough to be seen and read, never longer than needed beyond that.
         if (splash is not null && MinimumSplashTime - clock.Elapsed is { } remaining && remaining > TimeSpan.Zero)
@@ -113,6 +114,11 @@ public partial class App : Application
 
         // Once the window is up and idle, get the video player ready.
         DispatcherTimer.RunOnce(VideoPlayer.WarmUp, TimeSpan.FromSeconds(3));
+
+        _services.Updater.UpdateReady += (_, _) =>
+            _viewModel.Notify(string.Format(Strings.Update_ReadyNotification, _services.Updater.AvailableVersion));
+        if (_services.Settings.CheckForUpdates)
+            DispatcherTimer.RunOnce(() => _ = _services.Updater.CheckAsync(), TimeSpan.FromSeconds(8));
     }
 
     public static void ApplyTheme(AppTheme theme)
@@ -226,7 +232,7 @@ public partial class App : Application
             return;
         try
         {
-            ExplorerMenu.Installer.Install(exe, _services.Catalog);
+            ExplorerMenu.Installer.Install(exe, _services.Catalog, _services.Settings.Presets);
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or System.Security.SecurityException)
         {

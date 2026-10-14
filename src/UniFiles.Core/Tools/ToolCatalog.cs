@@ -15,10 +15,12 @@ public sealed class ToolCatalog
             new ImageCompressTool(),
             new ImageResizeTool(),
             new ImageConvertTool(),
+            new ImageFromHeicTool(),
             new ImageStripMetadataTool(),
             new BatchRenameTool(),
             new PdfMergeTool(),
             new PdfSplitTool(),
+            new PdfOrganizeTool(),
             new ImagesToPdfTool(),
             new PdfCompressTool(),
             new VideoTrimTool(),
@@ -39,11 +41,10 @@ public sealed class ToolCatalog
     {
         if (files.Count == 0)
             return [];
-        var kinds = files.Select(FileKindDetector.Detect).ToHashSet();
         return Tools.Where(t =>
             files.Count >= t.MinimumInputs
             && files.Count <= t.MaximumInputs
-            && (t.AcceptedKinds.Count == 0 || kinds.IsSubsetOf(t.AcceptedKinds)));
+            && files.All(t.Accepts));
     }
 
     /// <summary>File extensions a module can open, for file pickers.</summary>

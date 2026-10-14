@@ -45,15 +45,41 @@
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_System}" />
           <StackPanel Spacing="2">
             <ToggleSwitch IsChecked="{Binding ContextMenuEnabled}" IsEnabled="{Binding IsContextMenuSupported}"
-                          Content="{x:Static res:Strings.Prefs_ContextMenu}" OnContent="" OffContent="" />
-            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_ContextMenuHint}" TextWrapping="Wrap" IsVisible="{Binding IsContextMenuSupported}" />
+                          Content="{Binding ContextMenuLabel}" OnContent="" OffContent="" />
+            <TextBlock Classes="caption" Text="{Binding ContextMenuHint}" TextWrapping="Wrap" IsVisible="{Binding IsContextMenuSupported}" />
             <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_ContextMenuUnsupported}" TextWrapping="Wrap" IsVisible="{Binding !IsContextMenuSupported}" />
             <TextBlock Classes="error" Text="{Binding ContextMenuError}" TextWrapping="Wrap" IsVisible="{Binding HasContextMenuError}" />
+          </StackPanel>
+          <StackPanel Spacing="2">
+            <ToggleSwitch IsChecked="{Binding HardwareAcceleration}" Content="{x:Static res:Strings.Prefs_Hardware}" OnContent="" OffContent="" />
+            <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_HardwareHint}" TextWrapping="Wrap" />
+            <TextBlock Classes="secondary" Text="{Binding EncoderStatus}" TextWrapping="Wrap"
+                       IsVisible="{Binding EncoderStatus, Converter={x:Static ObjectConverters.IsNotNull}}" />
           </StackPanel>
           <StackPanel Spacing="2">
             <ToggleSwitch IsChecked="{Binding KeepInTray}" Content="{x:Static res:Strings.Prefs_KeepInTray}" OnContent="" OffContent="" />
             <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_KeepInTrayHint}" TextWrapping="Wrap" />
           </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Update_Title}" />
+          <StackPanel Spacing="12" IsVisible="{Binding Updater.IsSupported}">
+            <StackPanel Spacing="2">
+              <ToggleSwitch IsChecked="{Binding CheckForUpdates}" Content="{x:Static res:Strings.Update_Auto}" OnContent="" OffContent="" />
+              <TextBlock Classes="caption" Text="{x:Static res:Strings.Update_AutoHint}" TextWrapping="Wrap" />
+            </StackPanel>
+            <TextBlock Classes="secondary" Text="{Binding UpdateStatus}" TextWrapping="Wrap"
+                       IsVisible="{Binding UpdateStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button Classes="primary" Command="{Binding InstallUpdateCommand}" Content="{x:Static res:Strings.Update_RestartNow}"
+                      IsVisible="{Binding IsUpdateReady}" />
+              <Button Classes="ghost" Command="{Binding CheckUpdatesCommand}" Content="{x:Static res:Strings.Update_CheckNow}" />
+            </StackPanel>
+          </StackPanel>
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.Update_Unsupported}" TextWrapping="Wrap" IsVisible="{Binding !Updater.IsSupported}" />
         </StackPanel>
       </Border>
 

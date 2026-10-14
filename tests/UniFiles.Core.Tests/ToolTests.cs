@@ -45,6 +45,47 @@ public class ImageToolTests
         Assert.DoesNotContain("exif-data", image.GetFields());
     }
 
+    [Theory]
+    [InlineData(3000)]
+    [InlineData(40)]
+    public async Task Compress_to_a_target_size_stays_under_it(int targetKb)
+    {
+        using var temp = new TempFolder();
+        var input = MakePhoto(temp, "photo.jpg", 2400, 1600);
+
+        var output = (await Run(new ImageCompressTool(), input, temp.Sub("out"), s =>
+        {
+            s["mode"] = "size";
+            s["targetKb"] = targetKb;
+        })).Single();
+
+        Assert.InRange(new FileInfo(output).Length, 1, targetKb * 1024L);
+        using var image = Image.NewFromFile(output);
+        // Noise compresses badly: the small target needs smaller dimensions, the large one doesn't.
+        Assert.Equal(targetKb >= 3000, image.Width == 2400);
+    }
+
+    [Fact]
+    public async Task Heic_photos_become_jpg_and_only_heic_is_accepted()
+    {
+        // HEIC pixels are decoded by ffmpeg: passes trivially on machines without it.
+        if (ExternalTools.FindFfmpeg() is null)
+            return;
+        using var temp = new TempFolder();
+        var input = Path.Combine(AppContext.BaseDirectory, "Fixtures", "photo.heic");
+        var tool = new ImageFromHeicTool();
+
+        var output = (await Run(tool, input, temp.Sub("out"))).Single();
+
+        Assert.Equal(".jpg", Path.GetExtension(output));
+        using var image = Image.NewFromFile(output);
+        Assert.Equal((64, 48), (image.Width, image.Height));
+        Assert.True(tool.Accepts("IMG_0001.HEIC"));
+        Assert.False(tool.Accepts("photo.jpg"));
+        Assert.Contains(tool.Id, new ToolCatalog().CompatibleWith([input]).Select(t => t.Id));
+        Assert.DoesNotContain(tool.Id, new ToolCatalog().CompatibleWith(["photo.jpg"]).Select(t => t.Id));
+    }
+
     [Fact]
     public async Task Resize_fits_inside_the_box_without_enlarging()
     {
@@ -113,6 +154,56 @@ public class PdfToolTests
     {
         using var document = PdfReader.Open(path, PdfDocumentOpenMode.Import);
         return document.PageCount;
+    }
+
+    [Fact]
+    public async Task Organize_reorders_rotates_and_drops_pages()
+    {
+        using var temp = new TempFolder();
+        var input = MakePdf(temp, "doc.pdf", 4);
+        var tool = new PdfOrganizeTool();
+        var settings = ToolSettings.FromDefaults(tool);
+        settings[PdfOrganizeTool.PagesKey] = PdfOrganizeTool.FormatPages([new(3, 0), new(0, 90), new(2, 270)]);
+
+        var output = (await tool.ExecuteAsync(new ToolContext
+        {
+            Inputs = [input],
+            Settings = settings,
+            Output = new OutputFolder(temp.Sub("out")),
+        }, CancellationToken.None)).Single();
+
+        using var document = PdfReader.Open(output, PdfDocumentOpenMode.Import);
+        Assert.Equal(3, document.PageCount);
+        Assert.Equal([0, 90, 270], document.Pages.Cast<PdfPage>().Select(p => p.Rotate));
+        Assert.Throws<ToolException>(() => PdfOrganizeTool.ParsePages(""));
+    }
+
+    [Fact]
+    public void Renderer_draws_pages_on_white()
+    {
+        using var temp = new TempFolder();
+        var input = MakePdf(temp, "doc.pdf", 2);
+
+        using var renderer = PdfRenderer.Open(input);
+        var pixels = renderer.Render(1, 200, out var width, out var height);
+
+        Assert.Equal(2, renderer.PageCount);
+        // PDFsharp's default page is Letter portrait (612 x 792 pt): 200 px tall.
+        Assert.Equal((155, 200), (width, height));
+        Assert.Equal(width * height * 4, pixels.Length);
+        // Top-left corner is white paper (BGRA), the coral rectangle starts further in.
+        Assert.Equal(new byte[] { 255, 255, 255, 255 }, pixels[..4]);
+        var inside = (25 * width + 25) * 4; // about (100, 100) pt, inside the rectangle
+        Assert.Equal((0x50, 0x7F, 0xFF), (pixels[inside], pixels[inside + 1], pixels[inside + 2]));
+    }
+
+    [Fact]
+    public void Renderer_rejects_a_damaged_file()
+    {
+        using var temp = new TempFolder();
+        var path = temp.File("broken.pdf");
+        File.WriteAllText(path, "%PDF-1.4 not really");
+        Assert.Throws<ToolException>(() => PdfRenderer.Open(path));
     }
 
     [Fact]
@@ -266,6 +357,44 @@ public class VideoTrimTests
         var info = await UniFiles.Core.Tools.Video.VideoThumbnails.ProbeAsync(output, CancellationToken.None);
         Assert.InRange(info.Duration.TotalSeconds, 4.9, 5.2);
         Assert.True(info.HasAudio);
+    }
+
+    [Fact]
+    public async Task Exports_kept_passages_as_an_animated_gif()
+    {
+        if (ExternalTools.FindFfmpeg() is not { } ffmpeg)
+            return;
+
+        using var temp = new TempFolder();
+        var clip = temp.File("clip.mp4");
+        var (exitCode, errors) = await ExternalTools.RunAsync(ffmpeg,
+        [
+            "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "lavfi", "-i", "testsrc2=size=640x360:rate=25:duration=6",
+            "-c:v", "libx264", "-pix_fmt", "yuv420p", clip,
+        ], CancellationToken.None);
+        Assert.True(exitCode == 0, errors);
+
+        var tool = new UniFiles.Core.Tools.Video.VideoTrimTool();
+        var settings = ToolSettings.FromDefaults(tool);
+        settings[UniFiles.Core.Tools.Video.VideoTrimTool.SegmentsKey] = "0-1;4-5";
+        settings["output"] = "gif";
+        settings["gifWidth"] = "320";
+        settings["gifFps"] = "10";
+
+        var output = (await tool.ExecuteAsync(new ToolContext
+        {
+            Inputs = [clip],
+            Settings = settings,
+            Output = new OutputFolder(temp.Sub("out")),
+        }, CancellationToken.None)).Single();
+
+        Assert.Equal(".gif", Path.GetExtension(output));
+        // libvips reads every frame of a GIF as a tall strip: 2 s at 10 fps = 20 frames of 320x180.
+        using var gif = NetVips.Image.NewFromFile(output, kwargs: new NetVips.VOption { { "n", -1 } });
+        Assert.Equal(320, gif.Width);
+        Assert.Equal(20, gif.Height / gif.PageHeight);
+        Assert.Equal(180, gif.PageHeight);
     }
 }
 

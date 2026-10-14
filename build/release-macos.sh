@@ -15,6 +15,7 @@
 # Without a Developer ID the app is only ad-hoc signed: Gatekeeper asks users to confirm the first launch
 # (System Settings > Privacy & Security > Open Anyway).
 # Ghostscript isn't bundled on macOS (no official binaries): PDF compression uses a Homebrew install.
+# Needs python3 (for dmgbuild, installed in build/cache on first run).
 set -euo pipefail
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 
@@ -183,12 +184,19 @@ dotnet tool restore >/dev/null
 dotnet vpk "${pack_args[@]}"
 
 step "Disk image (.dmg)"
-# The app from the portable package (already signed), next to a link to Applications to drag it onto.
+# Styled window (background, drag arrow, icon positions) laid out by dmgbuild, without Finder.
+# The app comes from the portable package, already signed.
+dmgbuild_env="$cache/dmgbuild-venv"
+if [[ ! -x "$dmgbuild_env/bin/dmgbuild" ]]; then
+    python3 -m venv "$dmgbuild_env"
+    "$dmgbuild_env/bin/pip" install -q dmgbuild==1.6.7
+fi
 dmg_root="$artifacts/dmg-$rid"
 rm -rf "$dmg_root" && mkdir -p "$dmg_root"
 ditto -x -k "$releases/UniFiles-$rid-Portable.zip" "$dmg_root"
-ln -s /Applications "$dmg_root/Applications"
-hdiutil create -volname UniFiles -srcfolder "$dmg_root" -fs HFS+ -format UDZO -ov "$releases/UniFiles-$rid.dmg" >/dev/null
+"$dmgbuild_env/bin/dmgbuild" -s "$root/build/dmg/settings.py" \
+    -D app="$dmg_root/UniFiles.app" -D background="$root/build/dmg/background.png" -D icon="$bundle/UniFiles.icns" \
+    UniFiles "$releases/UniFiles-$rid.dmg" >/dev/null
 rm -rf "$dmg_root"
 if [[ -n "$notary_profile" && "$sign_app" != "-" ]]; then
     codesign --sign "$sign_app" --timestamp "$releases/UniFiles-$rid.dmg"

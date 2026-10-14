@@ -71,7 +71,7 @@ internal static class Program
     {
         var installer = ExplorerMenu.Installer;
         if (enabled && Environment.ProcessPath is { } exe)
-            installer.Install(exe, new ToolCatalog());
+            installer.Install(exe, new ToolCatalog(), store.Load().Presets);
         else
             installer.Uninstall();
 

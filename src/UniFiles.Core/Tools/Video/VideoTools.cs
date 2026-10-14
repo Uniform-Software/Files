@@ -30,35 +30,80 @@ public abstract class VideoToolBase : FileToolBase
         TimeSpan? expectedDuration = null)
     {
         var input = context.Inputs[0];
-        var options = FfOptions();
+        var duration = expectedDuration ?? (await AnalyseAsync(input, cancellationToken)).Duration;
 
-        TimeSpan duration;
+        return await WriteOutputAsync(context.Output, outputName, path =>
+            RunAsync(input, path, outputOptions, context.Progress.Report, duration, cancellationToken, inputOptions));
+    }
+
+    /// <summary>
+    /// Like <see cref="TranscodeAsync"/> for an H.264 output: <paramref name="arguments"/> receives the
+    /// encoder arguments for <paramref name="crf"/> (video chip when available, x264 otherwise). If the
+    /// chip fails, the file is redone with x264.
+    /// </summary>
+    protected static async Task<string> TranscodeH264Async(
+        ToolContext context,
+        string outputName,
+        int crf,
+        Func<string, string> arguments,
+        CancellationToken cancellationToken,
+        Action<FFMpegArgumentOptions>? inputOptions = null,
+        TimeSpan? expectedDuration = null)
+    {
+        var encoder = await VideoEncoder.ChooseAsync();
+        if (encoder.IsHardware)
+        {
+            try
+            {
+                return await TranscodeAsync(context, outputName, o => o.WithCustomArgument(arguments(encoder.Arguments(crf))),
+                    cancellationToken, inputOptions, expectedDuration);
+            }
+            catch (ToolException) when (!cancellationToken.IsCancellationRequested)
+            {
+                VideoEncoder.HardwareFailed();
+            }
+        }
+        return await TranscodeAsync(context, outputName, o => o.WithCustomArgument(arguments(VideoEncoder.Software.Arguments(crf))),
+            cancellationToken, inputOptions, expectedDuration);
+    }
+
+    /// <summary>Reads duration and streams; a file ffprobe can't read gives a plain-language error.</summary>
+    protected static async Task<IMediaAnalysis> AnalyseAsync(string input, CancellationToken cancellationToken)
+    {
         try
         {
-            duration = expectedDuration ?? (await FFProbe.AnalyseAsync(input, options, cancellationToken)).Duration;
+            return await FFProbe.AnalyseAsync(input, FfOptions(), cancellationToken);
         }
         catch (Exception ex) when (ex is not OperationCanceledException and not ToolException)
         {
             throw new ToolException(Strings.Error_MediaUnreadable, ex);
         }
+    }
 
-        return await WriteOutputAsync(context.Output, outputName, async path =>
+    /// <summary>One ffmpeg run, progress from 0 to 1 reported to <paramref name="progress"/>.</summary>
+    protected static async Task RunAsync(
+        string input,
+        string output,
+        Action<FFMpegArgumentOptions> outputOptions,
+        Action<double> progress,
+        TimeSpan duration,
+        CancellationToken cancellationToken,
+        Action<FFMpegArgumentOptions>? inputOptions = null)
+    {
+        try
         {
-            try
-            {
-                await FFMpegArguments
-                    .FromFileInput(input, verifyExists: true, inputOptions)
-                    .OutputToFile(path, overwrite: true, outputOptions)
-                    .NotifyOnProgress(percent => context.Progress.Report(Math.Clamp(percent / 100.0, 0, 1)), duration)
-                    .CancellableThrough(cancellationToken)
-                    .ProcessAsynchronously(throwOnError: true, options);
-            }
-            catch (Exception ex) when (ex is FFMpegException or FFMpegArgumentException && !cancellationToken.IsCancellationRequested)
-            {
-                throw new ToolException(Strings.Error_MediaConversion, ex);
-            }
-            cancellationToken.ThrowIfCancellationRequested();
-        });
+            await FFMpegArguments
+                .FromFileInput(input, verifyExists: true, inputOptions)
+                .OutputToFile(output, overwrite: true, outputOptions)
+                .NotifyOnProgress(percent => progress(Math.Clamp(percent / 100.0, 0, 1)), duration)
+                .CancellableThrough(cancellationToken)
+                .ProcessAsynchronously(throwOnError: true, FfOptions());
+        }
+        catch (Exception ex) when (ex is FFMpegException or FFMpegArgumentException && !cancellationToken.IsCancellationRequested)
+        {
+            throw new ToolException(Strings.Error_MediaConversion, ex);
+        }
+        cancellationToken.ThrowIfCancellationRequested();
     }
 
     /// <summary>Accepts "90", "1:30", "01:02:03" or "1:30.5".</summary>
@@ -88,12 +133,25 @@ public sealed class VideoCompressTool : VideoToolBase
 
     public override IReadOnlyList<ToolOption> Options { get; } =
     [
+        new ChoiceOption("mode", Strings.Option_CompressMode,
+        [
+            new Choice("quality", Strings.Choice_ByQuality),
+            new Choice("size", Strings.Choice_BySize),
+        ], "quality"),
         new ChoiceOption("quality", Strings.Option_Quality,
         [
             new Choice("high", Strings.Choice_QualityHigh),
             new Choice("balanced", Strings.Choice_QualityBalanced),
             new Choice("small", Strings.Choice_QualitySmall),
-        ], "balanced"),
+        ], "balanced") { VisibleWhenKey = "mode", VisibleWhenValue = "quality" },
+        new ChoiceOption("targetMb", Strings.Option_TargetSize,
+        [
+            new Choice("10", Strings.Choice_Target10),
+            new Choice("25", Strings.Choice_Target25),
+            new Choice("50", "50 " + Strings.Unit_MB),
+            new Choice("100", Strings.Choice_Target100),
+            new Choice("500", "500 " + Strings.Unit_MB),
+        ], "25") { Hint = Strings.Hint_TargetSizeVideo, VisibleWhenKey = "mode", VisibleWhenValue = "size" },
         new ChoiceOption("maxHeight", Strings.Option_Resolution,
         [
             new Choice("0", Strings.Choice_KeepResolution),
@@ -103,8 +161,15 @@ public sealed class VideoCompressTool : VideoToolBase
         ], "0"),
     ];
 
+    private static bool BySize(ToolSettings settings) => settings.GetString("mode", "quality") == "size";
+
+    private static long TargetBytes(ToolSettings settings) => settings.GetInt("targetMb", 25) * 1024L * 1024;
+
     public override long? EstimateOutputSize(IReadOnlyList<string> inputs, ToolSettings settings)
     {
+        if (BySize(settings))
+            return inputs.Where(File.Exists).Sum(i => Math.Min(new FileInfo(i).Length, TargetBytes(settings)));
+
         var ratio = settings.GetString("quality", "balanced") switch
         {
             "high" => 0.6,
@@ -118,6 +183,9 @@ public sealed class VideoCompressTool : VideoToolBase
 
     public override async Task<IReadOnlyList<string>> ExecuteAsync(ToolContext context, CancellationToken cancellationToken)
     {
+        if (BySize(context.Settings))
+            return [await CompressToSizeAsync(context, cancellationToken)];
+
         var input = context.Inputs[0];
         var crf = context.Settings.GetString("quality", "balanced") switch
         {
@@ -127,14 +195,57 @@ public sealed class VideoCompressTool : VideoToolBase
         };
         var maxHeight = context.Settings.GetInt("maxHeight");
 
-        var output = await TranscodeAsync(context, OutputName(input, ".mp4", " - " + Strings.Suffix_Compressed), o =>
-        {
-            if (maxHeight > 0)
-                o.WithCustomArgument($"-vf scale=-2:'trunc(min({maxHeight},ih)/2)*2'");
-            o.WithCustomArgument($"-c:v libx264 -crf {crf} -preset medium -pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart");
-        }, cancellationToken);
+        var scale = maxHeight > 0 ? $"-vf scale=-2:'trunc(min({maxHeight},ih)/2)*2' " : "";
+        var output = await TranscodeH264Async(context, OutputName(input, ".mp4", " - " + Strings.Suffix_Compressed), crf,
+            video => $"{scale}{video} -c:a aac -b:a 128k -movflags +faststart", cancellationToken);
 
         return [output];
+    }
+
+    /// <summary>
+    /// Target size: two-pass H.264 at the bitrate that fills the target (with a margin for the
+    /// container), lowering the resolution when that bitrate is too low for a sharp picture.
+    /// </summary>
+    private async Task<string> CompressToSizeAsync(ToolContext context, CancellationToken cancellationToken)
+    {
+        var input = context.Inputs[0];
+        var analysis = await AnalyseAsync(input, cancellationToken);
+        var plan = SizePlan.For(TargetBytes(context.Settings), analysis.Duration.TotalSeconds, analysis.PrimaryVideoStream?.Height ?? 0,
+            context.Settings.GetInt("maxHeight"), analysis.PrimaryAudioStream is not null);
+
+        var target = TargetBytes(context.Settings);
+        var scale = plan.Height > 0 ? $"-vf scale=-2:{plan.Height} " : "";
+        var audio = plan.AudioKbps > 0 ? $"-c:a aac -b:a {plan.AudioKbps}k" : "-an";
+        string Video(int kbps) => $"{scale}-c:v libx264 -b:v {kbps}k -preset medium -pix_fmt yuv420p";
+        var passLog = Path.Combine(Path.GetTempPath(), $"unifiles-{Guid.NewGuid():N}");
+        try
+        {
+            await RunAsync(input, OperatingSystem.IsWindows() ? "NUL" : "/dev/null",
+                o => o.WithCustomArgument($"{Video(plan.VideoKbps)} -pass 1 -passlogfile \"{passLog}\" -an -f mp4"),
+                p => context.Progress.Report(p / 2), analysis.Duration, cancellationToken);
+
+            return await WriteOutputAsync(context.Output, OutputName(input, ".mp4", " - " + Strings.Suffix_Compressed), async path =>
+            {
+                // x264 can overshoot a little (short or noisy videos): the first pass stays valid,
+                // so the second one is redone at a corrected bitrate until the file fits.
+                var kbps = plan.VideoKbps;
+                for (var attempt = 0; ; attempt++)
+                {
+                    await RunAsync(input, path,
+                        o => o.WithCustomArgument($"{Video(kbps)} -pass 2 -passlogfile \"{passLog}\" {audio} -movflags +faststart"),
+                        p => context.Progress.Report(0.5 + p / 2), analysis.Duration, cancellationToken);
+                    var size = new FileInfo(path).Length;
+                    if (size <= target || attempt == 2)
+                        break;
+                    kbps = Math.Max(1, (int)(kbps * (double)target / size * 0.95));
+                }
+            });
+        }
+        finally
+        {
+            foreach (var log in Directory.EnumerateFiles(Path.GetTempPath(), Path.GetFileName(passLog) + "*"))
+                OutputFolder.Release(log);
+        }
     }
 }
 
@@ -159,15 +270,16 @@ public sealed class VideoConvertTool : VideoToolBase
     {
         var input = context.Inputs[0];
         var format = context.Settings.GetString("format", "mp4");
-        var arguments = format switch
+        var name = OutputName(input, "." + format);
+        var output = format switch
         {
-            "webm" => "-c:v libvpx-vp9 -crf 32 -b:v 0 -row-mt 1 -c:a libopus -b:a 128k",
+            "webm" => await TranscodeAsync(context, name,
+                o => o.WithCustomArgument("-c:v libvpx-vp9 -crf 32 -b:v 0 -row-mt 1 -c:a libopus -b:a 128k"), cancellationToken),
             // MKV accepts almost any codec: copy the streams, no quality loss.
-            "mkv" => "-map 0 -c copy",
-            _ => "-c:v libx264 -crf 20 -preset medium -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart",
+            "mkv" => await TranscodeAsync(context, name, o => o.WithCustomArgument("-map 0 -c copy"), cancellationToken),
+            _ => await TranscodeH264Async(context, name, 20,
+                video => $"{video} -c:a aac -b:a 192k -movflags +faststart", cancellationToken),
         };
-
-        var output = await TranscodeAsync(context, OutputName(input, "." + format), o => o.WithCustomArgument(arguments), cancellationToken);
         return [output];
     }
 }
@@ -215,5 +327,46 @@ public sealed class AudioExtractTool : VideoToolBase
 
         var output = await TranscodeAsync(context, OutputName(input, "." + format), o => o.WithCustomArgument($"-vn {codec}"), cancellationToken);
         return [output];
+    }
+}
+
+/// <summary>Bitrates and resolution that make a video of a given length fit in a given size.</summary>
+public sealed record SizePlan(int VideoKbps, int AudioKbps, int Height)
+{
+    // Below this, H.264 can't keep a picture worth watching, whatever the resolution.
+    private const int MinimumVideoKbps = 80;
+
+    /// <param name="maxHeight">Resolution cap chosen by the user, 0 for none.</param>
+    public static SizePlan For(long targetBytes, double seconds, int sourceHeight, int maxHeight, bool hasAudio)
+    {
+        if (seconds <= 0)
+            throw new ToolException(Strings.Error_MediaUnreadable);
+
+        // 4 % for the MP4 container and the encoder's small overshoots.
+        var totalKbps = targetBytes * 8 * 0.96 / 1000 / seconds;
+        var audioKbps = !hasAudio ? 0 : totalKbps switch
+        {
+            >= 1500 => 128,
+            >= 400 => 96,
+            _ => 48,
+        };
+        var videoKbps = (int)(totalKbps - audioKbps);
+        if (videoKbps < MinimumVideoKbps)
+            throw new ToolException(string.Format(Strings.Error_TargetTooSmall, Math.Ceiling(MinimumVideoKbps * seconds / 8 / 1000 / 0.96 * 1.1)));
+
+        // Roughly what H.264 needs for a clean picture at each height.
+        var height = videoKbps switch
+        {
+            >= 2500 => 0,
+            >= 1200 => 720,
+            >= 600 => 480,
+            _ => 360,
+        };
+        if (maxHeight > 0 && (height == 0 || maxHeight < height))
+            height = maxHeight;
+        // Never upscale.
+        if (sourceHeight > 0 && height >= sourceHeight)
+            height = 0;
+        return new SizePlan(videoKbps, audioKbps, height);
     }
 }

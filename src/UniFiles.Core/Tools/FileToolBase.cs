@@ -13,6 +13,9 @@ public abstract class FileToolBase : IFileTool
 
     public abstract IReadOnlySet<FileKind> AcceptedKinds { get; }
 
+    public virtual bool Accepts(string path) =>
+        AcceptedKinds.Count == 0 || AcceptedKinds.Contains(FileKindDetector.Detect(path));
+
     public virtual bool CombinesInputs => false;
 
     public virtual int MinimumInputs => CombinesInputs ? 2 : 1;

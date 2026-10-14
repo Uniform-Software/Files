@@ -25,6 +25,7 @@ These programs are unmodified. As required by their licenses, their complete cor
 | libvips (NetVips.Native) | LGPL 2.1 or later | https://github.com/libvips/libvips |
 | PDFsharp | MIT | https://github.com/empira/PDFsharp |
 | FFMpegCore | MIT | https://github.com/rosenbjerg/FFMpegCore |
+| PDFium (bblanchon.PDFium binaries), to draw PDF pages | BSD 3-Clause / Apache 2.0 | https://pdfium.googlesource.com/pdfium · binaries: https://github.com/bblanchon/pdfium-binaries |
 | LibVLCSharp | LGPL 2.1 or later | https://code.videolan.org/videolan/LibVLCSharp |
 | LibVLC (VideoLAN.LibVLC.Windows, VideoLAN.LibVLC.Mac) | LGPL 2.1 or later | https://code.videolan.org/videolan/vlc |
 | Microsoft.Data.Sqlite, SQLitePCLRaw | MIT / Apache 2.0 | https://github.com/dotnet/efcore · https://github.com/ericsink/SQLitePCL.raw |

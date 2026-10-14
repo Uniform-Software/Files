@@ -11,9 +11,9 @@ public readonly record struct TimeRange(double Start, double End)
 }
 
 /// <summary>
-/// Keeps one or several passages of a video and joins them. Set up in the video editor, which
-/// stores the passages in the "segments" setting ("0-12.5;20-45.2", in seconds). Without it,
-/// the "start" and "end" options give a single passage.
+/// Keeps one or several passages of a video and joins them, as a video or an animated GIF. Set up
+/// in the video editor, which stores the passages in the "segments" setting ("0-12.5;20-45.2", in
+/// seconds). Without it, the "start" and "end" options give a single passage.
 /// </summary>
 public sealed class VideoTrimTool : VideoToolBase
 {
@@ -31,6 +31,24 @@ public sealed class VideoTrimTool : VideoToolBase
         new TextOption("start", Strings.Option_Start, "0:00") { Hint = Strings.Hint_Time },
         new TextOption("end", Strings.Option_End, "") { Hint = Strings.Hint_EndEmpty },
         new BoolOption("precise", Strings.Option_PreciseCut, true) { Hint = Strings.Hint_PreciseCut },
+        new ChoiceOption("output", Strings.Option_ExportAs,
+        [
+            new Choice("video", Strings.Choice_Video),
+            new Choice("gif", Strings.Choice_Gif),
+        ], "video"),
+        new ChoiceOption("gifWidth", Strings.Option_Width,
+        [
+            new Choice("320", "320 px"),
+            new Choice("480", "480 px"),
+            new Choice("640", "640 px"),
+            new Choice("800", "800 px"),
+        ], "480") { VisibleWhenKey = "output", VisibleWhenValue = "gif" },
+        new ChoiceOption("gifFps", Strings.Option_Fps,
+        [
+            new Choice("10", string.Format(Strings.Unit_Fps, 10)),
+            new Choice("15", string.Format(Strings.Unit_Fps, 15)),
+            new Choice("20", string.Format(Strings.Unit_Fps, 20)),
+        ], "15") { VisibleWhenKey = "output", VisibleWhenValue = "gif" },
     ];
 
     public static string FormatSegments(IEnumerable<TimeRange> ranges) =>
@@ -77,9 +95,42 @@ public sealed class VideoTrimTool : VideoToolBase
             ranges = [new TimeRange(start.TotalSeconds, end == TimeSpan.MaxValue ? double.PositiveInfinity : end.TotalSeconds)];
         }
 
+        if (context.Settings.GetString("output", "video") == "gif")
+            return [await MakeGifAsync(context, input, ranges, cancellationToken)];
+
         return ranges.Count == 1
             ? [await KeepOneAsync(context, input, ranges[0], precise, cancellationToken)]
             : [await KeepSeveralAsync(context, input, ranges, cancellationToken)];
+    }
+
+    /// <summary>
+    /// Animated GIF of the kept passages, with a palette computed for this clip (much cleaner than
+    /// the default 256 web colors), never wider than the source.
+    /// </summary>
+    private static async Task<string> MakeGifAsync(ToolContext context, string input, List<TimeRange> ranges, CancellationToken cancellationToken)
+    {
+        var analysis = await AnalyseAsync(input, cancellationToken);
+        var duration = analysis.Duration.TotalSeconds;
+        var width = context.Settings.GetInt("gifWidth", 480);
+        var fps = context.Settings.GetInt("gifFps", 15);
+
+        var graph = new List<string>();
+        var joined = "";
+        for (var i = 0; i < ranges.Count; i++)
+        {
+            var end = double.IsInfinity(ranges[i].End) ? "" : $":end={Seconds(ranges[i].End)}";
+            graph.Add($"[0:v]trim=start={Seconds(ranges[i].Start)}{end},setpts=PTS-STARTPTS[v{i}]");
+            joined += $"[v{i}]";
+        }
+        graph.Add($"{joined}concat=n={ranges.Count}:v=1:a=0,fps={fps},scale='min({width},iw)':-1:flags=lanczos,split[s0][s1]");
+        graph.Add("[s0]palettegen=stats_mode=diff[p]");
+        graph.Add("[s1][p]paletteuse=dither=bayer:bayer_scale=4:diff_mode=rectangle[g]");
+
+        var expected = TimeSpan.FromSeconds(ranges.Sum(r => Math.Min(r.End, duration) - r.Start));
+        return await TranscodeAsync(context, OutputName(input, ".gif"),
+            o => o.WithCustomArgument($"-filter_complex \"{string.Join(";", graph)}\" -map [g] -an -loop 0"),
+            cancellationToken,
+            expectedDuration: expected);
     }
 
     private static Task<string> KeepOneAsync(ToolContext context, string input, TimeRange range, bool precise, CancellationToken cancellationToken)
@@ -89,18 +140,14 @@ public sealed class VideoTrimTool : VideoToolBase
 
         // Copying streams is instant but can only cut on keyframes; re-encoding is exact (MP4 output).
         var extension = precise ? ".mp4" : Path.GetExtension(input);
-        return TranscodeAsync(context, OutputName(input, extension, " - " + Strings.Suffix_Trimmed),
-            o =>
-            {
-                if (length is { } l)
-                    o.WithCustomArgument($"-t {FormatTime(l)}");
-                o.WithCustomArgument(precise
-                    ? "-c:v libx264 -crf 18 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart"
-                    : "-c copy -avoid_negative_ts make_zero");
-            },
-            cancellationToken,
-            inputOptions: start > TimeSpan.Zero ? i => i.WithCustomArgument($"-ss {FormatTime(start)}") : null,
-            expectedDuration: length);
+        var name = OutputName(input, extension, " - " + Strings.Suffix_Trimmed);
+        var limit = length is { } l ? $"-t {FormatTime(l)} " : "";
+        Action<FFMpegArgumentOptions>? seek = start > TimeSpan.Zero ? i => i.WithCustomArgument($"-ss {FormatTime(start)}") : null;
+        return precise
+            ? TranscodeH264Async(context, name, 18, video => $"{limit}{video} -c:a aac -b:a 192k -movflags +faststart",
+                cancellationToken, seek, length)
+            : TranscodeAsync(context, name, o => o.WithCustomArgument($"{limit}-c copy -avoid_negative_ts make_zero"),
+                cancellationToken, seek, length);
     }
 
     private static async Task<string> KeepSeveralAsync(ToolContext context, string input, List<TimeRange> ranges, CancellationToken cancellationToken)
@@ -137,10 +184,8 @@ public sealed class VideoTrimTool : VideoToolBase
         var maps = hasAudio ? "-map [v] -map [a]" : "-map [v]";
         var expected = TimeSpan.FromSeconds(ranges.Sum(r => Math.Min(r.End, analysis.Duration.TotalSeconds) - r.Start));
 
-        return await TranscodeAsync(context, OutputName(input, ".mp4", " - " + Strings.Suffix_Trimmed),
-            o => o.WithCustomArgument(
-                $"-filter_complex \"{string.Join(";", graph)}\" {maps} " +
-                "-c:v libx264 -crf 18 -preset fast -pix_fmt yuv420p -c:a aac -b:a 192k -movflags +faststart"),
+        return await TranscodeH264Async(context, OutputName(input, ".mp4", " - " + Strings.Suffix_Trimmed), 18,
+            video => $"-filter_complex \"{string.Join(";", graph)}\" {maps} {video} -c:a aac -b:a 192k -movflags +faststart",
             cancellationToken,
             expectedDuration: expected);
     }

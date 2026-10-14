@@ -1,10 +1,13 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using UniFiles.App.Services;
 using UniFiles.Core;
 using UniFiles.Core.Resources;
+using UniFiles.Core.Storage;
 using UniFiles.Core.Tools;
+using UniFiles.Core.Tools.Pdf;
 using UniFiles.Core.Tools.Video;
 
 namespace UniFiles.App.ViewModels;
@@ -35,8 +38,24 @@ public sealed class ToolItemViewModel(IFileTool tool)
     public override string ToString() => $"{Name}. {Description}";
 }
 
-/// <summary>"Réglages d'une action": choose a tool, tune it, see the estimate, launch.</summary>
-public partial class ActionViewModel : PageViewModel
+/// <summary>A saved preset offered for the current files.</summary>
+public sealed class PresetItemViewModel(ToolPreset preset, IFileTool tool)
+{
+    public ToolPreset Preset { get; } = preset;
+
+    public IFileTool Tool { get; } = tool;
+
+    public ModuleInfo Module { get; } = ModuleInfo.For(tool.Module);
+
+    public string Name => Preset.Name;
+
+    public string ToolName => Tool.Name;
+
+    public override string ToString() => $"{Name}. {ToolName}";
+}
+
+/// <summary>"Réglages d'une action": choose a tool or a preset, tune it, see the estimate, launch.</summary>
+public partial class ActionViewModel : PageViewModel, IDisposable
 {
     private const int MaxPreviewRows = 200;
 
@@ -51,7 +70,129 @@ public partial class ActionViewModel : PageViewModel
         _preferredModule = preferredModule;
         foreach (var file in files)
             Files.Add(new FileItemViewModel(file));
+
+        // Settings change in bursts (sliders): render the comparison once they settle.
+        _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
+        _previewTimer.Tick += (_, _) =>
+        {
+            _previewTimer.Stop();
+            _ = RenderComparisonAsync();
+        };
         RefreshTools();
+    }
+
+    // ---- Before/after comparison (image tools) -------------------------------------------
+
+    private readonly DispatcherTimer _previewTimer;
+    private readonly string _previewFolder = Path.Combine(Path.GetTempPath(), $"unifiles-preview-{Guid.NewGuid():N}");
+    private CancellationTokenSource? _previewCancellation;
+
+    /// <summary>The file shown in the comparison (selected in the file list).</summary>
+    [ObservableProperty]
+    private FileItemViewModel? _comparisonFile;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasComparison))]
+    private ImagePreview? _comparison;
+
+    [ObservableProperty]
+    private bool _comparisonBusy;
+
+    [ObservableProperty]
+    private string? _comparisonError;
+
+    /// <summary>1:1 crop of the center rather than the whole picture.</summary>
+    [ObservableProperty]
+    private bool _comparisonActualPixels;
+
+    public bool HasComparison => Comparison is not null;
+
+    public bool CanCompare => SelectedTool?.Tool is { Module: ToolModule.Images, CombinesInputs: false } && ComparisonFile is not null;
+
+    public string? ComparisonSizes => Comparison is { } c ? Format.Gain(c.BeforeBytes, c.AfterBytes) : null;
+
+    partial void OnComparisonFileChanged(FileItemViewModel? value) => ScheduleComparison();
+
+    partial void OnComparisonActualPixelsChanged(bool value) => ScheduleComparison();
+
+    partial void OnComparisonChanged(ImagePreview? oldValue, ImagePreview? newValue)
+    {
+        oldValue?.Dispose();
+        OnPropertyChanged(nameof(ComparisonSizes));
+    }
+
+    private void ScheduleComparison()
+    {
+        OnPropertyChanged(nameof(CanCompare));
+        _previewCancellation?.Cancel();
+        _previewTimer.Stop();
+        if (CanCompare)
+        {
+            ComparisonBusy = true;
+            _previewTimer.Start();
+        }
+        else
+        {
+            ComparisonBusy = false;
+            Comparison = null;
+        }
+    }
+
+    private async Task RenderComparisonAsync()
+    {
+        if (SelectedTool?.Tool is not { } tool || ComparisonFile is not { } file || !CanCompare || Warning is not null)
+        {
+            ComparisonBusy = false;
+            return;
+        }
+
+        var cancellation = new CancellationTokenSource();
+        _previewCancellation = cancellation;
+        ComparisonBusy = true;
+        ComparisonError = null;
+        try
+        {
+            Directory.CreateDirectory(_previewFolder);
+            var preview = await ImagePreview.CreateAsync(tool, file.Path, CurrentSettings(), _previewFolder, ComparisonActualPixels, cancellation.Token);
+            if (cancellation.IsCancellationRequested)
+            {
+                preview.Dispose();
+                return;
+            }
+            Comparison = preview;
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        catch (ToolException ex)
+        {
+            Comparison = null;
+            ComparisonError = ex.Message;
+        }
+        catch (Exception ex) when (ex is IOException or NetVips.VipsException)
+        {
+            Comparison = null;
+            ComparisonError = Strings.Error_ImageUnreadable;
+        }
+        if (_previewCancellation == cancellation)
+            ComparisonBusy = false;
+    }
+
+    public void Dispose()
+    {
+        _previewTimer.Stop();
+        _previewCancellation?.Cancel();
+        Comparison = null;
+        try
+        {
+            if (Directory.Exists(_previewFolder))
+                Directory.Delete(_previewFolder, recursive: true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // A file still being written: the system cleans its temp folder eventually.
+        }
     }
 
     public ObservableCollection<FileItemViewModel> Files { get; } = [];
@@ -61,6 +202,21 @@ public partial class ActionViewModel : PageViewModel
     public ObservableCollection<OptionViewModel> Options { get; } = [];
 
     public ObservableCollection<PreviewRow> PreviewRows { get; } = [];
+
+    public ObservableCollection<PresetItemViewModel> Presets { get; } = [];
+
+    public bool HasPresets => Presets.Count > 0;
+
+    /// <summary>The preset whose values are shown, until a setting is changed.</summary>
+    [ObservableProperty]
+    private PresetItemViewModel? _activePreset;
+
+    [ObservableProperty]
+    private bool _isSavingPreset;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(SavePresetCommand))]
+    private string _presetName = "";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasTool), nameof(LaunchLabel), nameof(HasOptions))]
@@ -96,7 +252,11 @@ public partial class ActionViewModel : PageViewModel
     /// <summary>Shown when the files are of different kinds, so only shared actions remain.</summary>
     public bool IsMixed => Files.Select(f => FileKindDetector.Detect(f.Path)).Distinct().Count() > 1;
 
-    partial void OnSelectedToolChanged(ToolItemViewModel? value) => BuildOptions();
+    partial void OnSelectedToolChanged(ToolItemViewModel? value)
+    {
+        ActivePreset = null;
+        BuildOptions();
+    }
 
     partial void OnEstimateChanged(string? value) => OnPropertyChanged(nameof(HasEstimate));
 
@@ -117,6 +277,9 @@ public partial class ActionViewModel : PageViewModel
             Tools.Add(tool);
 
         SelectedTool = Tools.FirstOrDefault(t => t.Tool == previous) ?? Tools.FirstOrDefault();
+        RefreshPresets();
+        if (ComparisonFile is null || !Files.Contains(ComparisonFile))
+            ComparisonFile = Files.FirstOrDefault(f => FileKindDetector.Detect(f.Path) == FileKind.Image);
         OnPropertyChanged(nameof(FilesSummary));
         OnPropertyChanged(nameof(IsMixed));
         LaunchCommand.NotifyCanExecuteChanged();
@@ -155,7 +318,81 @@ public partial class ActionViewModel : PageViewModel
         Update();
     }
 
-    private void OnOptionChanged(object? sender, EventArgs e) => Update();
+    private void OnOptionChanged(object? sender, EventArgs e)
+    {
+        if (!_applyingPreset)
+            ActivePreset = null;
+        Update();
+    }
+
+    private bool _applyingPreset;
+
+    private void RefreshPresets()
+    {
+        Presets.Clear();
+        foreach (var preset in _services.Settings.Presets)
+        {
+            if (Tools.FirstOrDefault(t => t.Tool.Id == preset.ToolId && !t.Tool.NeedsEditor) is { } tool)
+                Presets.Add(new PresetItemViewModel(preset, tool.Tool));
+        }
+        OnPropertyChanged(nameof(HasPresets));
+    }
+
+    [RelayCommand]
+    private void ApplyPreset(PresetItemViewModel preset)
+    {
+        SelectedTool = Tools.FirstOrDefault(t => t.Tool.Id == preset.Tool.Id) ?? SelectedTool;
+        _applyingPreset = true;
+        try
+        {
+            foreach (var option in Options)
+            {
+                if (preset.Preset.Values.TryGetValue(option.Key, out var value))
+                    option.Restore(value);
+            }
+        }
+        finally
+        {
+            _applyingPreset = false;
+        }
+        ActivePreset = preset;
+        IsSavingPreset = false;
+        Update();
+    }
+
+    [RelayCommand]
+    private void StartSavingPreset()
+    {
+        PresetName = ActivePreset?.Name ?? "";
+        IsSavingPreset = true;
+    }
+
+    [RelayCommand]
+    private void CancelSavingPreset() => IsSavingPreset = false;
+
+    private bool CanSavePreset() => !string.IsNullOrWhiteSpace(PresetName);
+
+    [RelayCommand(CanExecute = nameof(CanSavePreset))]
+    private void SavePreset()
+    {
+        if (SelectedTool?.Tool is not { } tool)
+            return;
+        var name = PresetName.Trim();
+        var saved = _services.SavePreset(tool, name, CurrentSettings());
+        IsSavingPreset = false;
+        RefreshPresets();
+        ActivePreset = Presets.FirstOrDefault(p => p.Preset == saved);
+        _main.ShowNotification(string.Format(Strings.Preset_Saved, name));
+    }
+
+    [RelayCommand]
+    private void DeletePreset(PresetItemViewModel preset)
+    {
+        _services.DeletePreset(preset.Preset);
+        if (ActivePreset == preset)
+            ActivePreset = null;
+        RefreshPresets();
+    }
 
     private ToolSettings CurrentSettings() =>
         new(Options.ToDictionary(o => o.Key, o => o.CurrentValue));
@@ -202,6 +439,7 @@ public partial class ActionViewModel : PageViewModel
             }
         }
         OnPropertyChanged(nameof(HasPreview));
+        ScheduleComparison();
     }
 
     // A missing program (ffmpeg, Ghostscript) would fail every file: don't let the job start.
@@ -216,6 +454,11 @@ public partial class ActionViewModel : PageViewModel
         if (tool is VideoTrimTool trim)
         {
             _main.OpenTrimEditor(trim, Files[0].Path, this);
+            return;
+        }
+        if (tool is PdfOrganizeTool organize)
+        {
+            _main.OpenPdfOrganizer(organize, Files[0].Path, this);
             return;
         }
 

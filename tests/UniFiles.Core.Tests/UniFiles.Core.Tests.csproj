@@ -15,6 +15,11 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- Sample files that can't be generated in code (e.g. HEIC: libvips decodes it but can't encode it). -->
+  <ItemGroup>
+    <None Include="Fixtures\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\UniFiles.Core\UniFiles.Core.csproj" />
   </ItemGroup>

@@ -200,6 +200,29 @@
     <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
   </Style>
 
+  <!-- Preset chip: the whole chip is the button, without a second outline. -->
+  <Style Selector="Border.preset Button.ghost">
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="Background" Value="Transparent" />
+  </Style>
+
+  <!-- File list of the action screen: the selected file is the one compared, marked quietly. -->
+  <Style Selector="ListBox.files ListBoxItem">
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Margin" Value="0,0,0,2" />
+  </Style>
+  <Style Selector="ListBox.files ListBoxItem:selected /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+    <Setter Property="BorderBrush" Value="{StaticResource LemonBrush}" />
+    <Setter Property="BorderThickness" Value="2,0,0,0" />
+  </Style>
+  <Style Selector="ListBox.files ListBoxItem:selected">
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+  </Style>
+  <Style Selector="ListBox.files ListBoxItem:pointerover /template/ ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+  </Style>
+
   <!-- Loader: three squares that bounce. Each dot owns its TranslateTransform (see Loader.axaml). Disabled when motion is reduced. -->
   <Style Selector="Border.loaderDot">
     <Setter Property="Width" Value="8" />

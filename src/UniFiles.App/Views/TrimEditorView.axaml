@@ -103,7 +103,16 @@
     <!-- Summary and export -->
     <DockPanel Grid.Row="4">
       <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="16">
-        <StackPanel IsVisible="{Binding CanExportFast}" VerticalAlignment="Center">
+        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+          <TextBlock Classes="label" Text="{x:Static res:Strings.Option_ExportAs}" VerticalAlignment="Center" />
+          <ComboBox ItemsSource="{Binding OutputFormat.Choices}" SelectedItem="{Binding OutputFormat.Selected}" MinWidth="0" Width="150"
+                    AutomationProperties.Name="{x:Static res:Strings.Option_ExportAs}" />
+          <ComboBox ItemsSource="{Binding GifWidth.Choices}" SelectedItem="{Binding GifWidth.Selected}" IsVisible="{Binding IsGif}" MinWidth="0" Width="120"
+                    AutomationProperties.Name="{x:Static res:Strings.Option_Width}" ToolTip.Tip="{x:Static res:Strings.Option_Width}" />
+          <ComboBox ItemsSource="{Binding GifFps.Choices}" SelectedItem="{Binding GifFps.Selected}" IsVisible="{Binding IsGif}" MinWidth="0" Width="120"
+                    AutomationProperties.Name="{x:Static res:Strings.Option_Fps}" ToolTip.Tip="{x:Static res:Strings.Option_Fps}" />
+        </StackPanel>
+        <StackPanel IsVisible="{Binding ShowFastToggle}" VerticalAlignment="Center">
           <ToggleSwitch IsChecked="{Binding ExportFast}" Content="{x:Static res:Strings.Editor_Fast}" OnContent="" OffContent=""
                         ToolTip.Tip="{x:Static res:Strings.Hint_PreciseCut}" />
         </StackPanel>
@@ -117,7 +126,8 @@
       </StackPanel>
       <StackPanel VerticalAlignment="Center" Spacing="2">
         <TextBlock Classes="label" Text="{Binding Summary}" />
-        <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_Help}" TextWrapping="Wrap" />
+        <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_Help}" TextWrapping="Wrap" IsVisible="{Binding !IsGif}" />
+        <TextBlock Classes="caption" Text="{x:Static res:Strings.Editor_GifHint}" TextWrapping="Wrap" IsVisible="{Binding IsGif}" />
       </StackPanel>
     </DockPanel>
   </Grid>

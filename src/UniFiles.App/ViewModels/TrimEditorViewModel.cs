@@ -45,12 +45,41 @@ public partial class TrimEditorViewModel : PageViewModel, IDisposable
         _segments = [];
         _thumbnails = new Bitmap?[ThumbnailCount];
 
+        // Export format (video or GIF and its size), as last used.
+        var saved = _services.Settings.ToolSettings.GetValueOrDefault(tool.Id);
+        ChoiceOptionViewModel Choice(string key)
+        {
+            var option = new ChoiceOptionViewModel(tool.Options.OfType<ChoiceOption>().First(o => o.Key == key));
+            if (saved?.TryGetValue(key, out var value) == true)
+                option.Restore(value);
+            option.ValueChanged += (_, _) =>
+            {
+                OnPropertyChanged(nameof(IsGif));
+                OnPropertyChanged(nameof(ShowFastToggle));
+            };
+            return option;
+        }
+        OutputFormat = Choice("output");
+        GifWidth = Choice("gifWidth");
+        GifFps = Choice("gifFps");
+
         // Follows the player ~30 times a second for a smooth playhead.
         _clock = new DispatcherTimer(TimeSpan.FromMilliseconds(33), DispatcherPriority.Background, (_, _) => Tick());
         _ = LoadAsync();
     }
 
     public string FilePath { get; }
+
+    public ChoiceOptionViewModel OutputFormat { get; }
+
+    public ChoiceOptionViewModel GifWidth { get; }
+
+    public ChoiceOptionViewModel GifFps { get; }
+
+    public bool IsGif => OutputFormat.Selected.Value == "gif";
+
+    /// <summary>"Fast export" copies video streams: meaningless for a GIF.</summary>
+    public bool ShowFastToggle => CanExportFast && !IsGif;
 
     public string FileName { get; }
 
@@ -64,7 +93,7 @@ public partial class TrimEditorViewModel : PageViewModel, IDisposable
     private double _position;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Summary), nameof(CanExportFast), nameof(CurrentSegmentKept), nameof(ToggleLabel))]
+    [NotifyPropertyChangedFor(nameof(Summary), nameof(CanExportFast), nameof(ShowFastToggle), nameof(CurrentSegmentKept), nameof(ToggleLabel))]
     [NotifyCanExecuteChangedFor(nameof(ExportCommand), nameof(ResetCommand), nameof(ToggleSegmentCommand))]
     private IReadOnlyList<TimelineSegment> _segments;
 
@@ -359,6 +388,10 @@ public partial class TrimEditorViewModel : PageViewModel, IDisposable
     private void Export()
     {
         var settings = _services.LoadToolSettings(_tool);
+        foreach (var option in new[] { OutputFormat, GifWidth, GifFps })
+            settings[option.Key] = option.CurrentValue;
+        _services.SaveToolSettings(_tool, settings);
+
         settings[VideoTrimTool.SegmentsKey] = VideoTrimTool.FormatSegments(KeptRanges());
         settings["precise"] = !(ExportFast && CanExportFast);
         _services.Queue.Enqueue(_tool, [FilePath], settings, _services.OutputFolder);

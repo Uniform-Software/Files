@@ -178,4 +178,24 @@ public class StorageTests
         File.WriteAllText(temp.File("settings.json"), "{ not json");
         Assert.Equal(AppTheme.Dark, store.Load().Theme);
     }
+
+    [Fact]
+    public void Presets_keep_their_values()
+    {
+        using var temp = new TempFolder();
+        var store = new SettingsStore(temp.File("settings.json"));
+        var settings = new AppSettings();
+        settings.Presets.Add(new ToolPreset
+        {
+            Name = "Web 1600 px",
+            ToolId = "image.resize",
+            Values = new() { ["maxWidth"] = System.Text.Json.JsonSerializer.SerializeToElement(1600) },
+        });
+        store.Save(settings);
+
+        var preset = Assert.Single(store.Load().Presets);
+        Assert.Equal(("Web 1600 px", "image.resize"), (preset.Name, preset.ToolId));
+        Assert.Equal(1600, preset.Values["maxWidth"].GetInt32());
+        Assert.Equal(settings.Presets[0].Id, preset.Id);
+    }
 }

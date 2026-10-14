@@ -19,6 +19,9 @@ public interface IFileTool
     /// <summary>Kinds of files this tool accepts. Empty means any file.</summary>
     IReadOnlySet<FileKind> AcceptedKinds { get; }
 
+    /// <summary>Whether this file can be processed: its kind, and for some tools its exact format.</summary>
+    bool Accepts(string path);
+
     /// <summary>
     /// True when all inputs produce a single result (merge, images to PDF).
     /// False when each input is processed on its own.

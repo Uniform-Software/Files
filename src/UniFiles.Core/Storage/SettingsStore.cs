@@ -27,11 +27,33 @@ public sealed class AppSettings
     /// <summary>Closing the window hides it in the notification area instead of quitting.</summary>
     public bool KeepInTray { get; set; } = true;
 
+    /// <summary>Encodes videos with the computer's video chip when one is available.</summary>
+    public bool HardwareAcceleration { get; set; } = true;
+
+    /// <summary>Looks for a new version on GitHub at startup and installs it when the app quits.</summary>
+    public bool CheckForUpdates { get; set; } = true;
+
     /// <summary>The "UniFiles" submenu in the file explorer's right-click menu.</summary>
     public bool ContextMenuEnabled { get; set; }
 
     /// <summary>Last values chosen for each tool, keyed by tool id then option key.</summary>
     public Dictionary<string, Dictionary<string, JsonElement>> ToolSettings { get; set; } = [];
+
+    /// <summary>Named settings saved by the user ("Web 1600 px WebP"), in the order they were created.</summary>
+    public List<ToolPreset> Presets { get; set; } = [];
+}
+
+/// <summary>A tool with saved settings, launched in one click (action screen, right-click menu).</summary>
+public sealed class ToolPreset
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..12];
+
+    public string Name { get; set; } = "";
+
+    public string ToolId { get; set; } = "";
+
+    /// <summary>Option values, keyed by option key.</summary>
+    public Dictionary<string, JsonElement> Values { get; set; } = [];
 }
 
 /// <summary>Reads and writes the preferences as JSON in the user's application data folder.</summary>

@@ -238,4 +238,75 @@
   <data name="Error_InvalidTime" xml:space="preserve"><value>"{0}" isn't a valid time. Use seconds or minutes:seconds, e.g. 1:30.</value></data>
   <data name="Error_EndBeforeStart" xml:space="preserve"><value>The end must come after the start.</value></data>
   <data name="Error_ProgramMissing" xml:space="preserve"><value>{0} was not found on this computer. Install it, or place it in the "tools" folder next to UniFiles.</value></data>
+  <data name="Update_Title" xml:space="preserve"><value>Updates</value></data>
+  <data name="Update_Auto" xml:space="preserve"><value>Check for updates at startup</value></data>
+  <data name="Update_AutoHint" xml:space="preserve"><value>UniFiles asks GitHub for the latest version, then downloads it in the background. It's installed when you quit UniFiles. Nothing else is ever sent.</value></data>
+  <data name="Update_CheckNow" xml:space="preserve"><value>Check now</value></data>
+  <data name="Update_RestartNow" xml:space="preserve"><value>Restart and update</value></data>
+  <data name="Update_Checking" xml:space="preserve"><value>Looking for a new version…</value></data>
+  <data name="Update_UpToDate" xml:space="preserve"><value>UniFiles is up to date.</value></data>
+  <data name="Update_Downloading" xml:space="preserve"><value>Downloading version {0}… {1} %</value></data>
+  <data name="Update_Ready" xml:space="preserve"><value>Version {0} is ready. It will be installed when you quit UniFiles.</value></data>
+  <data name="Update_Failed" xml:space="preserve"><value>Couldn't check for updates (no connection?). UniFiles will try again at the next launch.</value></data>
+  <data name="Update_Unsupported" xml:space="preserve"><value>Automatic updates only work with a packaged UniFiles (installer, disk image or portable package), not with a development build.</value></data>
+  <data name="Update_ReadyNotification" xml:space="preserve"><value>UniFiles {0} is ready: it will be installed when you quit the app.</value></data>
+  <data name="Tool_ImageHeic_Name" xml:space="preserve"><value>Convert iPhone photos (HEIC)</value></data>
+  <data name="Tool_ImageHeic_Description" xml:space="preserve"><value>HEIC to JPG or PNG, which every app and website opens</value></data>
+  <data name="Option_CompressMode" xml:space="preserve"><value>Compress</value></data>
+  <data name="Choice_ByQuality" xml:space="preserve"><value>By quality</value></data>
+  <data name="Choice_BySize" xml:space="preserve"><value>To a target size</value></data>
+  <data name="Option_TargetSize" xml:space="preserve"><value>Maximum size per file</value></data>
+  <data name="Hint_TargetSizeImage" xml:space="preserve"><value>UniFiles finds the best quality under this size, and reduces the dimensions only if it has to.</value></data>
+  <data name="Choice_Target10" xml:space="preserve"><value>10 MB (Discord)</value></data>
+  <data name="Choice_Target25" xml:space="preserve"><value>25 MB (e-mail)</value></data>
+  <data name="Choice_Target100" xml:space="preserve"><value>100 MB (WhatsApp)</value></data>
+  <data name="Hint_TargetSizeVideo" xml:space="preserve"><value>UniFiles spreads the size over the whole video and lowers the resolution if needed to keep it sharp. Takes about twice as long.</value></data>
+  <data name="Error_TargetTooSmall" xml:space="preserve"><value>This video is too long for that size. Choose at least {0} MB, or cut it first.</value></data>
+  <data name="Common_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="Preset_Title" xml:space="preserve"><value>My presets</value></data>
+  <data name="Preset_Save" xml:space="preserve"><value>Save as preset</value></data>
+  <data name="Preset_SaveConfirm" xml:space="preserve"><value>Save</value></data>
+  <data name="Preset_NameLabel" xml:space="preserve"><value>Preset name</value></data>
+  <data name="Preset_NameExample" xml:space="preserve"><value>e.g. Website 1600 px</value></data>
+  <data name="Preset_SaveHint" xml:space="preserve"><value>The action and these settings, in one click here and in the right-click menu. A preset with the same name is replaced.</value></data>
+  <data name="Preset_Saved" xml:space="preserve"><value>Preset "{0}" saved</value></data>
+  <data name="Preset_Active" xml:space="preserve"><value>Preset: {0}</value></data>
+  <data name="Preset_Delete" xml:space="preserve"><value>Delete this preset</value></data>
+  <data name="Option_ExportAs" xml:space="preserve"><value>Export as</value></data>
+  <data name="Choice_Video" xml:space="preserve"><value>Video</value></data>
+  <data name="Choice_Gif" xml:space="preserve"><value>Animated GIF</value></data>
+  <data name="Option_Width" xml:space="preserve"><value>Width</value></data>
+  <data name="Option_Fps" xml:space="preserve"><value>Frames per second</value></data>
+  <data name="Editor_GifHint" xml:space="preserve"><value>GIFs have no sound and get heavy quickly: keep them under 10 seconds.</value></data>
+  <data name="Prefs_Hardware" xml:space="preserve"><value>Hardware video encoding</value></data>
+  <data name="Prefs_HardwareHint" xml:space="preserve"><value>Uses your computer's video chip to compress, convert and cut videos several times faster. Files are slightly bigger. Target sizes and WebM always use the processor.</value></data>
+  <data name="Prefs_HardwareFound" xml:space="preserve"><value>Video chip found: {0}.</value></data>
+  <data name="Prefs_HardwareNone" xml:space="preserve"><value>No compatible video chip found: videos are encoded by the processor (x264).</value></data>
+  <data name="Compare_Title" xml:space="preserve"><value>Before / after</value></data>
+  <data name="Compare_ActualPixels" xml:space="preserve"><value>100 %</value></data>
+  <data name="Compare_ActualPixelsHint" xml:space="preserve"><value>Show the center of the picture at actual size, to judge the details</value></data>
+  <data name="Compare_Help" xml:space="preserve"><value>Drag the handle (or use the arrow keys) to compare. Click a file in the list to preview it. The size shown is the real result.</value></data>
+  <data name="Error_PdfProtected" xml:space="preserve"><value>This PDF is protected by a password. Remove the password first, then try again.</value></data>
+  <data name="Tool_PdfOrganize_Name" xml:space="preserve"><value>Organize pages</value></data>
+  <data name="Tool_PdfOrganize_Description" xml:space="preserve"><value>Reorder, rotate or remove pages</value></data>
+  <data name="Suffix_Organized" xml:space="preserve"><value>organized</value></data>
+  <data name="Error_NoPages" xml:space="preserve"><value>Keep at least one page.</value></data>
+  <data name="Organizer_Page" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="Organizer_Pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="Organizer_Remove" xml:space="preserve"><value>Remove this page</value></data>
+  <data name="Organizer_Restore" xml:space="preserve"><value>Put this page back</value></data>
+  <data name="Organizer_Removed" xml:space="preserve"><value>Removed</value></data>
+  <data name="Organizer_MoveLeft" xml:space="preserve"><value>Move before</value></data>
+  <data name="Organizer_MoveRight" xml:space="preserve"><value>Move after</value></data>
+  <data name="Organizer_RotateLeft" xml:space="preserve"><value>Rotate left</value></data>
+  <data name="Organizer_RotateRight" xml:space="preserve"><value>Rotate right</value></data>
+  <data name="Organizer_RotateAll" xml:space="preserve"><value>Rotate all</value></data>
+  <data name="Organizer_Reset" xml:space="preserve"><value>Start over</value></data>
+  <data name="Organizer_Export" xml:space="preserve"><value>Create the PDF</value></data>
+  <data name="Organizer_Summary" xml:space="preserve"><value>{0} of {1} pages kept</value></data>
+  <data name="Organizer_Help" xml:space="preserve"><value>Drag a page onto another to move it there. Removed pages stay visible until you create the PDF.</value></data>
+  <data name="ContextMenu_MacItem" xml:space="preserve"><value>UniFiles · {0}</value></data>
+  <data name="Prefs_ContextMenuMac" xml:space="preserve"><value>Finder Quick Actions</value></data>
+  <data name="Prefs_ContextMenuHintMac" xml:space="preserve"><value>Adds UniFiles actions and your presets to the Finder's right-click menu, under Quick Actions. You can show or hide each one in System Settings › Keyboard › Keyboard Shortcuts › Services.</value></data>
+  <data name="Unit_Fps" xml:space="preserve"><value>{0} fps</value></data>
 </root>

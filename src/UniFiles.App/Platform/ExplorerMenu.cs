@@ -1,9 +1,10 @@
 using UniFiles.Core;
+using UniFiles.Core.Storage;
 using UniFiles.Core.Tools;
 
 namespace UniFiles.App.Platform;
 
-/// <summary>Adds the "UniFiles" submenu to the file manager's right-click menu.</summary>
+/// <summary>Adds UniFiles actions to the file manager's right-click menu (Explorer submenu, Finder Quick Actions).</summary>
 public interface IContextMenuInstaller
 {
     /// <summary>False on systems not handled yet: the preference is then shown as unavailable.</summary>
@@ -11,8 +12,11 @@ public interface IContextMenuInstaller
 
     bool IsInstalled { get; }
 
-    /// <summary>Installs or refreshes the menu (labels follow the current language, commands the current executable).</summary>
-    void Install(string executablePath, ToolCatalog catalog);
+    /// <summary>
+    /// Installs or refreshes the menu (labels follow the current language, commands the current
+    /// executable). Presets come after the tools, for the files their tool accepts.
+    /// </summary>
+    void Install(string executablePath, ToolCatalog catalog, IReadOnlyList<ToolPreset> presets);
 
     void Uninstall();
 }
@@ -20,7 +24,9 @@ public interface IContextMenuInstaller
 public static class ExplorerMenu
 {
     public static IContextMenuInstaller Installer { get; } =
-        OperatingSystem.IsWindows() ? new WindowsContextMenuInstaller() : new UnsupportedContextMenuInstaller();
+        OperatingSystem.IsWindows() ? new WindowsContextMenuInstaller()
+        : OperatingSystem.IsMacOS() ? new MacQuickActionsInstaller()
+        : new UnsupportedContextMenuInstaller();
 
     /// <summary>File extensions that get the menu, by kind.</summary>
     public static IReadOnlyDictionary<FileKind, string[]> Extensions { get; } = new Dictionary<FileKind, string[]>
@@ -31,9 +37,13 @@ public static class ExplorerMenu
         [FileKind.Audio] = [".mp3", ".wav", ".flac", ".ogg", ".opus", ".m4a", ".aac"],
     };
 
-    /// <summary>Quick actions offered for a kind of file: every tool accepting it, except renaming (it needs a pattern) and editor-based tools.</summary>
-    public static IEnumerable<IFileTool> QuickActionsFor(ToolCatalog catalog, FileKind kind) =>
-        catalog.Tools.Where(t => t.Module != ToolModule.Rename && !t.NeedsEditor && t.AcceptedKinds.Contains(kind));
+    /// <summary>Quick actions offered for a file extension: every tool accepting it, except renaming (it needs a pattern) and editor-based tools.</summary>
+    public static IEnumerable<IFileTool> QuickActionsFor(ToolCatalog catalog, string extension) =>
+        catalog.Tools.Where(t => t.Module != ToolModule.Rename && !t.NeedsEditor && t.AcceptedKinds.Count > 0 && t.Accepts("file" + extension));
+
+    /// <summary>Presets whose tool works on a file extension, in creation order.</summary>
+    public static IEnumerable<ToolPreset> PresetsFor(ToolCatalog catalog, IReadOnlyList<ToolPreset> presets, string extension) =>
+        presets.Where(p => catalog.Find(p.ToolId) is { NeedsEditor: false } tool && tool.Accepts("file" + extension));
 }
 
 internal sealed class UnsupportedContextMenuInstaller : IContextMenuInstaller
@@ -42,7 +52,7 @@ internal sealed class UnsupportedContextMenuInstaller : IContextMenuInstaller
 
     public bool IsInstalled => false;
 
-    public void Install(string executablePath, ToolCatalog catalog) { }
+    public void Install(string executablePath, ToolCatalog catalog, IReadOnlyList<ToolPreset> presets) { }
 
     public void Uninstall() { }
 }
