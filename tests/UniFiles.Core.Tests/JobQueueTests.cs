@@ -27,6 +27,17 @@ public class JobQueueTests
         }
     }
 
+    /// <summary>Polls a condition: timing tests must not depend on how fast the machine is.</summary>
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!condition())
+        {
+            Assert.True(DateTime.UtcNow < deadline, "Condition not reached within 10 seconds.");
+            await Task.Delay(20);
+        }
+    }
+
     private static List<string> MakeInputs(TempFolder temp, params string[] names) =>
         names.Select(n =>
         {
@@ -93,12 +104,15 @@ public class JobQueueTests
         var job = queue.Enqueue(new FakeTool(delayMs: 100, parallelism: 1), inputs, new ToolSettings(), new OutputFolder(temp.Sub("out")));
         await Task.Delay(150);
         job.Pause();
-        await Task.Delay(400);
+
+        // The file already running finishes first (however slow the machine), then nothing starts.
+        await WaitUntil(() => job.Items.All(i => i.Status != WorkStatus.Running));
         var doneWhilePaused = job.DoneCount;
         await Task.Delay(400);
 
         Assert.Equal(JobStatus.Paused, job.Status);
         Assert.Equal(doneWhilePaused, job.DoneCount);
+        Assert.True(doneWhilePaused < 10);
 
         job.Resume();
         await job.Completion.WaitAsync(TimeSpan.FromSeconds(10));
