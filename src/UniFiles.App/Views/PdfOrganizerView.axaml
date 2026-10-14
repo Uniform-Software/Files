@@ -1,0 +1,145 @@
+<!--
+  Page organizer: a grid of page thumbnails. Drag a page onto another to move it there, or use its
+  buttons (keyboard friendly): move left/right, rotate, remove.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.PdfOrganizerView"
+             x:DataType="vm:PdfOrganizerViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.page">
+      <Setter Property="Width" Value="184" />
+      <Setter Property="Margin" Value="0,0,14,14" />
+      <Setter Property="Padding" Value="10" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusCard}" />
+      <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.page.dropTarget">
+      <Setter Property="BorderBrush" Value="{StaticResource LemonBrush}" />
+      <Setter Property="BorderThickness" Value="2" />
+    </Style>
+    <Style Selector="Border.page.removed Panel.sheet">
+      <Setter Property="Opacity" Value="0.3" />
+    </Style>
+    <!-- A blank sheet until the thumbnail arrives, then the page's own shape. -->
+    <Style Selector="Border.sheet.loading">
+      <Setter Property="Width" Value="140" />
+      <Setter Property="Height" Value="180" />
+    </Style>
+    <Style Selector="Border.page Button.icon">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="MinWidth" Value="30" />
+      <Setter Property="MinHeight" Value="30" />
+      <Setter Property="Padding" Value="0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="0,0,0,24">
+
+    <!-- Header -->
+    <DockPanel Grid.Row="0" Margin="0,0,0,16">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Button Classes="ghost" Command="{Binding RotateAllCommand}" Content="{x:Static res:Strings.Organizer_RotateAll}" />
+        <Button Classes="ghost" Command="{Binding ResetCommand}" Content="{x:Static res:Strings.Organizer_Reset}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Classes="icon" Command="{Binding BackCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_Back}">
+          <controls:Icon Size="20" Data="{StaticResource IconBack}" />
+        </Button>
+        <StackPanel VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <controls:ModuleBadge Size="34" Tile="{StaticResource PdfBrush}" Icon="{StaticResource IconPdf}" />
+            <TextBlock Classes="h1" Text="{x:Static res:Strings.Tool_PdfOrganize_Name}" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Classes="caption" Text="{Binding FileName}" />
+        </StackPanel>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- Pages -->
+    <Panel Grid.Row="1">
+      <controls:Loader HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsLoading}" />
+      <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding HasError}" TextWrapping="Wrap"
+                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+      <ScrollViewer>
+        <ItemsControl x:Name="PageList" ItemsSource="{Binding Pages}" AutomationProperties.Name="{x:Static res:Strings.Organizer_Pages}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:PageTileViewModel">
+              <Border Classes="page" Classes.removed="{Binding IsRemoved}" Classes.dropTarget="{Binding IsDropTarget}"
+                      AutomationProperties.Name="{Binding}">
+                <StackPanel Spacing="8">
+                  <Panel Classes="sheet" Height="200">
+                    <LayoutTransformControl LayoutTransform="{Binding Transform}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                      <Border Classes="sheet" Classes.loading="{Binding Thumbnail, Converter={x:Static ObjectConverters.IsNull}}"
+                              Background="{StaticResource CreamBrush}" CornerRadius="4" ClipToBounds="True">
+                        <Image Source="{Binding Thumbnail}" Stretch="Uniform" MaxWidth="160" MaxHeight="196" />
+                      </Border>
+                    </LayoutTransformControl>
+                  </Panel>
+                  <DockPanel>
+                    <TextBlock Classes="label" Text="{Binding Label}" VerticalAlignment="Center" />
+                    <TextBlock DockPanel.Dock="Right" Classes="caption" Text="{x:Static res:Strings.Organizer_Removed}"
+                               IsVisible="{Binding IsRemoved}" HorizontalAlignment="Right" VerticalAlignment="Center" />
+                  </DockPanel>
+                  <StackPanel Orientation="Horizontal" Spacing="2" HorizontalAlignment="Center">
+                    <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:PdfOrganizerViewModel)DataContext).MoveLeftCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{x:Static res:Strings.Organizer_MoveLeft}" ToolTip.Tip="{x:Static res:Strings.Organizer_MoveLeft}">
+                      <controls:Icon Size="16" Data="{StaticResource IconChevronLeft}" />
+                    </Button>
+                    <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:PdfOrganizerViewModel)DataContext).RotateLeftCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{x:Static res:Strings.Organizer_RotateLeft}" ToolTip.Tip="{x:Static res:Strings.Organizer_RotateLeft}">
+                      <controls:Icon Size="16" Data="{StaticResource IconRotateLeft}" />
+                    </Button>
+                    <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:PdfOrganizerViewModel)DataContext).ToggleRemovedCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{Binding RemoveLabel}" ToolTip.Tip="{Binding RemoveLabel}">
+                      <Panel>
+                        <controls:Icon Size="16" Data="{StaticResource IconTrash}" IsVisible="{Binding !IsRemoved}" />
+                        <controls:Icon Size="16" Data="{StaticResource IconUndo}" IsVisible="{Binding IsRemoved}" />
+                      </Panel>
+                    </Button>
+                    <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:PdfOrganizerViewModel)DataContext).RotateRightCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{x:Static res:Strings.Organizer_RotateRight}" ToolTip.Tip="{x:Static res:Strings.Organizer_RotateRight}">
+                      <controls:Icon Size="16" Data="{StaticResource IconRotateRight}" />
+                    </Button>
+                    <Button Classes="icon" Command="{Binding $parent[ItemsControl].((vm:PdfOrganizerViewModel)DataContext).MoveRightCommand}" CommandParameter="{Binding}"
+                            AutomationProperties.Name="{x:Static res:Strings.Organizer_MoveRight}" ToolTip.Tip="{x:Static res:Strings.Organizer_MoveRight}">
+                      <controls:Icon Size="16" Data="{StaticResource IconChevronRight}" />
+                    </Button>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+    </Panel>
+
+    <!-- Summary and export -->
+    <DockPanel Grid.Row="2" Margin="0,16,0,0">
+      <Button DockPanel.Dock="Right" Classes="primary" Command="{Binding ExportCommand}" HotKey="Ctrl+Enter"
+              AutomationProperties.Name="{x:Static res:Strings.Organizer_Export}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <controls:Icon Size="16" Data="{StaticResource IconCheck}" />
+          <TextBlock Text="{x:Static res:Strings.Organizer_Export}" />
+        </StackPanel>
+      </Button>
+      <StackPanel VerticalAlignment="Center" Spacing="2">
+        <TextBlock Classes="label" Text="{Binding Summary}" />
+        <TextBlock Classes="caption" Text="{x:Static res:Strings.Organizer_Help}" TextWrapping="Wrap" />
+      </StackPanel>
+    </DockPanel>
+  </Grid>
+</UserControl>
