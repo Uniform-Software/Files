@@ -4,6 +4,7 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.Advanced;
 using PdfSharp.Pdf.IO;
 using UniFiles.Core.Resources;
+using UniFiles.Core.Tools.Pdf.Fonts;
 
 namespace UniFiles.Core.Tools.Pdf;
 
@@ -55,7 +56,8 @@ public sealed record NewFormField(string Name, FormFieldKind Kind, int Page, Pdf
 
 /// <summary>
 /// AcroForm fields: read, fill, add and flatten. Works on PDFsharp's object model, and draws the
-/// field appearances itself (Helvetica, a standard PDF font every reader has) so the values show
+/// field appearances itself (Helvetica, a standard PDF font every reader has, or Figtree embedded
+/// for characters Helvetica doesn't have: Ł, ő, Cyrillic, Greek…) so the values show
 /// in every reader, including those that don't redraw fields (macOS Preview, mobile readers).
 /// Check box value: "true" or "false". Radio value: the name of the chosen state.
 /// </summary>
@@ -242,7 +244,18 @@ public static class PdfForms
         field.Elements["/MK"] = characteristics;
 
         var flags = added.Required ? FlagRequired : 0;
-        if (added.Kind == FormFieldKind.CheckBox)
+        if (added.Kind == FormFieldKind.Signature)
+        {
+            // Left empty, to be signed (UniFiles, Acrobat…): a grey frame shows where.
+            field.Elements["/FT"] = new PdfName("/Sig");
+            field.Elements.Remove("/MK");
+            var frame = FormXObject(document, added.Rect,
+                Invariant($"0.6 G 0.75 w 0.5 0.5 {added.Rect.Width - 1} {added.Rect.Height - 1} re S\n"), new PdfDictionary(document));
+            var appearances = new PdfDictionary(document);
+            appearances.Elements["/N"] = frame.Reference;
+            field.Elements["/AP"] = appearances;
+        }
+        else if (added.Kind == FormFieldKind.CheckBox)
         {
             field.Elements["/FT"] = new PdfName("/Btn");
             field.Elements["/DA"] = new PdfString("/ZaDb 0 Tf 0 g");
@@ -265,7 +278,9 @@ public static class PdfForms
         ArrayOf(document, form, "/Fields").Elements.Add(field.Reference!);
         ArrayOf(document, page, "/Annots").Elements.Add(field.Reference!);
 
-        var kind = added.Kind == FormFieldKind.CheckBox ? FormFieldKind.CheckBox : added.Kind;
+        var kind = added.Kind;
+        if (kind == FormFieldKind.Signature)
+            return;
         if (added.Value is { } value)
             SetValue(document, field, kind, value);
         else
@@ -274,10 +289,30 @@ public static class PdfForms
 
     // ---- Flattening -----------------------------------------------------------------------------
 
-    /// <summary>Draws every visible widget's appearance into its page, then removes fields and widgets.</summary>
-    public static void Flatten(PdfDocument document)
+    /// <summary>
+    /// Draws every visible widget's appearance into its page, then removes fields and widgets.
+    /// Signature fields (empty or signed) are kept as they are: a signature is never flattened.
+    /// </summary>
+    public static void Flatten(PdfDocument document) => Flatten(document, keepSignatures: true);
+
+    /// <summary>
+    /// A copy to look at: every field and signature drawn into its page, since PDFium draws form
+    /// widgets only with its form module. Returns the temporary file (deleted by the caller).
+    /// </summary>
+    public static string DisplayCopy(string path)
+    {
+        var copy = Path.Combine(Path.GetTempPath(), $"unifiles-preview-{Guid.NewGuid():N}.pdf");
+        using var document = Open(path);
+        Flatten(document, keepSignatures: false);
+        document.Save(copy);
+        return copy;
+    }
+
+    /// <summary>Tests draw signature appearances into the page to look at them (PDFium doesn't draw widgets).</summary>
+    internal static void Flatten(PdfDocument document, bool keepSignatures)
     {
         var counter = 0;
+        var signatureFields = new List<PdfItem>();
         foreach (var page in document.Pages)
         {
             if (page.Elements.GetArray("/Annots") is not { } annots)
@@ -290,6 +325,16 @@ public static class PdfForms
                 if (Resolve(item) is not { } annotation || annotation.Elements.GetName("/Subtype") != "/Widget")
                 {
                     kept.Add(item);
+                    continue;
+                }
+                if (keepSignatures && IsSignatureWidget(annotation))
+                {
+                    kept.Add(item);
+                    var root = annotation;
+                    while (Resolve(root.Elements["/Parent"]) is { } parent)
+                        root = parent;
+                    if (root.Reference is { } reference && !signatureFields.Contains(reference))
+                        signatureFields.Add(reference);
                     continue;
                 }
                 if ((annotation.Elements.GetInteger("/F") & AnnotationHidden) != 0 || NormalAppearance(annotation) is not { } appearance)
@@ -314,7 +359,36 @@ public static class PdfForms
                 page.Contents.AppendContent().CreateStream(Encoding.ASCII.GetBytes("Q\n" + drawing));
             }
         }
-        document.Internals.Catalog.Elements.Remove("/AcroForm");
+        if (signatureFields.Count > 0 && AcroForm(document) is { } form)
+        {
+            form.Elements["/Fields"] = new PdfArray(document, signatureFields.ToArray());
+            form.Elements.Remove("/NeedAppearances");
+            form.Elements.Remove("/XFA");
+        }
+        else
+        {
+            document.Internals.Catalog.Elements.Remove("/AcroForm");
+        }
+    }
+
+    private static bool IsSignatureWidget(PdfDictionary widget) =>
+        widget.Elements.GetName("/FT") == "/Sig" || (Resolve(widget.Elements["/Parent"]) is { } parent && parent.Elements.GetName("/FT") == "/Sig");
+
+    /// <summary>Whether a signature field is signed: changing the file would then break a signature.</summary>
+    public static bool IsSigned(PdfDocument document)
+    {
+        var stack = new Stack<PdfItem>(ResolveArray(AcroForm(document)?.Elements["/Fields"])?.Elements.ToList() ?? []);
+        var seen = new HashSet<PdfDictionary>();
+        while (stack.Count > 0)
+        {
+            if (Resolve(stack.Pop()) is not { } field || !seen.Add(field))
+                continue;
+            if (IsSignatureWidget(field) && field.Elements["/V"] is not null)
+                return true;
+            foreach (var kid in ResolveArray(field.Elements["/Kids"])?.Elements.ToList() ?? [])
+                stack.Push(kid);
+        }
+        return false;
     }
 
     /// <summary>The appearance maps its /BBox (after /Matrix) onto the widget's /Rect.</summary>
@@ -334,7 +408,7 @@ public static class PdfForms
 
     // ---- Appearances ----------------------------------------------------------------------------
 
-    /// <summary>Text appearance: Helvetica, single line centered vertically, or wrapped from the top.</summary>
+    /// <summary>Text appearance: single line centered vertically, or wrapped from the top.</summary>
     private static void DrawText(PdfDocument document, PdfDictionary field, PdfDictionary widget, string value, bool multiline)
     {
         var rect = Rect(widget);
@@ -346,30 +420,35 @@ public static class PdfForms
         if (size <= 0)
             size = multiline ? 10 : Math.Clamp(rect.Height * 0.62, 6, 12);
 
+        // Helvetica when it has every character (no font to embed), Figtree otherwise.
+        var figtree = !Helvetica.CanDraw(value);
+        Func<string, double, double> measure = figtree ? Figtree.Regular.Width : Helvetica.Width;
+        Func<string, string> show = figtree ? text => PdfFontEmbedder.Hex(Figtree.Regular, text) : Literal;
+
         var content = new StringBuilder();
         content.Append("/Tx BMC\nq\n");
         content.Append(Invariant($"{padding / 2} {padding / 2} {rect.Width - padding} {rect.Height - padding} re W n\n"));
-        content.Append(Invariant($"BT\n/Helv {size} Tf\n0 g\n"));
+        content.Append(Invariant($"BT\n/{(figtree ? FigtreeKey : "Helv")} {size} Tf\n0 g\n"));
 
         var available = rect.Width - 2 * padding;
         if (multiline)
         {
             var leading = size * 1.15;
-            var lines = Wrap(value, size, available);
+            var lines = Wrap(value, size, available, measure);
             var y = rect.Height - padding - size;
             content.Append(Invariant($"{padding} {y} Td\n{leading} TL\n"));
             for (var i = 0; i < lines.Count; i++)
-                content.Append(i == 0 ? $"{Literal(lines[i])} Tj\n" : $"{Literal(lines[i])} '\n");
+                content.Append(i == 0 ? $"{show(lines[i])} Tj\n" : $"{show(lines[i])} '\n");
         }
         else
         {
             var line = value.Replace('\r', ' ').Replace('\n', ' ');
             var y = (rect.Height - size * 0.72) / 2;
-            content.Append(Invariant($"{padding} {y} Td\n{Literal(line)} Tj\n"));
+            content.Append(Invariant($"{padding} {y} Td\n{show(line)} Tj\n"));
         }
         content.Append("ET\nQ\nEMC\n");
 
-        var stream = FormXObject(document, rect, content.ToString(), HelveticaResources(document));
+        var stream = FormXObject(document, rect, content.ToString(), figtree ? FigtreeResources(document) : HelveticaResources(document));
         var appearances = new PdfDictionary(document);
         appearances.Elements["/N"] = stream.Reference;
         widget.Elements["/AP"] = appearances;
@@ -423,6 +502,30 @@ public static class PdfForms
         return resources;
     }
 
+    private const string FigtreeKey = "UFFig";
+
+    /// <summary>Figtree, embedded once per document and kept in the form's resources (/DR).</summary>
+    private static PdfDictionary FigtreeResources(PdfDocument document)
+    {
+        var form = EnsureAcroForm(document);
+        var shared = form.Elements.GetDictionary("/DR") ?? new PdfDictionary(document);
+        form.Elements["/DR"] = shared;
+        var sharedFonts = shared.Elements.GetDictionary("/Font") ?? new PdfDictionary(document);
+        shared.Elements["/Font"] = sharedFonts;
+        if (Resolve(sharedFonts.Elements["/" + FigtreeKey]) is not { } font
+            || font.Elements.GetName("/BaseFont") != "/" + Figtree.Regular.PostScriptName)
+        {
+            font = PdfFontEmbedder.Embed(document, Figtree.Regular);
+            sharedFonts.Elements["/" + FigtreeKey] = font.Reference;
+        }
+
+        var fonts = new PdfDictionary(document);
+        fonts.Elements["/" + FigtreeKey] = font.Reference;
+        var resources = new PdfDictionary(document);
+        resources.Elements["/Font"] = fonts;
+        return resources;
+    }
+
     private static PdfDictionary ZapfResources(PdfDocument document)
     {
         var fonts = new PdfDictionary(document);
@@ -455,9 +558,9 @@ public static class PdfForms
         return font;
     }
 
-    // ---- Text layout (Helvetica, WinAnsi) --------------------------------------------------------
+    // ---- Text layout -------------------------------------------------------------------------------
 
-    private static List<string> Wrap(string text, double size, double width)
+    private static List<string> Wrap(string text, double size, double width, Func<string, double, double> measure)
     {
         var lines = new List<string>();
         foreach (var paragraph in text.Replace("\r\n", "\n").Split('\n'))
@@ -466,7 +569,7 @@ public static class PdfForms
             foreach (var word in paragraph.Split(' '))
             {
                 var candidate = line.Length == 0 ? word : line + " " + word;
-                if (line.Length > 0 && Helvetica.Width(candidate, size) > width)
+                if (line.Length > 0 && measure(candidate, size) > width)
                 {
                     lines.Add(line);
                     line = word;
@@ -509,7 +612,7 @@ public static class PdfForms
     private static PdfDictionary? AcroForm(PdfDocument document) =>
         Resolve(document.Internals.Catalog.Elements["/AcroForm"]);
 
-    private static PdfDictionary EnsureAcroForm(PdfDocument document)
+    internal static PdfDictionary EnsureAcroForm(PdfDocument document)
     {
         if (AcroForm(document) is { } existing)
             return existing;
@@ -659,14 +762,14 @@ public static class PdfForms
 
     // ---- PDF object helpers -------------------------------------------------------------------
 
-    private static PdfDictionary? Resolve(PdfItem? item) => item switch
+    internal static PdfDictionary? Resolve(PdfItem? item) => item switch
     {
         PdfReference reference => reference.Value as PdfDictionary,
         PdfDictionary dictionary => dictionary,
         _ => null,
     };
 
-    private static double Number(PdfItem item) => item switch
+    internal static double Number(PdfItem item) => item switch
     {
         PdfInteger i => i.Value,
         PdfReal r => r.Value,
@@ -675,7 +778,7 @@ public static class PdfForms
         _ => 0,
     };
 
-    private static PdfArray? ResolveArray(PdfItem? item) => item switch
+    internal static PdfArray? ResolveArray(PdfItem? item) => item switch
     {
         PdfReference { Value: PdfArray array } => array,
         PdfArray array => array,
@@ -760,4 +863,7 @@ internal static class Helvetica
     };
 
     public static double Width(string text, double size) => text.Sum(c => Widths[Encode(c) - 32]) * size / 1000;
+
+    /// <summary>Whether Helvetica (WinAnsi) has every character of the text.</summary>
+    public static bool CanDraw(string text) => text.All(c => c is '\n' or '\r' or '?' || Encode(c) != (byte)'?');
 }

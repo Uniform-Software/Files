@@ -5,6 +5,30 @@
              xmlns:res="using:UniFiles.Core.Resources"
              x:Class="UniFiles.App.Views.HomeView"
              x:DataType="vm:HomeViewModel">
+  <UserControl.Styles>
+    <!-- Module cards: the hovered one grows, the others step back. At rest they are a little
+         smaller than their place, so the hovered one grows into it and never spills over. -->
+    <Style Selector="Button.moduleCard">
+      <Setter Property="RenderTransform" Value="scale(1)" />
+    </Style>
+    <Style Selector="Window:not(.reducedMotion) Button.moduleCard">
+      <Setter Property="RenderTransform" Value="scale(0.97)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.22" Easing="CubicEaseOut" />
+          <DoubleTransition Property="Opacity" Duration="0:0:0.22" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Window:not(.reducedMotion) ItemsControl.modules:pointerover Button.moduleCard">
+      <Setter Property="RenderTransform" Value="scale(0.94)" />
+      <Setter Property="Opacity" Value="0.82" />
+    </Style>
+    <Style Selector="Window:not(.reducedMotion) ItemsControl.modules Button.moduleCard:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1)" />
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+  </UserControl.Styles>
   <ScrollViewer>
     <StackPanel Spacing="32" MaxWidth="1040" Margin="0,0,0,40">
 
@@ -37,7 +61,7 @@
       <!-- Modules -->
       <StackPanel Spacing="14">
         <TextBlock Classes="h2" Text="{x:Static res:Strings.Home_Modules}" />
-        <ItemsControl ItemsSource="{Binding Modules}">
+        <ItemsControl Classes="modules" ItemsSource="{Binding Modules}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
               <UniformGrid Columns="5" />
@@ -45,7 +69,7 @@
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="vm:ModuleCardViewModel">
-              <Button Margin="0,0,12,12"
+              <Button Classes="moduleCard" Margin="0,0,12,12"
                       HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
                       HorizontalContentAlignment="Stretch" VerticalContentAlignment="Top"
                       Padding="20" CornerRadius="{StaticResource RadiusCard}"
@@ -55,7 +79,8 @@
                       CommandParameter="{Binding}"
                       AutomationProperties.Name="{Binding Info.Name}">
                 <StackPanel Spacing="10">
-                  <controls:ModuleBadge Size="44" Mosaic="True" Tile="{Binding Info.Brush}" Icon="{Binding Info.Icon}" HorizontalAlignment="Left" Margin="0,0,0,4" />
+                  <controls:ModuleBadge Size="44" Mosaic="True" Tile="{Binding Info.Brush}" Icon="{Binding Info.Icon}" HorizontalAlignment="Left" Margin="0,0,0,4"
+                                        IsActive="{Binding $parent[Button].IsPointerOver}" />
                   <TextBlock Classes="h2" Text="{Binding Info.Name}" />
                   <TextBlock Classes="caption" Text="{Binding Info.Summary}" TextWrapping="Wrap" />
                 </StackPanel>

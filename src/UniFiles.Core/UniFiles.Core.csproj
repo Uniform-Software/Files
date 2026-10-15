@@ -26,6 +26,12 @@
     <PackageReference Include="bblanchon.PDFium.Linux" Version="156.0.8076" />
   </ItemGroup>
 
+  <!-- Figtree (OFL), embedded in PDFs written by UniFiles (form values, signature appearances). -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\UniFiles.App\Assets\Fonts\Figtree-Regular.ttf" LogicalName="UniFiles.Core.Fonts.Figtree-Regular.ttf" Link="Fonts\Figtree-Regular.ttf" />
+    <EmbeddedResource Include="..\UniFiles.App\Assets\Fonts\Figtree-SemiBold.ttf" LogicalName="UniFiles.Core.Fonts.Figtree-SemiBold.ttf" Link="Fonts\Figtree-SemiBold.ttf" />
+  </ItemGroup>
+
   <!-- All UI and tool texts. Strings.resx is English (fallback), Strings.fr.resx is French. -->
   <ItemGroup>
     <EmbeddedResource Update="Resources\Strings.resx">

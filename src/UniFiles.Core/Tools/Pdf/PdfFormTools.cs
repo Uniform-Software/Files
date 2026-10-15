@@ -40,6 +40,8 @@ public sealed class PdfFormFillTool : PdfToolBase
         var output = await WriteOutputAsync(context.Output, OutputName(input, ".pdf", " - " + suffix), path => Task.Run(() =>
         {
             using var document = PdfForms.Open(input);
+            if (PdfForms.IsSigned(document))
+                throw new ToolException(Strings.Error_ModifySigned);
             PdfForms.Apply(document, values, added, flatten);
             Save(document, path);
         }, cancellationToken));
@@ -78,6 +80,8 @@ public sealed class PdfFormFlattenTool : PdfToolBase
         var output = await WriteOutputAsync(context.Output, OutputName(input, ".pdf", " - " + Strings.Suffix_Flattened), path => Task.Run(() =>
         {
             using var document = PdfForms.Open(input);
+            if (PdfForms.IsSigned(document))
+                throw new ToolException(Strings.Error_ModifySigned);
             if (PdfForms.Read(document).Count == 0)
                 throw new ToolException(Strings.Error_NoFormFields);
             PdfForms.Apply(document, new Dictionary<string, string>(), [], flatten: true);

@@ -26,8 +26,19 @@ public partial class MainWindow : Window
         DialogService.Owner = this;
         DataContextChanged += (_, _) =>
         {
-            if (ViewModel is { } vm)
-                vm.ReadClipboard = () => ClipboardImport.ReadAsync(this);
+            if (ViewModel is not { } vm)
+                return;
+            vm.ReadClipboard = () => ClipboardImport.ReadAsync(this);
+            vm.PropertyChanged += (_, e) =>
+            {
+                // One short fade for the page area, whether the page or a part of the Preferences
+                // changes (a click can do both: the animation restarts, never stacks). The
+                // Preferences' entries unfold one after the other.
+                if (e.PropertyName is nameof(MainWindowViewModel.CurrentPage) or nameof(MainWindowViewModel.SelectedNav))
+                    Entrance.Play(PageHost);
+                if (e.PropertyName == nameof(MainWindowViewModel.SelectedNav))
+                    UnfoldSubEntries(vm);
+            };
         };
         _dragEndTimer.Tick += (_, _) => EndDrag();
 
@@ -97,6 +108,22 @@ public partial class MainWindow : Window
     }
 
     private MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;
+
+    private bool _groupOpen;
+
+    private void UnfoldSubEntries(MainWindowViewModel vm)
+    {
+        var open = vm.NavItems.Any(n => n.HasChildren && n.IsOpen);
+        // Started right away (the entries exist, hidden): they never show before sliding in.
+        if (open && !_groupOpen)
+        {
+            var index = 0;
+            foreach (var item in vm.NavItems.Where(n => n.IsSub))
+                if (Nav.ContainerFromItem(item) is Control container)
+                    Entrance.Play(container, fromX: -8, fromY: 0, delayMs: 30 * index++, durationMs: 200);
+        }
+        _groupOpen = open;
+    }
 
     private void OnTitlePressed(object? sender, PointerPressedEventArgs e)
     {

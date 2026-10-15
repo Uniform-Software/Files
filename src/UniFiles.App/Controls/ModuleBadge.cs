@@ -24,6 +24,10 @@ public sealed class ModuleBadge : Panel
     public static readonly StyledProperty<bool> MosaicProperty =
         AvaloniaProperty.Register<ModuleBadge, bool>(nameof(Mosaic));
 
+    /// <summary>The mosaic comes alive: its pieces spread a little and float (a card being hovered).</summary>
+    public static readonly StyledProperty<bool> IsActiveProperty =
+        AvaloniaProperty.Register<ModuleBadge, bool>(nameof(IsActive));
+
     private const double TiltDegrees = 14;
 
     private readonly Border _tile = new() { RenderTransform = TransformOperations($"rotate({TiltDegrees}deg)") };
@@ -63,6 +67,12 @@ public sealed class ModuleBadge : Panel
         set => SetValue(MosaicProperty, value);
     }
 
+    public bool IsActive
+    {
+        get => GetValue(IsActiveProperty);
+        set => SetValue(IsActiveProperty, value);
+    }
+
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
@@ -70,6 +80,8 @@ public sealed class ModuleBadge : Panel
             Apply();
         if (change.Property == MosaicProperty)
             _mosaic.IsVisible = Mosaic;
+        if (change.Property == IsActiveProperty)
+            _mosaic.SetActive(IsActive, TopLevel.GetTopLevel(this) is { } top && top.Classes.Contains("reducedMotion"));
     }
 
     private void Apply()
@@ -116,19 +128,66 @@ public sealed class ModuleBadge : Panel
         /// <summary>Side of the main tile.</summary>
         public double Side { get; set; }
 
+        // Hover: 0 = at rest, 1 = spread out; eased towards the target at each frame.
+        private double _spread;
+        private double _target;
+        private bool _reduced;
+        private bool _running;
+        private TimeSpan? _start;
+        private TimeSpan _now;
+
+        public void SetActive(bool active, bool reduced)
+        {
+            _target = active ? 1 : 0;
+            _reduced = reduced;
+            if (reduced)
+            {
+                _spread = _target;
+                InvalidateVisual();
+                return;
+            }
+            if (!_running)
+            {
+                _running = true;
+                TopLevel.GetTopLevel(this)?.RequestAnimationFrame(OnFrame);
+            }
+        }
+
+        private void OnFrame(TimeSpan time)
+        {
+            _start ??= time;
+            _now = time - _start.Value;
+            _spread += (_target - _spread) * 0.16;
+            if (Math.Abs(_target - _spread) < 0.002)
+                _spread = _target;
+            InvalidateVisual();
+            // Keeps running while spread (the pieces float), stops once back at rest.
+            if (_spread > 0 || _target > 0)
+                TopLevel.GetTopLevel(this)?.RequestAnimationFrame(OnFrame);
+            else
+                _running = false;
+        }
+
         public override void Render(DrawingContext context)
         {
             if (Tile is not { } brush)
                 return;
             var center = Bounds.Size / 2;
             var frame = Matrix.CreateRotation(TiltDegrees * Math.PI / 180) * Matrix.CreateTranslation(center.Width, center.Height);
+            var seconds = _reduced ? 0 : _now.TotalSeconds;
             using (context.PushTransform(frame))
             {
-                foreach (var (x, y, size, opacity) in MosaicTiles)
+                for (var i = 0; i < MosaicTiles.Length; i++)
                 {
-                    var piece = size * Side;
-                    var rect = new Rect(x * Side - piece / 2, y * Side - piece / 2, piece, piece);
-                    using (context.PushOpacity(opacity))
+                    var (x, y, size, opacity) = MosaicTiles[i];
+                    // Spread: away from the main tile; float: a slow drift, each piece in its own phase.
+                    var distance = Math.Sqrt(x * x + y * y);
+                    var push = _spread * 0.16;
+                    var px = x + x / distance * push + _spread * 0.035 * Math.Sin(seconds * 2.1 + i * 1.7);
+                    var py = y + y / distance * push + _spread * 0.035 * Math.Cos(seconds * 1.8 + i * 2.3);
+                    var piece = size * Side * (1 + _spread * 0.12);
+                    var rect = new Rect(px * Side - piece / 2, py * Side - piece / 2, piece, piece);
+                    using (context.PushOpacity(Math.Min(1, opacity * (1 + _spread * 0.6))))
                         context.DrawRectangle(brush, null, rect, piece * 0.26, piece * 0.26);
                 }
             }

@@ -19,8 +19,41 @@ public sealed record LanguageChoice(string Value, string Label)
     public override string ToString() => Label;
 }
 
+/// <summary>The parts of the Preferences, one per sub-entry of the sidebar.</summary>
+public enum PreferencesSection
+{
+    General,
+    Appearance,
+    System,
+    Updates,
+    About,
+}
+
 public partial class PreferencesViewModel : PageViewModel
 {
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsGeneral), nameof(IsAppearance), nameof(IsSystem), nameof(IsUpdates), nameof(IsAbout), nameof(SectionTitle))]
+    private PreferencesSection _section;
+
+    public bool IsGeneral => Section == PreferencesSection.General;
+
+    public bool IsAppearance => Section == PreferencesSection.Appearance;
+
+    public bool IsSystem => Section == PreferencesSection.System;
+
+    public bool IsUpdates => Section == PreferencesSection.Updates;
+
+    public bool IsAbout => Section == PreferencesSection.About;
+
+    public string SectionTitle => Section switch
+    {
+        PreferencesSection.Appearance => Strings.Prefs_Appearance,
+        PreferencesSection.System => Strings.Prefs_System,
+        PreferencesSection.Updates => Strings.Update_Title,
+        PreferencesSection.About => Strings.Prefs_AboutTitle,
+        _ => Strings.Prefs_General,
+    };
+
     private readonly MainWindowViewModel _main;
     private readonly AppServices _services;
     private readonly string _startupLanguage;

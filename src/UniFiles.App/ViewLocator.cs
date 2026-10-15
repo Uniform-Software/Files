@@ -19,6 +19,10 @@ public sealed class ViewLocator : IDataTemplate
         PdfOrganizerViewModel => new PdfOrganizerView(),
         PdfFormEditorViewModel => new PdfFormEditorView(),
         AutomationsViewModel => new AutomationsView(),
+        SignatureSettingsViewModel => new SignatureSettingsView(),
+        SignatureWizardViewModel => new SignatureWizardView(),
+        SignatureDetailViewModel => new SignatureDetailView(),
+        PdfSignEditorViewModel => new PdfSignEditorView(),
         _ => new TextBlock { Text = data?.GetType().Name },
     };
 

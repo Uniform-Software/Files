@@ -350,7 +350,7 @@
   <data name="Tool_Zip_Name" xml:space="preserve"><value>Créer une archive ZIP</value></data>
   <data name="Tool_Zip_Description" xml:space="preserve"><value>Tous les fichiers en une pièce jointe</value></data>
   <data name="Module_Files" xml:space="preserve"><value>Fichiers</value></data>
-  <data name="Module_Files_Summary" xml:space="preserve"><value>Archiver, et bientôt plus</value></data>
+  <data name="Module_Files_Summary" xml:space="preserve"><value>Renommer, archiver</value></data>
   <data name="Option_Pages" xml:space="preserve"><value>Pages</value></data>
   <data name="Choice_AllPages" xml:space="preserve"><value>Toutes les pages</value></data>
   <data name="Choice_SomePages" xml:space="preserve"><value>Certaines pages</value></data>
@@ -468,4 +468,168 @@
   <data name="History_RerunSettings" xml:space="preserve"><value>Réglages du {0:d}</value></data>
   <data name="Doc_ReleaseNotes" xml:space="preserve"><value>Nouveautés</value></data>
   <data name="Doc_WhatsNew" xml:space="preserve"><value>Nouveautés de la {0}</value></data>
+  <data name="Sign_WrongPassword" xml:space="preserve"><value>Mot de passe incorrect pour ce fichier de certificat.</value></data>
+  <data name="Sign_NoPrivateKey" xml:space="preserve"><value>Ce fichier ne contient pas de clé privée : il ne permet pas de signer. Demande le fichier .p12 ou .pfx.</value></data>
+  <data name="Sign_NotForSigning" xml:space="preserve"><value>Ce certificat n'est pas prévu pour signer des documents.</value></data>
+  <data name="Sign_NotACertificate" xml:space="preserve"><value>Ce fichier n'est pas un certificat.</value></data>
+  <data name="Sign_NotAnAuthority" xml:space="preserve"><value>Ce certificat n'est pas une autorité : seule une autorité (le .cer d'une organisation) peut être ajoutée aux autorités de confiance.</value></data>
+  <data name="Sign_TimestampFailed" xml:space="preserve"><value>Le service d'horodatage ({0}) n'a pas répondu correctement. Signe sans horodatage, ou réessaie plus tard.</value></data>
+  <data name="Sign_HandwritingEmpty" xml:space="preserve"><value>Aucune signature trouvée dans cette image : utilise une photo ou un scan d'une signature sur papier clair.</value></data>
+  <data name="Sign_IdentityMissing" xml:space="preserve"><value>Le certificat choisi pour cette signature n'est plus sur cet ordinateur. Choisis-en un autre.</value></data>
+  <data name="Error_CertificateExpired" xml:space="preserve"><value>Ce certificat a expiré le {0:d}.</value></data>
+  <data name="Sign_KeyRefused" xml:space="preserve"><value>La signature n'a pas été faite : la clé a été refusée ou le code PIN n'a pas été saisi.</value></data>
+  <data name="Suffix_Signed" xml:space="preserve"><value>signé</value></data>
+  <data name="Tool_PdfSign_Name" xml:space="preserve"><value>Signer un PDF</value></data>
+  <data name="Tool_PdfSign_Description" xml:space="preserve"><value>Avec ton certificat, sans rien envoyer</value></data>
+  <data name="Tool_PdfVerify_Name" xml:space="preserve"><value>Vérifier les signatures</value></data>
+  <data name="Tool_PdfVerify_Description" xml:space="preserve"><value>Qui a signé, et si le PDF a changé depuis</value></data>
+  <data name="Sign_FieldMissing" xml:space="preserve"><value>Ce champ de signature est déjà signé ou n'existe plus.</value></data>
+  <data name="Verify_Offline" xml:space="preserve"><value>Vérifié sur cet ordinateur, sans connexion : la révocation des certificats n'est pas contrôlée.</value></data>
+  <data name="Verify_FileName" xml:space="preserve"><value>Vérification des signatures</value></data>
+  <data name="Verify_None" xml:space="preserve"><value>Ce PDF ne contient aucune signature.</value></data>
+  <data name="Verify_SignatureN" xml:space="preserve"><value>Signature {0}</value></data>
+  <data name="Verify_Valid" xml:space="preserve"><value>✅ Signature valide</value></data>
+  <data name="Verify_Unverified" xml:space="preserve"><value>⚠️ Signature intacte, identité non vérifiée</value></data>
+  <data name="Verify_Modified" xml:space="preserve"><value>❌ Document modifié après la signature</value></data>
+  <data name="Verify_Invalid" xml:space="preserve"><value>❌ Signature invalide : le document ou la signature a été altéré</value></data>
+  <data name="Verify_Signer" xml:space="preserve"><value>Signataire</value></data>
+  <data name="Verify_Issuer" xml:space="preserve"><value>Certificat délivré par</value></data>
+  <data name="Verify_Qualified" xml:space="preserve"><value>qualifié (déclaré par le certificat)</value></data>
+  <data name="Verify_SelfSigned" xml:space="preserve"><value>certificat personnel, vérifié par personne</value></data>
+  <data name="Verify_ValidFromTo" xml:space="preserve"><value>valable du {0:d} au {1:d}</value></data>
+  <data name="Verify_NotValidAtTime" xml:space="preserve"><value>Le certificat n'était pas valable à la date de signature.</value></data>
+  <data name="Verify_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="Verify_Timestamped" xml:space="preserve"><value>{0:g} (horodatage de confiance)</value></data>
+  <data name="Verify_Claimed" xml:space="preserve"><value>{0:g} (heure de l'ordinateur du signataire)</value></data>
+  <data name="Verify_Coverage" xml:space="preserve"><value>Couverture</value></data>
+  <data name="Verify_CoversAll" xml:space="preserve"><value>tout le document</value></data>
+  <data name="Verify_Extended" xml:space="preserve"><value>le document tel qu'il était ; seules d'autres signatures ont été ajoutées depuis</value></data>
+  <data name="Verify_ModifiedAfter" xml:space="preserve"><value>une version précédente : le document a été modifié depuis</value></data>
+  <data name="Verify_Reason" xml:space="preserve"><value>Motif</value></data>
+  <data name="Verify_Location" xml:space="preserve"><value>Lieu</value></data>
+  <data name="Verify_Format" xml:space="preserve"><value>Format</value></data>
+  <data name="Verify_Legacy" xml:space="preserve"><value>signature d'ancienne génération</value></data>
+  <data name="SignSettings_Title" xml:space="preserve"><value>Signature</value></data>
+  <data name="SignSettings_Subtitle" xml:space="preserve"><value>Tes certificats restent dans le trousseau de l'ordinateur : UniFiles ne copie jamais une clé privée.</value></data>
+  <data name="SignSettings_Certificates" xml:space="preserve"><value>Mes certificats</value></data>
+  <data name="SignSettings_NoCertificate" xml:space="preserve"><value>Aucun certificat de signature pour l'instant. Crée le tien, ou importe le fichier .p12 fourni par un prestataire ou ton organisation. La clé USB d'un prestataire apparaît ici d'elle-même une fois son logiciel installé.</value></data>
+  <data name="SignSettings_IssuedBy" xml:space="preserve"><value>Délivré par {0} · valable jusqu'au {1:d}</value></data>
+  <data name="SignSettings_Self" xml:space="preserve"><value>toi-même</value></data>
+  <data name="SignSettings_BadgeQualified" xml:space="preserve"><value>Qualifié</value></data>
+  <data name="SignSettings_BadgeHardware" xml:space="preserve"><value>Clé matérielle</value></data>
+  <data name="SignSettings_BadgePersonal" xml:space="preserve"><value>Créé par UniFiles</value></data>
+  <data name="SignSettings_BadgeSoon" xml:space="preserve"><value>Expire bientôt</value></data>
+  <data name="SignSettings_BadgeExpired" xml:space="preserve"><value>Expiré</value></data>
+  <data name="SignSettings_ExportHint" xml:space="preserve"><value>Enregistrer le certificat public (.cer) à donner aux personnes qui reçoivent tes documents</value></data>
+  <data name="SignSettings_Remove" xml:space="preserve"><value>Retirer</value></data>
+  <data name="SignSettings_Create" xml:space="preserve"><value>Créer mon certificat</value></data>
+  <data name="SignSettings_Name" xml:space="preserve"><value>Prénom et nom</value></data>
+  <data name="SignSettings_Email" xml:space="preserve"><value>E-mail (facultatif)</value></data>
+  <data name="SignSettings_CreateHint" xml:space="preserve"><value>Ce certificat prouve que le document n'a pas été modifié et qu'il a été signé avec cette clé, mais personne n'a vérifié ton identité. Pour une signature reconnue partout en Europe, utilise un certificat d'un prestataire qualifié (clé USB).</value></data>
+  <data name="SignSettings_Created" xml:space="preserve"><value>Certificat créé pour {0}.</value></data>
+  <data name="SignSettings_Import" xml:space="preserve"><value>Importer un fichier .p12…</value></data>
+  <data name="SignSettings_P12Type" xml:space="preserve"><value>Certificat avec sa clé</value></data>
+  <data name="SignSettings_CerType" xml:space="preserve"><value>Certificat public</value></data>
+  <data name="SignSettings_ImageType" xml:space="preserve"><value>Image</value></data>
+  <data name="SignSettings_Password" xml:space="preserve"><value>Mot de passe de {0}</value></data>
+  <data name="SignSettings_ImportConfirm" xml:space="preserve"><value>Importer</value></data>
+  <data name="SignSettings_Imported" xml:space="preserve"><value>Certificat de {0} importé dans le trousseau.</value></data>
+  <data name="SignSettings_FileUnreadable" xml:space="preserve"><value>Ce fichier ne peut pas être lu.</value></data>
+  <data name="SignSettings_Export" xml:space="preserve"><value>Enregistrer le certificat public</value></data>
+  <data name="SignSettings_Exported" xml:space="preserve"><value>Certificat public enregistré.</value></data>
+  <data name="SignSettings_Handwriting" xml:space="preserve"><value>Signature manuscrite</value></data>
+  <data name="SignSettings_HandwritingHint" xml:space="preserve"><value>Signe dans le cadre avec la souris, le trackpad ou un stylet, ou importe une photo de ta signature sur papier blanc. Elle reste sur cet ordinateur.</value></data>
+  <data name="SignSettings_HandwritingImport" xml:space="preserve"><value>Importer une image…</value></data>
+  <data name="SignSettings_HandwritingClear" xml:space="preserve"><value>Effacer</value></data>
+  <data name="SignSettings_Organization" xml:space="preserve"><value>Autorité d'organisation</value></data>
+  <data name="SignSettings_OrganizationHint" xml:space="preserve"><value>Pour une association ou une petite entreprise : crée une autorité, délivre un certificat à chaque membre, et les signatures de tes membres sont vérifiées sur chaque poste qui fait confiance à l'autorité. Sans prestataire ni serveur.</value></data>
+  <data name="SignSettings_OrganizationName" xml:space="preserve"><value>Nom de l'organisation</value></data>
+  <data name="SignSettings_CreateAuthority" xml:space="preserve"><value>Créer l'autorité</value></data>
+  <data name="SignSettings_AuthorityCreated" xml:space="preserve"><value>Autorité {0} créée.</value></data>
+  <data name="SignSettings_AuthorityDetail" xml:space="preserve"><value>{0} · valable jusqu'au {1:d}</value></data>
+  <data name="SignSettings_Issue" xml:space="preserve"><value>Délivrer un certificat…</value></data>
+  <data name="SignSettings_MemberName" xml:space="preserve"><value>Nom du membre</value></data>
+  <data name="SignSettings_MemberPassword" xml:space="preserve"><value>Mot de passe du fichier (8 caractères ou plus), à transmettre au membre séparément</value></data>
+  <data name="SignSettings_IssueConfirm" xml:space="preserve"><value>Enregistrer le .p12</value></data>
+  <data name="SignSettings_IssueIncomplete" xml:space="preserve"><value>Indique le nom du membre et un mot de passe de 8 caractères ou plus.</value></data>
+  <data name="SignSettings_Issued" xml:space="preserve"><value>{0} enregistré, avec {1} : donne les deux au membre, et le mot de passe séparément.</value></data>
+  <data name="SignSettings_ExportAuthority" xml:space="preserve"><value>Enregistrer le .cer de l'autorité</value></data>
+  <data name="SignSettings_TrustedTitle" xml:space="preserve"><value>Autorités de confiance</value></data>
+  <data name="SignSettings_TrustedHint" xml:space="preserve"><value>Les signatures des membres de ces organisations apparaissent comme vérifiées. Les autorités des prestataires qualifiés sont déjà connues du système.</value></data>
+  <data name="SignSettings_Trust" xml:space="preserve"><value>Ajouter une autorité (.cer)…</value></data>
+  <data name="SignSettings_Trusted" xml:space="preserve"><value>{0} ajoutée aux autorités de confiance.</value></data>
+  <data name="SignSettings_Timestamp" xml:space="preserve"><value>Horodater mes signatures</value></data>
+  <data name="SignSettings_TimestampHint" xml:space="preserve"><value>Prouve la date de signature. Seule une empreinte du document (32 octets) est envoyée au service choisi, jamais le document lui-même.</value></data>
+  <data name="SignSettings_TimestampUrl" xml:space="preserve"><value>Adresse du service d'horodatage (RFC 3161)</value></data>
+  <data name="SignSettings_Open" xml:space="preserve"><value>Signature…</value></data>
+  <data name="Prefs_SignatureHint" xml:space="preserve"><value>Certificats, signature manuscrite, organisation et horodatage.</value></data>
+  <data name="Error_ModifySigned" xml:space="preserve"><value>Ce PDF est signé : le modifier casserait la signature. Remplis et aplatis avant de signer.</value></data>
+  <data name="Sign_AlreadySigned" xml:space="preserve"><value>Déjà signé par {0}. Ta signature s'ajoute sans toucher aux leurs.</value></data>
+  <data name="Sign_PlacementInvisible" xml:space="preserve"><value>Signature invisible : visible seulement dans le panneau des signatures des lecteurs.</value></data>
+  <data name="Sign_PlacementField" xml:space="preserve"><value>Dans le champ « {0} ».</value></data>
+  <data name="Sign_PlacementBox" xml:space="preserve"><value>Dans le cadre tracé page {0}.</value></data>
+  <data name="Sign_PlacementNone" xml:space="preserve"><value>Clique sur un champ de signature vide ou trace un cadre sur la page.</value></data>
+  <data name="Sign_Invisible" xml:space="preserve"><value>Signature invisible</value></data>
+  <data name="Sign_Certificate" xml:space="preserve"><value>Certificat</value></data>
+  <data name="Sign_NoIdentity" xml:space="preserve"><value>Aucun certificat de signature pour l'instant.</value></data>
+  <data name="Sign_Manage" xml:space="preserve"><value>Gérer mes certificats…</value></data>
+  <data name="Sign_IdentitySummary" xml:space="preserve"><value>Signé par {0} · certificat délivré par {1} · valable jusqu'au {2:d}</value></data>
+  <data name="Sign_Shows" xml:space="preserve"><value>La signature affiche</value></data>
+  <data name="Sign_ShowName" xml:space="preserve"><value>Nom</value></data>
+  <data name="Sign_ShowDate" xml:space="preserve"><value>Date</value></data>
+  <data name="Sign_ShowReason" xml:space="preserve"><value>Motif</value></data>
+  <data name="Sign_Handwriting" xml:space="preserve"><value>Signature manuscrite</value></data>
+  <data name="Sign_HandwritingNone" xml:space="preserve"><value>Aucune</value></data>
+  <data name="Sign_HandwritingDrawn" xml:space="preserve"><value>Dessinée</value></data>
+  <data name="Sign_HandwritingImage" xml:space="preserve"><value>Image</value></data>
+  <data name="Sign_Reason" xml:space="preserve"><value>Motif</value></data>
+  <data name="Sign_ReasonRead" xml:space="preserve"><value>Lu et approuvé</value></data>
+  <data name="Sign_ReasonAgreed" xml:space="preserve"><value>Bon pour accord</value></data>
+  <data name="Sign_Location" xml:space="preserve"><value>Lieu (facultatif)</value></data>
+  <data name="Sign_Timestamp" xml:space="preserve"><value>Horodater (envoie une empreinte de 32 octets)</value></data>
+  <data name="Sign_Flatten" xml:space="preserve"><value>Aplatir le formulaire avant de signer</value></data>
+  <data name="Sign_FlattenHint" xml:space="preserve"><value>Sinon ses champs restent modifiables : un changement après signature serait signalé comme une modification.</value></data>
+  <data name="Sign_Sign" xml:space="preserve"><value>Signer</value></data>
+  <data name="Sign_Preview" xml:space="preserve"><value>Signature</value></data>
+  <data name="Sign_FieldEmpty" xml:space="preserve"><value>Champ de signature « {0} » vide : clique pour signer ici</value></data>
+  <data name="Sign_FieldSigned" xml:space="preserve"><value>Signé par {0}</value></data>
+  <data name="Form_Signature" xml:space="preserve"><value>Signature (vide, à signer)</value></data>
+  <data name="Verify_Launch" xml:space="preserve"><value>Vérifier</value></data>
+  <data name="Verify_Line" xml:space="preserve"><value>{0} : </value></data>
+  <data name="Module_Signature" xml:space="preserve"><value>Signature</value></data>
+  <data name="Module_Signature_Summary" xml:space="preserve"><value>Signer des PDF, vérifier les signatures</value></data>
+  <data name="Prefs_General" xml:space="preserve"><value>Général</value></data>
+  <data name="Prefs_Signatures" xml:space="preserve"><value>Signatures</value></data>
+  <data name="Prefs_AboutTitle" xml:space="preserve"><value>À propos</value></data>
+  <data name="Wizard_StepOf" xml:space="preserve"><value>Étape {0} sur {1}</value></data>
+  <data name="Wizard_Continue" xml:space="preserve"><value>Continuer</value></data>
+  <data name="Wizard_Create" xml:space="preserve"><value>Créer ma signature</value></data>
+  <data name="Wizard_NameTitle" xml:space="preserve"><value>Comment t'appelles-tu ?</value></data>
+  <data name="Wizard_NameHint" xml:space="preserve"><value>Comme sur tes papiers : il est inscrit dans ton certificat et montré à ceux qui vérifient tes signatures.</value></data>
+  <data name="Wizard_FirstName" xml:space="preserve"><value>Prénom</value></data>
+  <data name="Wizard_LastName" xml:space="preserve"><value>Nom</value></data>
+  <data name="Wizard_HandwritingTitle" xml:space="preserve"><value>Signe ici</value></data>
+  <data name="Wizard_HandwritingHint" xml:space="preserve"><value>Avec la souris, le trackpad ou un stylet. Elle apparaît dans tes signatures visibles. Tu peux aussi utiliser une photo de ta signature, ou passer cette étape.</value></data>
+  <data name="Wizard_EmailTitle" xml:space="preserve"><value>Ton e-mail</value></data>
+  <data name="Wizard_EmailHint" xml:space="preserve"><value>Facultatif. Il est inscrit dans ton certificat, pour qu'on sache comment te joindre.</value></data>
+  <data name="Wizard_EmailInvalid" xml:space="preserve"><value>Cet e-mail ne semble pas correct.</value></data>
+  <data name="Wizard_Note" xml:space="preserve"><value>Ta signature reste sur cet ordinateur. Personne ne vérifie ton identité : pour une signature reconnue partout en Europe, importe plutôt le certificat d'un prestataire.</value></data>
+  <data name="Wizard_Back" xml:space="preserve"><value>Retour</value></data>
+  <data name="Wizard_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="Signatures_Title" xml:space="preserve"><value>Signatures</value></data>
+  <data name="Signatures_Empty" xml:space="preserve"><value>Aucune signature pour l'instant. Crée la tienne en une minute, ou importe le certificat d'un prestataire ou de ton organisation.</value></data>
+  <data name="Signatures_Create" xml:space="preserve"><value>Créer une signature</value></data>
+  <data name="Signatures_Import" xml:space="preserve"><value>Importer (.p12)…</value></data>
+  <data name="Signatures_Advanced" xml:space="preserve"><value>Options avancées</value></data>
+  <data name="Signatures_ReturnToSigning" xml:space="preserve"><value>Revenir à la signature</value></data>
+  <data name="Signatures_NoHandwriting" xml:space="preserve"><value>Pas de signature manuscrite</value></data>
+  <data name="Signature_Certificate" xml:space="preserve"><value>Certificat</value></data>
+  <data name="Signature_Delete" xml:space="preserve"><value>Supprimer cette signature</value></data>
+  <data name="Action_Recommended" xml:space="preserve"><value>Recommandées</value></data>
+  <data name="Action_OtherTools" xml:space="preserve"><value>Autres actions</value></data>
+  <data name="Signatures_AdvancedHint" xml:space="preserve"><value>Autorité d'organisation, autorités de confiance, horodatage</value></data>
+  <data name="Signatures_TimestampTitle" xml:space="preserve"><value>Horodatage</value></data>
+  <data name="SignSettings_IssuedNone" xml:space="preserve"><value>Aucun certificat délivré</value></data>
+  <data name="SignSettings_IssuedOne" xml:space="preserve"><value>1 certificat délivré</value></data>
+  <data name="SignSettings_IssuedMany" xml:space="preserve"><value>{0} certificats délivrés</value></data>
 </root>

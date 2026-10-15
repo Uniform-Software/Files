@@ -12,16 +12,18 @@ public enum FileKind
     Audio,
 }
 
-/// <summary>The four UniFiles modules. Each one has its own color in the UI.</summary>
+/// <summary>The UniFiles modules. Each one has its own color in the UI.</summary>
 public enum ToolModule
 {
     Images,
-    Rename,
     Pdf,
     Video,
 
-    /// <summary>Any file: archives and other file-level actions.</summary>
+    /// <summary>Any file: renaming, archives and other file-level actions.</summary>
     Files,
+
+    /// <summary>Signing PDFs and checking their signatures.</summary>
+    Signature,
 }
 
 public static class FileKindDetector

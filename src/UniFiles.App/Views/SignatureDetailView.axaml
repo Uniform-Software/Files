@@ -1,0 +1,56 @@
+<!-- One saved signature: certificate, handwritten signature, export and removal. -->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.SignatureDetailView"
+             x:DataType="vm:SignatureDetailViewModel">
+  <ScrollViewer>
+    <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="0,0,0,40">
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Classes="icon" Command="{Binding BackCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_Back}">
+          <controls:Icon Size="20" Data="{StaticResource IconBack}" />
+        </Button>
+        <StackPanel Spacing="2" VerticalAlignment="Center">
+          <TextBlock Classes="h1" Text="{Binding Item.Name}" />
+          <TextBlock Classes="secondary" Text="{Binding Item.Email}" IsVisible="{Binding Item.HasEmail}" />
+        </StackPanel>
+      </StackPanel>
+
+      <Border Classes="banner" IsVisible="{Binding Notice, Converter={x:Static ObjectConverters.IsNotNull}}">
+        <TextBlock Text="{Binding Notice}" TextWrapping="Wrap" Classes.error="{Binding NoticeIsError}" />
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.SignSettings_Handwriting}" />
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.SignSettings_HandwritingHint}" TextWrapping="Wrap" />
+          <Border Background="{StaticResource CreamBrush}" CornerRadius="18" Width="460" Height="150" HorizontalAlignment="Left" ClipToBounds="True">
+            <Panel>
+              <controls:SignaturePad x:Name="Pad" Ink="{StaticResource InkBrush}" Guide="#9A9486" IsVisible="{Binding !HasImage}" Drawing="{Binding Drawing}"
+                                     AutomationProperties.Name="{x:Static res:Strings.SignSettings_Handwriting}" />
+              <Image Source="{Binding Image}" Stretch="Uniform" Margin="18" IsVisible="{Binding HasImage}" />
+            </Panel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="ghost" x:Name="ClearPad" Command="{Binding ClearHandwritingCommand}" Content="{x:Static res:Strings.SignSettings_HandwritingClear}" />
+            <Button Classes="ghost" Command="{Binding ImportHandwritingCommand}" Content="{x:Static res:Strings.SignSettings_HandwritingImport}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+
+      <Border Classes="card">
+        <StackPanel Spacing="10">
+          <TextBlock Classes="h2" Text="{x:Static res:Strings.Signature_Certificate}" />
+          <TextBlock Classes="secondary" Text="{Binding Item.Detail}" TextWrapping="Wrap" />
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.SignSettings_CreateHint}" TextWrapping="Wrap" IsVisible="{Binding Item.IsPersonal}" />
+          <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,4,0,0">
+            <Button Classes="ghost" Command="{Binding ExportCommand}" Content="{x:Static res:Strings.SignSettings_Export}" ToolTip.Tip="{x:Static res:Strings.SignSettings_ExportHint}" />
+            <Button Classes="ghost" Command="{Binding RemoveCommand}" Content="{x:Static res:Strings.Signature_Delete}" IsVisible="{Binding CanRemove}" />
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

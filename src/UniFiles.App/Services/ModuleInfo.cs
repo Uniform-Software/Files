@@ -30,10 +30,10 @@ public sealed class ModuleInfo
     public static IReadOnlyList<ModuleInfo> All { get; } =
     [
         new(ToolModule.Images, Strings.Module_Images, Strings.Module_Images_Summary, "Images", "IconImage"),
-        new(ToolModule.Rename, Strings.Module_Rename, Strings.Module_Rename_Summary, "Rename", "IconRename"),
         new(ToolModule.Pdf, Strings.Module_Pdf, Strings.Module_Pdf_Summary, "Pdf", "IconPdf"),
         new(ToolModule.Video, Strings.Module_Video, Strings.Module_Video_Summary, "Video", "IconVideo"),
-        new(ToolModule.Files, Strings.Module_Files, Strings.Module_Files_Summary, "Files", "IconArchive"),
+        new(ToolModule.Files, Strings.Module_Files, Strings.Module_Files_Summary, "Files", "IconFolder"),
+        new(ToolModule.Signature, Strings.Module_Signature, Strings.Module_Signature_Summary, "Signature", "IconSignature"),
     ];
 
     public static ModuleInfo For(ToolModule module) => All.First(m => m.Module == module);

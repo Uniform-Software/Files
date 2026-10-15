@@ -27,6 +27,8 @@ public sealed class ToolCatalog
             new PdfFormFillTool(),
             new PdfFormFlattenTool(),
             new PdfFormExportTool(),
+            new PdfSignTool(),
+            new PdfVerifyTool(),
             new ImagesToPdfTool(),
             new PdfCompressTool(),
             new VideoTrimTool(),
@@ -61,6 +63,7 @@ public sealed class ToolCatalog
     {
         ToolModule.Images => ["*.jpg", "*.jpeg", "*.png", "*.webp", "*.avif", "*.heic", "*.gif", "*.tif", "*.tiff", "*.bmp"],
         ToolModule.Pdf => ["*.pdf", "*.jpg", "*.jpeg", "*.png", "*.webp"],
+        ToolModule.Signature => ["*.pdf"],
         ToolModule.Video => ["*.mp4", "*.mov", "*.mkv", "*.webm", "*.avi", "*.m4v", "*.mp3", "*.wav", "*.flac", "*.m4a", "*.ogg"],
         _ => ["*"],
     };

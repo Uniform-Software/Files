@@ -55,6 +55,33 @@ public sealed partial class PdfRenderer : IDisposable
         }
     }
 
+    /// <summary>The text of a page, as a reader would copy it (checks embedded fonts and their Unicode maps).</summary>
+    public unsafe string ExtractText(int pageIndex)
+    {
+        lock (Sync)
+        {
+            if (_closed)
+                throw new ToolException(Strings.Error_PdfUnreadable);
+            var page = LoadPage(_document, pageIndex);
+            if (page == IntPtr.Zero)
+                throw new ToolException(Strings.Error_PdfUnreadable);
+            var text = TextLoadPage(page);
+            try
+            {
+                var count = TextCountChars(text);
+                var buffer = new char[count + 1];
+                fixed (char* chars = buffer)
+                    TextGetText(text, 0, count, chars);
+                return new string(buffer, 0, count);
+            }
+            finally
+            {
+                TextClosePage(text);
+                ClosePage(page);
+            }
+        }
+    }
+
     /// <summary>Draws a page at a resolution in dots per inch (72 = the page's size in points).</summary>
     public byte[] RenderAtDpi(int pageIndex, int dpi, out int width, out int height)
     {
@@ -177,4 +204,17 @@ public sealed partial class PdfRenderer : IDisposable
 
     [LibraryImport(Library, EntryPoint = "FPDFBitmap_Destroy")]
     private static partial void BitmapDestroy(IntPtr bitmap);
+
+    [LibraryImport(Library, EntryPoint = "FPDFText_LoadPage")]
+    private static partial IntPtr TextLoadPage(IntPtr page);
+
+    [LibraryImport(Library, EntryPoint = "FPDFText_ClosePage")]
+    private static partial void TextClosePage(IntPtr textPage);
+
+    [LibraryImport(Library, EntryPoint = "FPDFText_CountChars")]
+    private static partial int TextCountChars(IntPtr textPage);
+
+    // Writes UTF-16 code units, plus a terminating zero.
+    [LibraryImport(Library, EntryPoint = "FPDFText_GetText")]
+    private static unsafe partial int TextGetText(IntPtr textPage, int startIndex, int count, char* result);
 }

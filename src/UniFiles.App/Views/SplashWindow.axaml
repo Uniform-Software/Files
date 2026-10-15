@@ -39,7 +39,7 @@
       <Canvas>
         <Border Classes="art" Tag="0:0:0.05" Canvas.Left="420" Canvas.Top="-70" Width="230" Height="230" Background="{StaticResource ImagesBrush}" RenderTransform="rotate(14deg)" />
         <Border Classes="art" Tag="0:0:0.15" Canvas.Left="520" Canvas.Top="150" Width="190" Height="190" Background="{StaticResource PdfBrush}" RenderTransform="rotate(-9deg)" />
-        <Border Classes="art" Tag="0:0:0.25" Canvas.Left="360" Canvas.Top="190" Width="150" Height="150" Background="{StaticResource RenameBrush}" RenderTransform="rotate(24deg)" />
+        <Border Classes="art" Tag="0:0:0.25" Canvas.Left="360" Canvas.Top="190" Width="150" Height="150" Background="{StaticResource FilesBrush}" RenderTransform="rotate(24deg)" />
         <Border Classes="art" Tag="0:0:0.35" Canvas.Left="455" Canvas.Top="300" Width="120" Height="120" Background="{StaticResource VideoBrush}" RenderTransform="rotate(8deg)" CornerRadius="22" />
         <Border Classes="art" Tag="0:0:0.45" Canvas.Left="370" Canvas.Top="70" Width="70" Height="70" Background="{StaticResource LemonBrush}" RenderTransform="rotate(14deg)" CornerRadius="16" />
         <Border Classes="art" Tag="0:0:0.55" Canvas.Left="610" Canvas.Top="60" Width="34" Height="34" Background="{StaticResource CreamBrush}" RenderTransform="rotate(-20deg)" CornerRadius="8" />

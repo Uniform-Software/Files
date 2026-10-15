@@ -74,7 +74,7 @@ public class OutputTargetTests
     private sealed class CopyTool : FileToolBase
     {
         public override string Id => "test.copy";
-        public override ToolModule Module => ToolModule.Rename;
+        public override ToolModule Module => ToolModule.Files;
         public override string Name => "Copy";
         public override string Description => "";
         public override IReadOnlySet<FileKind> AcceptedKinds { get; } = new HashSet<FileKind>();

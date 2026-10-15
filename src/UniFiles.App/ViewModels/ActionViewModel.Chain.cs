@@ -176,6 +176,7 @@ public partial class ActionViewModel
             ExtraSteps[i].Number = i + 2;
         OnPropertyChanged(nameof(HasSteps));
         OnPropertyChanged(nameof(HasOptions));
+        OnPropertyChanged(nameof(CanStartSavingPreset));
         OnPropertyChanged(nameof(CanAddStep));
         OnPropertyChanged(nameof(SettingsTitle));
         Update();

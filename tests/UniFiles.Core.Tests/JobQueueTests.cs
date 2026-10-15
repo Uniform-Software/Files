@@ -10,7 +10,7 @@ public class JobQueueTests
     private sealed class FakeTool(int delayMs = 0, int parallelism = 4) : FileToolBase
     {
         public override string Id => "test.fake";
-        public override ToolModule Module => ToolModule.Rename;
+        public override ToolModule Module => ToolModule.Files;
         public override string Name => "Fake";
         public override string Description => "";
         public override IReadOnlySet<FileKind> AcceptedKinds { get; } = new HashSet<FileKind>();

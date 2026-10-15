@@ -1,0 +1,130 @@
+<!--
+  Creating a signature, one question per screen: a centered column, a large title, a short
+  explanation, the field, and one big button. Dots show the progress.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             x:Class="UniFiles.App.Views.SignatureWizardView"
+             x:DataType="vm:SignatureWizardViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.wizardTitle">
+      <Setter Property="FontFamily" Value="{StaticResource DisplayFont}" />
+      <Setter Property="FontWeight" Value="Bold" />
+      <Setter Property="FontSize" Value="32" />
+      <Setter Property="LetterSpacing" Value="-0.8" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.wizardHint">
+      <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}" />
+      <Setter Property="TextAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="LineHeight" Value="21" />
+    </Style>
+    <Style Selector="TextBox.large">
+      <Setter Property="MinHeight" Value="50" />
+      <Setter Property="FontSize" Value="16" />
+      <Setter Property="Padding" Value="16,0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="CornerRadius" Value="14" />
+    </Style>
+    <Style Selector="Button.wide">
+      <Setter Property="MinHeight" Value="50" />
+      <Setter Property="CornerRadius" Value="25" />
+      <Setter Property="FontSize" Value="15" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Ellipse.dot">
+      <Setter Property="Width" Value="8" />
+      <Setter Property="Height" Value="8" />
+      <Setter Property="Fill" Value="{DynamicResource BorderBrush}" />
+    </Style>
+    <Style Selector="Ellipse.dot.done">
+      <Setter Property="Fill" Value="{StaticResource LemonBrush}" />
+    </Style>
+    <!-- Steps fade in. -->
+    <Style Selector="StackPanel.step">
+      <Setter Property="Transitions">
+        <Transitions>
+          <DoubleTransition Property="Opacity" Duration="0:0:0.25" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="StackPanel.step[IsVisible=False]">
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*">
+    <!-- Top: back, progress, cancel -->
+    <DockPanel Grid.Row="0" Margin="0,0,0,8">
+      <Button DockPanel.Dock="Left" Classes="ghost" BorderThickness="0" Command="{Binding BackCommand}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <controls:Icon Size="16" Data="{StaticResource IconChevronLeft}" />
+          <TextBlock Text="{x:Static res:Strings.Wizard_Back}" />
+        </StackPanel>
+      </Button>
+      <Button DockPanel.Dock="Right" Classes="ghost" BorderThickness="0" Command="{Binding CancelCommand}" Content="{x:Static res:Strings.Wizard_Cancel}" />
+      <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Center" VerticalAlignment="Center"
+                  AutomationProperties.Name="{Binding StepText}" ToolTip.Tip="{Binding StepText}">
+        <Ellipse Classes="dot" Classes.done="{Binding Step1Done}" />
+        <Ellipse Classes="dot" Classes.done="{Binding Step2Done}" />
+        <Ellipse Classes="dot" Classes.done="{Binding Step3Done}" />
+      </StackPanel>
+    </DockPanel>
+
+    <ScrollViewer Grid.Row="1">
+      <StackPanel Width="460" HorizontalAlignment="Center" Margin="0,48,0,40" Spacing="28">
+
+        <!-- 1. Name -->
+        <StackPanel Classes="step" Spacing="14" IsVisible="{Binding IsNameStep}">
+          <controls:ModuleBadge Size="56" Mosaic="True" Tile="{StaticResource SignatureBrush}" Icon="{StaticResource IconSignature}" HorizontalAlignment="Center" Margin="0,0,0,6" />
+          <TextBlock Classes="wizardTitle" Text="{x:Static res:Strings.Wizard_NameTitle}" />
+          <TextBlock Classes="wizardHint" Text="{x:Static res:Strings.Wizard_NameHint}" />
+          <TextBox x:Name="FirstName" Classes="large" Margin="0,10,0,0" Text="{Binding FirstName}" Watermark="{x:Static res:Strings.Wizard_FirstName}"
+                   AutomationProperties.Name="{x:Static res:Strings.Wizard_FirstName}" />
+          <TextBox Classes="large" Text="{Binding LastName}" Watermark="{x:Static res:Strings.Wizard_LastName}"
+                   AutomationProperties.Name="{x:Static res:Strings.Wizard_LastName}" />
+        </StackPanel>
+
+        <!-- 2. Handwritten signature -->
+        <StackPanel Classes="step" Spacing="14" IsVisible="{Binding IsHandwritingStep}">
+          <TextBlock Classes="wizardTitle" Text="{x:Static res:Strings.Wizard_HandwritingTitle}" />
+          <TextBlock Classes="wizardHint" Text="{x:Static res:Strings.Wizard_HandwritingHint}" />
+          <Border Background="{StaticResource CreamBrush}" CornerRadius="18" Height="170" Margin="0,10,0,0" ClipToBounds="True"
+                  BoxShadow="0 2 12 0 #30000000">
+            <Panel>
+              <controls:SignaturePad x:Name="Pad" Ink="{StaticResource InkBrush}" Guide="#9A9486" IsVisible="{Binding !HasImage}"
+                                     AutomationProperties.Name="{x:Static res:Strings.Wizard_HandwritingTitle}" />
+              <Image Source="{Binding Image}" Stretch="Uniform" Margin="20" IsVisible="{Binding HasImage}" />
+            </Panel>
+          </Border>
+          <StackPanel Orientation="Horizontal" Spacing="10" HorizontalAlignment="Center">
+            <Button Classes="ghost" x:Name="ClearPad" Content="{x:Static res:Strings.SignSettings_HandwritingClear}" />
+            <Button Classes="ghost" Command="{Binding PickImageCommand}" Content="{x:Static res:Strings.SignSettings_HandwritingImport}" />
+          </StackPanel>
+        </StackPanel>
+
+        <!-- 3. Email -->
+        <StackPanel Classes="step" Spacing="14" IsVisible="{Binding IsEmailStep}">
+          <TextBlock Classes="wizardTitle" Text="{x:Static res:Strings.Wizard_EmailTitle}" />
+          <TextBlock Classes="wizardHint" Text="{x:Static res:Strings.Wizard_EmailHint}" />
+          <TextBox x:Name="EmailBox" Classes="large" Margin="0,10,0,0" Text="{Binding Email}" Watermark="nom@exemple.fr"
+                   AutomationProperties.Name="{x:Static res:Strings.Wizard_EmailTitle}" />
+          <TextBlock Classes="caption" Text="{x:Static res:Strings.Wizard_Note}" TextWrapping="Wrap" TextAlignment="Center" Margin="0,6,0,0" />
+        </StackPanel>
+
+        <StackPanel Spacing="10">
+          <TextBlock Classes="error" Text="{Binding Error}" TextWrapping="Wrap" TextAlignment="Center"
+                     IsVisible="{Binding Error, Converter={x:Static ObjectConverters.IsNotNull}}" />
+          <Button Classes="primary wide" Command="{Binding ContinueCommand}" Content="{Binding ContinueLabel}" IsDefault="True" />
+          <TextBlock Classes="caption" Text="{Binding StepText}" HorizontalAlignment="Center" />
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Grid>
+</UserControl>

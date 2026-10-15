@@ -11,7 +11,7 @@ namespace UniFiles.Core.Tools.Rename;
 public sealed partial class BatchRenameTool : FileToolBase, IPreviewableTool
 {
     public override string Id => "rename.pattern";
-    public override ToolModule Module => ToolModule.Rename;
+    public override ToolModule Module => ToolModule.Files;
     public override string Name => Strings.Tool_Rename_Name;
     public override string Description => Strings.Tool_Rename_Description;
     public override IReadOnlySet<FileKind> AcceptedKinds { get; } = new HashSet<FileKind>();

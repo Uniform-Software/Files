@@ -1,6 +1,7 @@
 using UniFiles.Core;
 using UniFiles.Core.Storage;
 using UniFiles.Core.Tools;
+using UniFiles.Core.Tools.Rename;
 
 namespace UniFiles.App.Platform;
 
@@ -39,7 +40,7 @@ public static class ExplorerMenu
 
     /// <summary>Quick actions offered for a file extension: every tool accepting it, except renaming (it needs a pattern) and editor-based tools.</summary>
     public static IEnumerable<IFileTool> QuickActionsFor(ToolCatalog catalog, string extension) =>
-        catalog.Tools.Where(t => t.Module != ToolModule.Rename && !t.NeedsEditor && t.AcceptedKinds.Count > 0 && t.Accepts("file" + extension));
+        catalog.Tools.Where(t => t is not BatchRenameTool && !t.NeedsEditor && t.AcceptedKinds.Count > 0 && t.Accepts("file" + extension));
 
     /// <summary>Presets whose tool works on a file extension, in creation order.</summary>
     public static IEnumerable<ToolPreset> PresetsFor(ToolCatalog catalog, IReadOnlyList<ToolPreset> presets, string extension) =>

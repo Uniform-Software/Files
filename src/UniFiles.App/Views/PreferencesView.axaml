@@ -7,10 +7,10 @@
              x:Class="UniFiles.App.Views.PreferencesView"
              x:DataType="vm:PreferencesViewModel">
   <ScrollViewer>
-    <StackPanel Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="0,0,0,40">
-      <TextBlock Classes="h1" Text="{x:Static res:Strings.Nav_Preferences}" Margin="0,0,0,4" />
+    <StackPanel x:Name="Sections" Spacing="16" MaxWidth="760" HorizontalAlignment="Left" Margin="0,0,0,40">
+      <TextBlock Classes="h1" Text="{Binding SectionTitle}" Margin="0,0,0,4" />
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsGeneral}">
         <StackPanel Spacing="12">
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_OutputFolder}" />
           <TextBlock Classes="secondary" Text="{x:Static res:Strings.Prefs_OutputFolderHint}" TextWrapping="Wrap" />
@@ -25,7 +25,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsAppearance}">
         <StackPanel Spacing="14">
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_Appearance}" />
           <StackPanel Spacing="6">
@@ -41,7 +41,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsSystem}">
         <StackPanel Spacing="14">
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_System}" />
           <StackPanel Spacing="2">
@@ -64,7 +64,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsUpdates}">
         <StackPanel Spacing="12">
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Update_Title}" />
           <StackPanel Spacing="12" IsVisible="{Binding Updater.IsSupported}">
@@ -84,7 +84,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsAppearance}">
         <StackPanel Spacing="10">
           <TextBlock Classes="h2" Text="{x:Static res:Strings.Prefs_Language}" />
           <ComboBox ItemsSource="{Binding Languages}" SelectedItem="{Binding SelectedLanguage}"
@@ -93,7 +93,7 @@
         </StackPanel>
       </Border>
 
-      <Border Classes="card">
+      <Border Classes="card" IsVisible="{Binding IsAbout}">
         <StackPanel Spacing="8">
           <controls:Logo HorizontalAlignment="Left" />
           <TextBlock Classes="secondary" Text="{Binding Version}" />

@@ -66,6 +66,19 @@
     <Style Selector="StackPanel#MacCaption:pointerover Button.traffic Path">
       <Setter Property="Opacity" Value="0.65" />
     </Style>
+    <Style Selector="ListBox.nav controls|Icon">
+      <Setter Property="RenderTransform" Value="rotate(0deg)" />
+    </Style>
+    <Style Selector="Window:not(.reducedMotion) ListBox.nav controls|Icon">
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.2" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="ListBox.nav controls|Icon.open">
+      <Setter Property="RenderTransform" Value="rotate(180deg)" />
+    </Style>
     <Style Selector="Border.grip">
       <Setter Property="Background" Value="Transparent" />
     </Style>
@@ -136,13 +149,23 @@
           <TextBlock Classes="caption" Text="{x:Static res:Strings.Tagline_OpenSource}" />
         </StackPanel>
 
-        <ListBox Classes="nav" SelectionMode="AlwaysSelected"
+        <ListBox Classes="nav" x:Name="Nav" SelectionMode="AlwaysSelected"
                  ItemsSource="{Binding NavItems}"
                  SelectedItem="{Binding SelectedNav}"
                  AutomationProperties.Name="{x:Static res:Strings.Nav_Label}">
+          <ListBox.Styles>
+            <!-- Sub-entries (Preferences parts): shown while their group is open, smaller, indented. -->
+            <Style Selector="ListBox.nav ListBoxItem" x:DataType="vm:NavItemViewModel">
+              <Setter Property="IsVisible" Value="{Binding IsShown}" />
+              <Setter Property="Padding" Value="{Binding ItemPadding}" />
+              <Setter Property="MinHeight" Value="{Binding ItemHeight}" />
+            </Style>
+          </ListBox.Styles>
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="vm:NavItemViewModel">
               <DockPanel>
+                <controls:Icon DockPanel.Dock="Right" Size="14" Data="{StaticResource IconDown}" IsVisible="{Binding HasChildren}"
+                               RenderTransformOrigin="50%,50%" Classes.open="{Binding IsOpen}" Opacity="0.6" />
                 <Border DockPanel.Dock="Right"
                         IsVisible="{Binding HasBadge}"
                         Background="{StaticResource LemonBrush}"
@@ -152,8 +175,8 @@
                              HorizontalAlignment="Center" VerticalAlignment="Center" />
                 </Border>
                 <StackPanel Orientation="Horizontal" Spacing="12">
-                  <controls:Icon Size="20" Data="{Binding Icon}" />
-                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                  <controls:Icon Size="20" Data="{Binding Icon}" IsVisible="{Binding !IsSub}" />
+                  <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" FontSize="{Binding ItemFontSize}" />
                 </StackPanel>
               </DockPanel>
             </DataTemplate>
@@ -185,7 +208,7 @@
         </DockPanel>
 
         <!-- Current page -->
-        <ContentControl Grid.Row="1" Content="{Binding CurrentPage}" Margin="40,0,40,0" />
+        <ContentControl Grid.Row="1" x:Name="PageHost" Content="{Binding CurrentPage}" Margin="40,0,40,0" />
 
         <!-- Notification, bottom right -->
         <Border Grid.Row="1"

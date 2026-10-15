@@ -22,6 +22,35 @@ public static class DialogService
         return files.Select(f => f.TryGetLocalPath()).OfType<string>().ToList();
     }
 
+    public static async Task<string?> PickFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
+    {
+        if (Owner is null)
+            return null;
+        var files = await Owner.StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType(typeName) { Patterns = patterns }, FilePickerFileTypes.All],
+        });
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
+
+    /// <summary>"Save as": the chosen path, or null when canceled.</summary>
+    public static async Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
+    {
+        if (Owner is null)
+            return null;
+        var file = await Owner.StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = extension,
+            ShowOverwritePrompt = true,
+            FileTypeChoices = [new FilePickerFileType(typeName) { Patterns = ["*." + extension] }],
+        });
+        return file?.TryGetLocalPath();
+    }
+
     public static async Task<string?> PickFolderAsync(string title)
     {
         if (Owner is null)

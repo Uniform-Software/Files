@@ -1,0 +1,181 @@
+<!--
+  Signing screen: page thumbnails on the left, the page with its signature fields in the middle
+  (click an empty one, or draw a box), and the signature's settings on the right.
+-->
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:UniFiles.App.ViewModels"
+             xmlns:controls="using:UniFiles.App.Controls"
+             xmlns:res="using:UniFiles.Core.Resources"
+             xmlns:services="using:UniFiles.App.Services"
+             x:Class="UniFiles.App.Views.PdfSignEditorView"
+             x:DataType="vm:PdfSignEditorViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Border.pageThumb">
+      <Setter Property="Padding" Value="6" />
+      <Setter Property="Margin" Value="0,0,0,10" />
+      <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+      <Setter Property="BorderThickness" Value="2" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Border.pageThumb.current">
+      <Setter Property="BorderBrush" Value="{StaticResource LemonBrush}" />
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,*,Auto" Margin="0,0,0,24">
+
+    <!-- Header -->
+    <DockPanel Grid.Row="0" Margin="0,0,0,16">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <Button Classes="icon" Command="{Binding ZoomOutCommand}" AutomationProperties.Name="{x:Static res:Strings.Form_ZoomOut}" ToolTip.Tip="{x:Static res:Strings.Form_ZoomOut}">
+          <TextBlock Text="−" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" />
+        </Button>
+        <Button Classes="icon" Command="{Binding ZoomInCommand}" AutomationProperties.Name="{x:Static res:Strings.Form_ZoomIn}" ToolTip.Tip="{x:Static res:Strings.Form_ZoomIn}">
+          <TextBlock Text="+" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" />
+        </Button>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="12">
+        <Button Classes="icon" Command="{Binding BackCommand}" AutomationProperties.Name="{x:Static res:Strings.Common_Back}">
+          <controls:Icon Size="20" Data="{StaticResource IconBack}" />
+        </Button>
+        <StackPanel VerticalAlignment="Center">
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <controls:ModuleBadge Size="34" Tile="{StaticResource PdfBrush}" Icon="{StaticResource IconSignature}" />
+            <TextBlock Classes="h1" Text="{x:Static res:Strings.Tool_PdfSign_Name}" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock Classes="caption" Text="{Binding FileName}" />
+        </StackPanel>
+      </StackPanel>
+    </DockPanel>
+
+    <!-- Body -->
+    <Grid Grid.Row="1" ColumnDefinitions="140,16,*,16,300">
+      <ScrollViewer Grid.Column="0">
+        <ItemsControl ItemsSource="{Binding Pages}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="vm:FormPageViewModel">
+              <Border Classes="pageThumb" Classes.current="{Binding IsCurrent}" Background="Transparent"
+                      PointerPressed="OnThumbnailPressed" AutomationProperties.Name="{Binding Label}">
+                <StackPanel Spacing="4">
+                  <Border Background="{StaticResource CreamBrush}" CornerRadius="3" ClipToBounds="True" MinHeight="60">
+                    <Image Source="{Binding Thumbnail}" Stretch="Uniform" />
+                  </Border>
+                  <TextBlock Classes="caption" Text="{Binding Label}" HorizontalAlignment="Center" />
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </ScrollViewer>
+
+      <Border Grid.Column="2" Background="{DynamicResource SurfaceRaisedBrush}" CornerRadius="{StaticResource RadiusCard}" ClipToBounds="True">
+        <Panel>
+          <ScrollViewer x:Name="PageScroller" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+            <LayoutTransformControl x:Name="Zoomer" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="24">
+              <Panel Width="{Binding PageWidth}" Height="{Binding PageHeight}">
+                <Border BoxShadow="0 4 24 0 #50000000" Background="{StaticResource CreamBrush}">
+                  <Image Source="{Binding PageImage}" Stretch="Fill" />
+                </Border>
+                <Canvas x:Name="Overlay" Background="Transparent" ClipToBounds="True" Cursor="Cross" />
+              </Panel>
+            </LayoutTransformControl>
+          </ScrollViewer>
+          <controls:Loader HorizontalAlignment="Center" VerticalAlignment="Center" IsVisible="{Binding IsLoading}" />
+          <TextBlock Classes="error" Text="{Binding Error}" IsVisible="{Binding HasError}" TextWrapping="Wrap" MaxWidth="420"
+                     HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" />
+        </Panel>
+      </Border>
+
+      <!-- Settings -->
+      <Border Grid.Column="4" Classes="panel" Padding="18">
+        <ScrollViewer>
+          <StackPanel Spacing="16">
+            <Border Classes="banner" IsVisible="{Binding ExistingSignatures, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <TextBlock Text="{Binding ExistingSignatures}" TextWrapping="Wrap" FontSize="12.5" />
+            </Border>
+
+            <!-- Where -->
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" Text="{Binding PlacementText}" TextWrapping="Wrap" />
+              <ToggleSwitch IsChecked="{Binding IsInvisible}" Content="{x:Static res:Strings.Sign_Invisible}" OnContent="" OffContent="" />
+            </StackPanel>
+
+            <!-- Certificate -->
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" Text="{x:Static res:Strings.Sign_Certificate}" />
+              <TextBlock Classes="secondary" Text="{x:Static res:Strings.Sign_NoIdentity}" TextWrapping="Wrap" IsVisible="{Binding HasNoIdentity}" />
+              <ComboBox ItemsSource="{Binding Identities}" SelectedItem="{Binding SelectedIdentity}" HorizontalAlignment="Stretch"
+                        IsVisible="{Binding !HasNoIdentity}" AutomationProperties.Name="{x:Static res:Strings.Sign_Certificate}" />
+              <TextBlock Classes="caption" Text="{Binding IdentityText}" TextWrapping="Wrap" IsVisible="{Binding !HasNoIdentity}" />
+              <Button Classes="ghost" HorizontalAlignment="Left" Command="{Binding ManageCertificatesCommand}" Content="{x:Static res:Strings.Sign_Manage}" />
+            </StackPanel>
+
+            <!-- Shows -->
+            <StackPanel Spacing="6" IsVisible="{Binding !IsInvisible}">
+              <TextBlock Classes="label" Text="{x:Static res:Strings.Sign_Shows}" />
+              <WrapPanel>
+                <CheckBox IsChecked="{Binding ShowName}" Content="{x:Static res:Strings.Sign_ShowName}" Margin="0,0,14,0" />
+                <CheckBox IsChecked="{Binding ShowDate}" Content="{x:Static res:Strings.Sign_ShowDate}" Margin="0,0,14,0" />
+                <CheckBox IsChecked="{Binding ShowReason}" Content="{x:Static res:Strings.Sign_ShowReason}" />
+              </WrapPanel>
+              <TextBlock Classes="caption" Text="{x:Static res:Strings.Sign_Handwriting}" Margin="0,4,0,0" />
+              <ComboBox ItemsSource="{Binding HandwritingChoices}" SelectedItem="{Binding SelectedHandwriting}" HorizontalAlignment="Stretch"
+                        AutomationProperties.Name="{x:Static res:Strings.Sign_Handwriting}" />
+            </StackPanel>
+
+            <!-- Reason, place -->
+            <StackPanel Spacing="6">
+              <TextBlock Classes="label" Text="{x:Static res:Strings.Sign_Reason}" />
+              <TextBox Text="{Binding Reason}" AutomationProperties.Name="{x:Static res:Strings.Sign_Reason}" />
+              <ItemsControl ItemsSource="{Binding SuggestedReasons}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <WrapPanel />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="x:String">
+                    <Button Classes="ghost" Padding="10,2" MinHeight="28" Margin="0,0,6,6" FontSize="12.5" Content="{Binding}"
+                            Command="{Binding $parent[ItemsControl].((vm:PdfSignEditorViewModel)DataContext).UseReasonCommand}" CommandParameter="{Binding}" />
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+              <TextBox Text="{Binding Location}" Watermark="{x:Static res:Strings.Sign_Location}" AutomationProperties.Name="{x:Static res:Strings.Sign_Location}" />
+            </StackPanel>
+
+            <ToggleSwitch IsChecked="{Binding UseTimestamp}" IsVisible="{Binding CanTimestamp}" Content="{x:Static res:Strings.Sign_Timestamp}" OnContent="" OffContent="" />
+
+            <StackPanel Spacing="2" IsVisible="{Binding HasEditableFields}">
+              <ToggleSwitch IsChecked="{Binding Flatten}" Content="{x:Static res:Strings.Sign_Flatten}" OnContent="" OffContent="" />
+              <TextBlock Classes="caption" Text="{x:Static res:Strings.Sign_FlattenHint}" TextWrapping="Wrap" />
+            </StackPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+
+    <!-- Bottom bar -->
+    <DockPanel Grid.Row="2" Margin="0,16,0,0">
+      <Button DockPanel.Dock="Right" Classes="primary" Command="{Binding SignCommand}"
+              HotKey="{OnPlatform Ctrl+Enter, macOS=Meta+Enter}" ToolTip.Tip="{x:Static services:PlatformText.LaunchShortcut}"
+              AutomationProperties.Name="{x:Static res:Strings.Sign_Sign}">
+        <StackPanel Orientation="Horizontal" Spacing="8">
+          <controls:Icon Size="16" Data="{StaticResource IconSignature}" />
+          <TextBlock Text="{x:Static res:Strings.Sign_Sign}" />
+        </StackPanel>
+      </Button>
+      <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+        <Button Classes="icon" Command="{Binding PreviousPageCommand}" AutomationProperties.Name="{x:Static res:Strings.Form_PreviousPage}">
+          <controls:Icon Size="16" Data="{StaticResource IconChevronLeft}" />
+        </Button>
+        <TextBlock Classes="label" Text="{Binding PageLabel}" VerticalAlignment="Center" />
+        <Button Classes="icon" Command="{Binding NextPageCommand}" AutomationProperties.Name="{x:Static res:Strings.Form_NextPage}">
+          <controls:Icon Size="16" Data="{StaticResource IconChevronRight}" />
+        </Button>
+      </StackPanel>
+    </DockPanel>
+  </Grid>
+</UserControl>

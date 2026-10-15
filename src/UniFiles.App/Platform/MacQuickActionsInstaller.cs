@@ -5,6 +5,7 @@ using UniFiles.Core;
 using UniFiles.Core.Resources;
 using UniFiles.Core.Storage;
 using UniFiles.Core.Tools;
+using UniFiles.Core.Tools.Rename;
 
 namespace UniFiles.App.Platform;
 
@@ -48,7 +49,7 @@ internal sealed class MacQuickActionsInstaller : IContextMenuInstaller
         Uninstall(refresh: false);
         Directory.CreateDirectory(ServicesFolder);
 
-        foreach (var tool in catalog.Tools.Where(t => t.Module != ToolModule.Rename && !t.NeedsEditor && t.AcceptedKinds.Count > 0))
+        foreach (var tool in catalog.Tools.Where(t => t is not BatchRenameTool && !t.NeedsEditor && t.AcceptedKinds.Count > 0))
             Write(tool.Name, $"--action {tool.Id}", Utis(tool), executablePath);
         foreach (var preset in presets)
         {

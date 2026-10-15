@@ -27,9 +27,17 @@ public sealed class FileItemViewModel(InputFile input)
     public override string ToString() => $"{Name}, {SizeText}";
 }
 
-public sealed class ToolItemViewModel(IFileTool tool)
+public sealed partial class ToolItemViewModel(IFileTool tool) : ObservableObject
 {
     public IFileTool Tool { get; } = tool;
+
+    /// <summary>The open action of the accordion.</summary>
+    [ObservableProperty]
+    private bool _isSelected;
+
+    /// <summary>The action screen while this action is open (its settings show under it), null otherwise.</summary>
+    [ObservableProperty]
+    private ActionViewModel? _host;
 
     public ModuleInfo Module { get; } = ModuleInfo.For(tool.Module);
 
@@ -254,6 +262,25 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     public ObservableCollection<ToolItemViewModel> Tools { get; } = [];
 
+    /// <summary>The action chosen for these files, first in the accordion.</summary>
+    public ObservableCollection<ToolItemViewModel> DefaultTools { get; } = [];
+
+    /// <summary>The other actions of the files' module.</summary>
+    public ObservableCollection<ToolItemViewModel> RecommendedTools { get; } = [];
+
+    /// <summary>Actions of other modules (files, signature…).</summary>
+    public ObservableCollection<ToolItemViewModel> OtherTools { get; } = [];
+
+    public bool HasRecommended => RecommendedTools.Count > 0;
+
+    public bool CanStartSavingPreset => HasOptions && !IsSavingPreset;
+
+    public bool HasOther => OtherTools.Count > 0;
+
+    /// <summary>Opens an action of the accordion; the open one closes, leaving no action chosen.</summary>
+    [RelayCommand]
+    private void SelectTool(ToolItemViewModel tool) => SelectedTool = SelectedTool == tool ? null : tool;
+
     public ObservableCollection<OptionViewModel> Options { get; } = [];
 
     public ObservableCollection<PreviewRow> PreviewRows { get; } = [];
@@ -267,6 +294,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     private PresetItemViewModel? _activePreset;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(CanStartSavingPreset))]
     private bool _isSavingPreset;
 
     [ObservableProperty]
@@ -303,7 +331,12 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     public bool HasTool => SelectedTool is not null;
 
     /// <summary>"Start", or "Open the editor" for tools set up in an editor.</summary>
-    public string LaunchLabel => SelectedTool?.Tool.NeedsEditor == true ? Strings.Action_OpenEditor : Strings.Action_Launch;
+    public string LaunchLabel => SelectedTool?.Tool switch
+    {
+        PdfVerifyTool => Strings.Verify_Launch,
+        { NeedsEditor: true } => Strings.Action_OpenEditor,
+        _ => Strings.Action_Launch,
+    };
 
     // Editor-based tools are set up in their editor, not here.
     public bool HasOptions => (Options.Count > 0 || HasSteps) && SelectedTool?.Tool.NeedsEditor != true;
@@ -321,6 +354,11 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     partial void OnSelectedToolChanged(ToolItemViewModel? value)
     {
+        foreach (var tool in Tools)
+        {
+            tool.IsSelected = tool == value;
+            tool.Host = tool == value ? this : null;
+        }
         ActivePreset = null;
         IsChoosingStep = false;
         BuildOptions();
@@ -335,19 +373,42 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     partial void OnWarningChanged(string? value) => OnPropertyChanged(nameof(HasWarning));
 
+    /// <summary>Tools of the recent history, most recent first (once each).</summary>
+    private List<string> RecentToolIds()
+    {
+        try
+        {
+            return _services.History.Recent(50).Select(e => e.ToolId).Distinct().ToList();
+        }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or Microsoft.Data.Sqlite.SqliteException)
+        {
+            return [];
+        }
+    }
+
     private void RefreshTools()
     {
         var previous = SelectedTool?.Tool;
         var primary = _preferredModule ?? ModuleFor(Files.Select(f => FileKindDetector.Detect(f.Path)));
+        // The action used last for this kind of file is the one chosen by default.
+        var recent = RecentToolIds();
         var compatible = _services.Catalog.CompatibleWith(Files.Select(f => f.Path).ToList())
             .Select(t => new ToolItemViewModel(t))
-            // The module matching the files (or picked by the user) first, renaming last.
-            .OrderBy(t => t.Tool.Module == primary ? 0 : t.Tool.Module is ToolModule.Rename or ToolModule.Files ? 2 : 1)
+            // The module matching the files (or picked by the user) first, file-level actions last.
+            .OrderBy(t => t.Tool.Module == primary ? 0 : t.Tool.Module == ToolModule.Files ? 2 : 1)
+            .ThenBy(t => t.Tool.Module == primary && recent.IndexOf(t.Tool.Id) is var at and >= 0 ? at : int.MaxValue)
             .ToList();
 
         Tools.Clear();
         foreach (var tool in compatible)
             Tools.Add(tool);
+        DefaultTools.Clear();
+        RecommendedTools.Clear();
+        OtherTools.Clear();
+        for (var i = 0; i < compatible.Count; i++)
+            (i == 0 ? DefaultTools : compatible[i].Tool.Module == compatible[0].Tool.Module ? RecommendedTools : OtherTools).Add(compatible[i]);
+        OnPropertyChanged(nameof(HasRecommended));
+        OnPropertyChanged(nameof(HasOther));
 
         SelectedTool = Tools.FirstOrDefault(t => t.Tool == previous) ?? Tools.FirstOrDefault();
         RefreshPresets();
@@ -388,6 +449,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         }
 
         OnPropertyChanged(nameof(HasOptions));
+        OnPropertyChanged(nameof(CanStartSavingPreset));
         Warning = AppServices.MissingProgramWarning(SelectedTool?.Tool);
         Update();
     }
@@ -703,6 +765,16 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         if (tool is PdfFormFillTool form)
         {
             _main.OpenFormEditor(form, Files[0].Path, this);
+            return;
+        }
+        if (tool is PdfSignTool sign)
+        {
+            _main.OpenSignEditor(sign, Files[0].Path, this);
+            return;
+        }
+        if (tool is PdfVerifyTool)
+        {
+            _ = _main.ShowSignatureReportAsync(Files.Select(f => f.Path).ToList());
             return;
         }
 

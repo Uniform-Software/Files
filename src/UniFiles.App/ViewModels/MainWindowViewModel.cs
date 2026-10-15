@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia;
 using Avalonia.Media;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -20,15 +21,48 @@ public abstract class PageViewModel : ObservableObject;
 /// <summary>A text shown in a window over the page (notices, release notes).</summary>
 public sealed record DocumentViewModel(string Title, string Markdown);
 
-public sealed class NavItemViewModel(string title, string iconKey, PageViewModel page) : ObservableObject
+/// <summary>
+/// An entry of the sidebar. Sub-entries (<see cref="IsSub"/>) sit under their parent (Preferences)
+/// and show only while one of them is open.
+/// </summary>
+public sealed class NavItemViewModel(string title, string iconKey, PageViewModel page, bool isSub = false, PreferencesSection? section = null) : ObservableObject
 {
     private int _badge;
+    private bool _isShown = !isSub;
+    private bool _isOpen;
 
     public string Title { get; } = title;
 
     public Geometry? Icon { get; } = ModuleInfo.Resource<Geometry>(iconKey);
 
     public PageViewModel Page { get; } = page;
+
+    public bool IsSub { get; } = isSub;
+
+    /// <summary>The part of the Preferences page this sub-entry shows.</summary>
+    public PreferencesSection? Section { get; } = section;
+
+    /// <summary>Visible in the sidebar (sub-entries: while their group is open).</summary>
+    public bool IsShown
+    {
+        get => _isShown;
+        set => SetProperty(ref _isShown, value);
+    }
+
+    /// <summary>A parent whose sub-entries are showing.</summary>
+    public bool IsOpen
+    {
+        get => _isOpen;
+        set => SetProperty(ref _isOpen, value);
+    }
+
+    public bool HasChildren { get; init; }
+
+    public Thickness ItemPadding => IsSub ? new Thickness(44, 6, 12, 6) : new Thickness(12, 10);
+
+    public double ItemHeight => IsSub ? 34 : 44;
+
+    public double ItemFontSize => IsSub ? 13 : 14;
 
     public int Badge
     {
@@ -61,6 +95,7 @@ public partial class MainWindowViewModel : ObservableObject
         History = new HistoryViewModel(this, services);
         Preferences = new PreferencesViewModel(this, services);
         Automations = new AutomationsViewModel(services);
+        Signatures = new SignatureSettingsViewModel(this, services);
 
         NavItems =
         [
@@ -68,7 +103,13 @@ public partial class MainWindowViewModel : ObservableObject
             new NavItemViewModel(Strings.Nav_Queue, "IconQueue", Queue),
             new NavItemViewModel(Strings.Nav_History, "IconHistory", History),
             new NavItemViewModel(Strings.Nav_Automations, "IconAutomation", Automations),
-            new NavItemViewModel(Strings.Nav_Preferences, "IconSettings", Preferences),
+            new NavItemViewModel(Strings.Nav_Preferences, "IconSettings", Preferences) { HasChildren = true },
+            new NavItemViewModel(Strings.Prefs_General, "", Preferences, isSub: true, PreferencesSection.General),
+            new NavItemViewModel(Strings.Prefs_Appearance, "", Preferences, isSub: true, PreferencesSection.Appearance),
+            new NavItemViewModel(Strings.Prefs_System, "", Preferences, isSub: true, PreferencesSection.System),
+            new NavItemViewModel(Strings.Update_Title, "", Preferences, isSub: true, PreferencesSection.Updates),
+            new NavItemViewModel(Strings.Prefs_Signatures, "", Signatures, isSub: true),
+            new NavItemViewModel(Strings.Prefs_AboutTitle, "", Preferences, isSub: true, PreferencesSection.About),
         ];
         _selectedNav = NavItems[0];
         _currentPage = Home;
@@ -193,6 +234,22 @@ public partial class MainWindowViewModel : ObservableObject
     {
         if (value is null)
             return;
+        // "Preferences" opens its group on its first part.
+        if (value.HasChildren)
+        {
+            var first = NavItems[NavItems.IndexOf(value) + 1];
+            Dispatcher.UIThread.Post(() => SelectedNav = first);
+            return;
+        }
+        var parent = NavItems.First(n => n.HasChildren);
+        var inGroup = value.IsSub;
+        parent.IsOpen = inGroup;
+        foreach (var item in NavItems.Where(n => n.IsSub))
+            item.IsShown = inGroup;
+        if (value.Section is { } section)
+            Preferences.Section = section;
+        if (value.Page == Signatures)
+            Signatures.Refresh();
         CurrentPage = value.Page;
         if (value.Page == History)
             History.Refresh();
@@ -235,6 +292,17 @@ public partial class MainWindowViewModel : ObservableObject
     {
         SelectedNav = NavItems[0];
         CurrentPage = page;
+        (page as IShownAgain)?.OnShownAgain();
+    }
+
+    public void OpenSignEditor(PdfSignTool tool, string file, PageViewModel back) =>
+        ShowPage(new PdfSignEditorViewModel(this, _services, tool, file, back));
+
+    /// <summary>"Check signatures": the report in a window over the page.</summary>
+    public async Task ShowSignatureReportAsync(IReadOnlyList<string> files)
+    {
+        var report = await Task.Run(() => PdfVerifyTool.Report(files));
+        Document = new DocumentViewModel(Strings.Tool_PdfVerify_Name, report);
     }
 
     public void OpenTrimEditor(VideoTrimTool tool, string file, PageViewModel back) =>
@@ -246,6 +314,18 @@ public partial class MainWindowViewModel : ObservableObject
     public void OpenFormEditor(PdfFormFillTool tool, string file, PageViewModel back) =>
         ShowPage(new PdfFormEditorViewModel(this, _services, tool, file, back));
 
+    public SignatureSettingsViewModel Signatures { get; }
+
+    /// <summary>The saved signatures (Preferences › Signatures); <paramref name="returnTo"/>: the signing screen to go back to.</summary>
+    public void OpenSignatureSettings(PageViewModel? returnTo = null)
+    {
+        Signatures.ReturnTo = returnTo;
+        SelectedNav = NavItems.First(n => n.Page == Signatures);
+    }
+
+    /// <summary>A page shown inside a Preferences part (signature creation, a signature's details): the sidebar stays put.</summary>
+    public void ShowInPreferences(PageViewModel page) => CurrentPage = page;
+
     public void GoHome()
     {
         SelectedNav = NavItems[0];
@@ -254,7 +334,7 @@ public partial class MainWindowViewModel : ObservableObject
 
     public void ShowQueue() => SelectedNav = NavItems.First(n => n.Page == Queue);
 
-    public void ShowPreferences() => SelectedNav = NavItems.First(n => n.Page == Preferences);
+    public void ShowPreferences() => SelectedNav = NavItems.First(n => n.Section == PreferencesSection.General);
 
     // ---- Documents (window over the page) ---------------------------------------------------
 

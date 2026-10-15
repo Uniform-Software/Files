@@ -39,8 +39,8 @@
   <Color x:Key="ImagesColor">#FF6A42</Color>
   <Color x:Key="PdfColor">#6E8BFF</Color>
   <Color x:Key="VideoColor">#B08CFF</Color>
-  <Color x:Key="RenameColor">#3FD8C8</Color>
-  <Color x:Key="FilesColor">#FF7AB6</Color>
+  <Color x:Key="FilesColor">#3FD8C8</Color>
+  <Color x:Key="SignatureColor">#FF7AB6</Color>
 
   <SolidColorBrush x:Key="BackgroundBrush" Color="{DynamicResource BackgroundColor}" />
   <SolidColorBrush x:Key="SurfaceBrush" Color="{DynamicResource SurfaceColor}" />
@@ -70,8 +70,8 @@
   <SolidColorBrush x:Key="ImagesBrush" Color="{StaticResource ImagesColor}" />
   <SolidColorBrush x:Key="PdfBrush" Color="{StaticResource PdfColor}" />
   <SolidColorBrush x:Key="VideoBrush" Color="{StaticResource VideoColor}" />
-  <SolidColorBrush x:Key="RenameBrush" Color="{StaticResource RenameColor}" />
   <SolidColorBrush x:Key="FilesBrush" Color="{StaticResource FilesColor}" />
+  <SolidColorBrush x:Key="SignatureBrush" Color="{StaticResource SignatureColor}" />
 
   <!-- Window: folder tab above the sidebar -->
   <x:Double x:Key="FolderTabWidth">264</x:Double>
@@ -106,6 +106,10 @@
   <StreamGeometry x:Key="IconUpload">M21 15 V19 A2 2 0 0 1 19 21 H5 A2 2 0 0 1 3 19 V15 M17 8 L12 3 L7 8 M12 3 V15</StreamGeometry>
   <StreamGeometry x:Key="IconPlus">M12 5 V19 M5 12 H19</StreamGeometry>
   <StreamGeometry x:Key="IconAutomation">M13 2 L4 14 H12 L11 22 L20 10 H12 Z</StreamGeometry>
+  <!-- Pen writing on a line (signature) -->
+  <StreamGeometry x:Key="IconSignature">M3 21 H21 M15.5 3.5 A2.12 2.12 0 0 1 18.5 6.5 L8 17 L4 18 L5 14 Z M13 6 L16 9</StreamGeometry>
+  <!-- Shield with a check (check signatures) -->
+  <StreamGeometry x:Key="IconShieldCheck">M12 22 C12 22 20 18 20 12 V5 L12 2 L4 5 V12 C4 18 12 22 12 22 Z M9 12 L11 14 L15 10</StreamGeometry>
   <StreamGeometry x:Key="IconArchive">M3 4 H21 V8 H3 Z M5 8 V19 A2 2 0 0 0 7 21 H17 A2 2 0 0 0 19 19 V8 M10 12 H14</StreamGeometry>
   <StreamGeometry x:Key="IconRotateLeft">M3 12 A9 9 0 1 0 12 3 A9.75 9.75 0 0 0 5.26 5.74 L3 8 M3 3 V8 H8</StreamGeometry>
   <StreamGeometry x:Key="IconRotateRight">M21 12 A9 9 0 1 1 12 3 C14.52 3 16.93 4 18.74 5.74 L21 8 M21 3 V8 H16</StreamGeometry>

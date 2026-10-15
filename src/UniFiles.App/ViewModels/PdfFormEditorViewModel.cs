@@ -101,57 +101,22 @@ public sealed partial class FormFieldViewModel : ObservableObject
         new(Name, Kind, Widgets[0].Page, Widgets[0].Rect, FontSize, Required, IsFilled ? Value : null);
 }
 
-/// <summary>A page in the left column.</summary>
-public sealed partial class FormPageViewModel(int index) : ObservableObject
-{
-    public int Index { get; } = index;
-
-    public string Label => string.Format(Strings.Organizer_Page, Index + 1);
-
-    [ObservableProperty]
-    private Bitmap? _thumbnail;
-
-    [ObservableProperty]
-    private bool _isCurrent;
-}
-
 /// <summary>
 /// Form editor: the page drawn by PDFium with a control over each field. "Fill" mode types the
 /// answers; "Add fields" mode draws new text fields and check boxes with the mouse. Saving queues
 /// <see cref="PdfFormFillTool"/>, optionally flattening the form.
 /// </summary>
-public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
+public partial class PdfFormEditorViewModel : PdfPagesViewModel
 {
-    /// <summary>Display units (DIP) per PDF point at 100 % zoom.</summary>
-    public const double Scale = 1.5;
-
-    private const int ThumbnailSize = 150;
-
-    private readonly MainWindowViewModel _main;
-    private readonly AppServices _services;
     private readonly PdfFormFillTool _tool;
-    private readonly PageViewModel _back;
-    private readonly CancellationTokenSource _cancellation = new();
-    private PdfRenderer? _renderer;
-    private IReadOnlyList<PdfPageGeometry> _geometry = [];
 
     public PdfFormEditorViewModel(MainWindowViewModel main, AppServices services, PdfFormFillTool tool, string file, PageViewModel back)
+        : base(main, services, file, back)
     {
-        _main = main;
-        _services = services;
         _tool = tool;
-        _back = back;
-        FilePath = file;
-        FileName = Path.GetFileName(file);
         _selectedNewKind = NewKinds[0];
         _ = LoadAsync();
     }
-
-    public string FilePath { get; }
-
-    public string FileName { get; }
-
-    public ObservableCollection<FormPageViewModel> Pages { get; } = [];
 
     public ObservableCollection<FormFieldViewModel> Fields { get; } = [];
 
@@ -160,25 +125,8 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
         new(FormFieldKind.Text, Strings.Form_Text),
         new(FormFieldKind.MultilineText, Strings.Form_Multiline),
         new(FormFieldKind.CheckBox, Strings.Form_CheckBox),
+        new(FormFieldKind.Signature, Strings.Form_Signature),
     ];
-
-    [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(SaveCommand))]
-    private bool _isLoading = true;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasError))]
-    private string? _error;
-
-    public bool HasError => Error is not null;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(PageLabel), nameof(PageWidth), nameof(PageHeight))]
-    [NotifyCanExecuteChangedFor(nameof(PreviousPageCommand), nameof(NextPageCommand))]
-    private int _currentPage;
-
-    [ObservableProperty]
-    private Bitmap? _pageImage;
 
     /// <summary>True in "Add fields" mode.</summary>
     [ObservableProperty]
@@ -198,19 +146,7 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
     [ObservableProperty]
     private bool _flatten;
 
-    [ObservableProperty]
-    private double _zoom = 1;
-
-    /// <summary>Raised when the fields of the current page must be laid out again.</summary>
-    public event EventHandler? LayoutChanged;
-
     public bool HasSelection => SelectedField is not null;
-
-    public string PageLabel => string.Format(Strings.Form_PageOf, CurrentPage + 1, Math.Max(1, Pages.Count));
-
-    public double PageWidth => DisplaySize(CurrentPage).Width;
-
-    public double PageHeight => DisplaySize(CurrentPage).Height;
 
     public string Summary => string.Format(Strings.Form_Summary, Fields.Count(f => f.IsSupported), Fields.Count(f => f.IsSupported && f.IsFilled));
 
@@ -229,12 +165,9 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
             });
             if (xfa)
                 throw new ToolException(Strings.Error_FormUnsupported);
-            _geometry = geometry;
-            _renderer = await Task.Run(() => PdfRenderer.Open(FilePath));
+            await OpenPagesAsync(geometry);
             foreach (var field in fields)
                 Track(new FormFieldViewModel(field));
-            for (var i = 0; i < _renderer.PageCount; i++)
-                Pages.Add(new FormPageViewModel(i));
         }
         catch (ToolException ex)
         {
@@ -251,9 +184,10 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
 
         // A PDF without fields opens straight in "Add fields" mode.
         IsAdding = Fields.Count == 0;
-        await ShowPageAsync(0);
-        await RenderThumbnailsAsync();
+        await ShowPagesAsync();
     }
+
+    protected override void OnStateChanged() => SaveCommand.NotifyCanExecuteChanged();
 
     private void Track(FormFieldViewModel field)
     {
@@ -265,106 +199,6 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
         Fields.Add(field);
         OnPropertyChanged(nameof(Summary));
         OnPropertyChanged(nameof(HasNoFields));
-    }
-
-    private async Task RenderThumbnailsAsync()
-    {
-        foreach (var page in Pages.ToList())
-        {
-            if (_cancellation.IsCancellationRequested || _renderer is not { } renderer)
-                return;
-            try
-            {
-                var (pixels, width, height) = await Task.Run(() => (renderer.Render(page.Index, ThumbnailSize, out var w, out var h), w, h));
-                page.Thumbnail = ToBitmap(pixels, width, height);
-            }
-            catch (ToolException)
-            {
-                // A page PDFium can't draw keeps an empty thumbnail.
-            }
-        }
-    }
-
-    private async Task ShowPageAsync(int index)
-    {
-        if (_renderer is not { } renderer || index < 0 || index >= Pages.Count)
-            return;
-        CurrentPage = index;
-        foreach (var page in Pages)
-            page.IsCurrent = page.Index == index;
-        // Drawn at twice the display size, for sharp text on high-density screens.
-        var (pixels, width, height) = await Task.Run(() => (renderer.RenderAtDpi(index, (int)(72 * Scale * 2), out var w, out var h), w, h));
-        var old = PageImage;
-        PageImage = ToBitmap(pixels, width, height);
-        old?.Dispose();
-        LayoutChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    private static unsafe WriteableBitmap ToBitmap(byte[] pixels, int width, int height)
-    {
-        var bitmap = new WriteableBitmap(new PixelSize(width, height), new Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Opaque);
-        using var target = bitmap.Lock();
-        fixed (byte* source = pixels)
-        {
-            for (var y = 0; y < height; y++)
-                Buffer.MemoryCopy(source + (long)y * width * 4, (byte*)target.Address + (long)y * target.RowBytes, target.RowBytes, width * 4);
-        }
-        return bitmap;
-    }
-
-    // ---- Coordinates: PDF points (unrotated, origin bottom-left) ↔ display (rotated, top-left) ----
-
-    public Size DisplaySize(int page)
-    {
-        if (page < 0 || page >= _geometry.Count)
-            return new Size(612 * Scale, 792 * Scale);
-        var g = _geometry[page];
-        var (w, h) = g.Rotate is 90 or 270 ? (g.MediaBox.Height, g.MediaBox.Width) : (g.MediaBox.Width, g.MediaBox.Height);
-        return new Size(w * Scale, h * Scale);
-    }
-
-    public Rect ToDisplay(int page, PdfRect rect)
-    {
-        var a = ToDisplay(page, rect.Left, rect.Bottom);
-        var b = ToDisplay(page, rect.Right, rect.Top);
-        return new Rect(new Point(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y)), new Point(Math.Max(a.X, b.X), Math.Max(a.Y, b.Y)));
-    }
-
-    private Point ToDisplay(int page, double x, double y)
-    {
-        var g = page >= 0 && page < _geometry.Count ? _geometry[page] : new PdfPageGeometry(new PdfRect(0, 0, 612, 792), 0);
-        var (w, h) = (g.MediaBox.Width, g.MediaBox.Height);
-        var (px, py) = (x - g.MediaBox.Left, y - g.MediaBox.Bottom);
-        var (dx, dy) = g.Rotate switch
-        {
-            90 => (py, px),
-            180 => (w - px, py),
-            270 => (h - py, w - px),
-            _ => (px, h - py),
-        };
-        return new Point(dx * Scale, dy * Scale);
-    }
-
-    public PdfRect FromDisplay(int page, Rect rect)
-    {
-        var a = FromDisplay(page, rect.TopLeft);
-        var b = FromDisplay(page, rect.BottomRight);
-        return new PdfRect(Math.Min(a.X, b.X), Math.Min(a.Y, b.Y), Math.Max(a.X, b.X), Math.Max(a.Y, b.Y));
-    }
-
-    private Point FromDisplay(int page, Point point)
-    {
-        var g = page >= 0 && page < _geometry.Count ? _geometry[page] : new PdfPageGeometry(new PdfRect(0, 0, 612, 792), 0);
-        var (w, h) = (g.MediaBox.Width, g.MediaBox.Height);
-        var (dx, dy) = (point.X / Scale, point.Y / Scale);
-        var (px, py) = g.Rotate switch
-        {
-            90 => (dy, dx),
-            180 => (w - dx, dy),
-            270 => (w - dy, h - dx),
-            _ => (dx, h - dy),
-        };
-        return new Point(px + g.MediaBox.Left, py + g.MediaBox.Bottom);
     }
 
     // ---- Adding fields -------------------------------------------------------------------------
@@ -379,10 +213,10 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
             var side = Math.Clamp(Math.Min(displayRect.Width, displayRect.Height), 12 * Scale, 24 * Scale);
             displayRect = new Rect(displayRect.X, displayRect.Y, side, side);
         }
-        var field = new FormFieldViewModel(UniqueName(), kind, CurrentPage, FromDisplay(CurrentPage, displayRect));
+        var field = new FormFieldViewModel(UniqueName(kind), kind, CurrentPage, FromDisplay(CurrentPage, displayRect));
         Track(field);
         SelectedField = field;
-        LayoutChanged?.Invoke(this, EventArgs.Empty);
+        RaiseLayoutChanged();
     }
 
     /// <summary>Moves or resizes an added field (display units).</summary>
@@ -393,11 +227,11 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
         field.Widgets[0] = field.Widgets[0] with { Rect = FromDisplay(field.Widgets[0].Page, displayRect) };
     }
 
-    private string UniqueName()
+    private string UniqueName(FormFieldKind kind)
     {
         for (var n = 1; ; n++)
         {
-            var name = string.Format(Strings.Form_DefaultName, n);
+            var name = kind == FormFieldKind.Signature ? $"signature_{n}" : string.Format(Strings.Form_DefaultName, n);
             if (Fields.All(f => f.Name != name))
                 return name;
         }
@@ -408,7 +242,7 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
     partial void OnIsAddingChanged(bool value)
     {
         SelectedField = null;
-        LayoutChanged?.Invoke(this, EventArgs.Empty);
+        RaiseLayoutChanged();
     }
 
     [RelayCommand]
@@ -425,7 +259,7 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
         Fields.Remove(field);
         SelectedField = null;
         OnPropertyChanged(nameof(Summary));
-        LayoutChanged?.Invoke(this, EventArgs.Empty);
+        RaiseLayoutChanged();
     }
 
     /// <summary>Field names must be unique (the PDF finds fields by name).</summary>
@@ -446,25 +280,6 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
 
     // ---- Navigation and saving -----------------------------------------------------------------
 
-    private bool CanGoBack() => CurrentPage > 0;
-
-    private bool CanGoForward() => CurrentPage < Pages.Count - 1;
-
-    [RelayCommand(CanExecute = nameof(CanGoBack))]
-    private Task PreviousPage() => ShowPageAsync(CurrentPage - 1);
-
-    [RelayCommand(CanExecute = nameof(CanGoForward))]
-    private Task NextPage() => ShowPageAsync(CurrentPage + 1);
-
-    [RelayCommand]
-    private Task SelectPage(FormPageViewModel page) => ShowPageAsync(page.Index);
-
-    [RelayCommand]
-    private void ZoomIn() => Zoom = Math.Min(2, Math.Round(Zoom + 0.25, 2));
-
-    [RelayCommand]
-    private void ZoomOut() => Zoom = Math.Max(0.5, Math.Round(Zoom - 0.25, 2));
-
     private bool CanSave() => !IsLoading && Error is null;
 
     [RelayCommand(CanExecute = nameof(CanSave))]
@@ -475,22 +290,7 @@ public partial class PdfFormEditorViewModel : PageViewModel, IDisposable
             Fields.Where(f => !f.IsAdded && f.IsSupported && !f.ReadOnly).ToDictionary(f => f.Name, f => f.Value));
         settings[PdfFormFillTool.AddedKey] = PdfFormFillTool.SerializeAdded(Fields.Where(f => f.IsAdded).Select(f => f.ToNewField()).ToList());
         settings[PdfFormFillTool.FlattenKey] = Flatten;
-        _services.Queue.Enqueue(_tool, [InputFile.Of(FilePath)], settings, _services.TargetFor(settings));
-        Dispose();
-        _main.ShowQueue();
-    }
-
-    [RelayCommand]
-    private void Back()
-    {
-        Dispose();
-        _main.ShowPage(_back);
-    }
-
-    public void Dispose()
-    {
-        _cancellation.Cancel();
-        _renderer?.Dispose();
-        _renderer = null;
+        Services.Queue.Enqueue(_tool, [InputFile.Of(FilePath)], settings, Services.TargetFor(settings));
+        Finish();
     }
 }
