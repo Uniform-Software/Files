@@ -103,14 +103,26 @@ public sealed class ChainTool : FileToolBase
         }
         finally
         {
+            await DeleteTempAsync(temp);
+        }
+    }
+
+    /// <summary>
+    /// Under Windows a file just written can stay held for a moment (antivirus, indexer): a few
+    /// tries, then the system cleans its temp folder (a canceled program may still hold a file).
+    /// </summary>
+    private static async Task DeleteTempAsync(string temp)
+    {
+        for (var attempt = 0; attempt < 5 && Directory.Exists(temp); attempt++)
+        {
             try
             {
-                if (Directory.Exists(temp))
-                    Directory.Delete(temp, recursive: true);
+                Directory.Delete(temp, recursive: true);
+                return;
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                // A file still held by a canceled program: the system cleans its temp folder.
+                await Task.Delay(100 * (attempt + 1));
             }
         }
     }

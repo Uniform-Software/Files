@@ -71,6 +71,7 @@ public abstract class ImageToolBase : FileToolBase
     /// <param name="metadataFrom">Original file whose metadata goes with the pixels of <paramref name="input"/> (decoded HEIC).</param>
     internal static void Process(string input, string output, ImagePlan plan, string? metadataFrom = null)
     {
+        VipsSetup.Ensure();
         Image image;
         try
         {
@@ -191,6 +192,7 @@ public abstract class ImageToolBase : FileToolBase
 
     private static Image LoadUpright(string input)
     {
+        VipsSetup.Ensure();
         using var loaded = Image.NewFromFile(input);
         return loaded.Autorot();
     }

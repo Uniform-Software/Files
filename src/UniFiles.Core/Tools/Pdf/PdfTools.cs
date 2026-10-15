@@ -4,6 +4,8 @@ using PdfSharp.Pdf;
 using PdfSharp.Pdf.IO;
 using UniFiles.Core.Resources;
 
+using UniFiles.Core.Tools.Images;
+
 namespace UniFiles.Core.Tools.Pdf;
 
 public abstract class PdfToolBase : FileToolBase
@@ -252,6 +254,7 @@ public sealed class ImagesToPdfTool : PdfToolBase
     /// </summary>
     private static MemoryStream EncodeForPdf(string path, out int width, out int height)
     {
+        VipsSetup.Ensure();
         try
         {
             using var loaded = Image.NewFromFile(path);

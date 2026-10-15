@@ -34,6 +34,7 @@ public static class HeifDecoder
     /// </summary>
     public static Image WithMetadataOf(Image pixels, string original)
     {
+        VipsSetup.Ensure();
         using var header = Image.NewFromFile(original); // header only: the pixels are never decoded
         return pixels.Mutate(mutable =>
         {

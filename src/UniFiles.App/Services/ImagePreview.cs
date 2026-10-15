@@ -64,6 +64,7 @@ public sealed class ImagePreview : IDisposable
 
     private static Bitmap Render(string path, bool actualPixels)
     {
+        VipsSetup.Ensure();
         Image picture;
         if (actualPixels)
         {
