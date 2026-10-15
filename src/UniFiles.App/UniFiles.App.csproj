@@ -55,10 +55,16 @@
     <SatelliteResourceLanguages>en;fr</SatelliteResourceLanguages>
   </PropertyGroup>
 
-  <!-- Third-party notices, shipped next to the executable and opened from Preferences. -->
+  <!-- Third-party notices and licence, shipped next to the executable as the licences require. -->
   <ItemGroup>
     <None Include="..\..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- The same notices and the release notes, shown in a window inside the app (Preferences, after an update). -->
+  <ItemGroup>
+    <AvaloniaResource Include="..\..\THIRD-PARTY-NOTICES.md" Link="Assets\Docs\THIRD-PARTY-NOTICES.md" />
+    <AvaloniaResource Include="..\..\build\release-notes\*.md" Exclude="..\..\build\release-notes\*-*.md" Link="Assets\Docs\release-notes\%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

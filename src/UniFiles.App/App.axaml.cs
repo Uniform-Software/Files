@@ -95,6 +95,13 @@ public partial class App : Application
         SetUpTray();
         RefreshContextMenu();
         FolderIcon.Apply(_services.Settings.OutputDirectory);
+        ClipboardImport.CleanOld();
+
+        // Watched folders: grouped notifications, restarted when presets change.
+        _services.Automations.Notify = (folder, count, module) =>
+            _viewModel.Notify(string.Format(Strings.Auto_Notification, folder, Format.Files(count)), module: module);
+        _services.Automations.Refresh();
+        _services.PresetsChanged += (_, _) => _services.Automations.Refresh();
         _services.PresetsChanged += (_, _) => RefreshContextMenu();
 
         // Long enough to be seen and read, never longer than needed beyond that.
@@ -102,7 +109,7 @@ public partial class App : Application
             await Task.Delay(remaining);
 
         // A right-click quick action works in the background: no window unless asked for.
-        if (initial.Mode != LaunchMode.QuickAction)
+        if (initial.Mode is not (LaunchMode.QuickAction or LaunchMode.Background))
             ShowMainWindow();
         Handle(initial);
         splash?.Close();
@@ -174,6 +181,7 @@ public partial class App : Application
         if (_window.WindowState == WindowState.Minimized)
             _window.WindowState = WindowState.Normal;
         _window.Activate();
+        _viewModel.ShowWhatsNewIfUpdated();
     }
 
     private void OnWindowClosing(object? sender, WindowClosingEventArgs e)
@@ -234,7 +242,16 @@ public partial class App : Application
             ShowMainWindow();
             _viewModel.ShowPreferences();
         };
-        NativeMenu.SetMenu(this, new NativeMenu { Items = { preferences } });
+        // No ⌘V shortcut here: it would take over pasting text in fields; the window handles ⌘V itself.
+        var paste = new NativeMenuItem(Strings.Paste_Action);
+        paste.Click += (_, _) =>
+        {
+            if (_early is not null)
+                return;
+            ShowMainWindow();
+            _viewModel.PasteCommand.Execute(null);
+        };
+        NativeMenu.SetMenu(this, new NativeMenu { Items = { preferences, paste } });
     }
 
     /// <summary>Re-applies the right-click menu if enabled, so labels and the executable path stay current.</summary>
@@ -324,6 +341,11 @@ public partial class App : Application
 
         menu.Items.Add(new NativeMenuItemSeparator());
         menu.Items.Add(Item(Strings.Tray_OpenOutput, () => _ = DialogService.OpenFolderAsync(_services.Settings.OutputDirectory, _window)));
+        menu.Items.Add(Item(Strings.Paste_Action, () =>
+        {
+            ShowMainWindow();
+            _viewModel.PasteCommand.Execute(null);
+        }));
         menu.Items.Add(new NativeMenuItemSeparator());
         menu.Items.Add(Item(Strings.Tray_Quit, Quit));
     }

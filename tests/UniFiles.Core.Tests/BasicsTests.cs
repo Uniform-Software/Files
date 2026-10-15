@@ -81,7 +81,8 @@ public class FileKindTests
         Assert.DoesNotContain("pdf.merge", forImages);
         Assert.Contains("pdf.split", forOnePdf);
         Assert.DoesNotContain("pdf.merge", forOnePdf); // merging needs two files
-        Assert.Equal(["rename.pattern"], forMixed);
+        // Only the actions working on any file: renaming and archiving.
+        Assert.Equal(["rename.pattern", "files.zip"], forMixed);
     }
 
     [Fact]

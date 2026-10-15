@@ -290,6 +290,7 @@ public sealed class AudioExtractTool : VideoToolBase
     private static readonly IReadOnlySet<FileKind> VideoAndAudio = new HashSet<FileKind> { FileKind.Video, FileKind.Audio };
 
     public override string Id => "audio.extract";
+    public override FileKind OutputKind(FileKind input) => FileKind.Audio;
     public override string Name => Strings.Tool_AudioExtract_Name;
     public override string Description => Strings.Tool_AudioExtract_Description;
     public override IReadOnlySet<FileKind> AcceptedKinds => VideoAndAudio;
@@ -369,5 +370,112 @@ public sealed record SizePlan(int VideoKbps, int AudioKbps, int Height)
         if (sourceHeight > 0 && height >= sourceHeight)
             height = 0;
         return new SizePlan(videoKbps, audioKbps, height);
+    }
+}
+
+/// <summary>Removes the sound of a video. Streams are copied: instant, no quality loss.</summary>
+public sealed class VideoMuteTool : VideoToolBase
+{
+    public override string Id => "video.mute";
+    public override string Name => Strings.Tool_VideoMute_Name;
+    public override string Description => Strings.Tool_VideoMute_Description;
+    public override bool ShowsSizeChange => false;
+
+    public override IReadOnlyList<ToolOption> Options { get; } = [];
+
+    public override async Task<IReadOnlyList<string>> ExecuteAsync(ToolContext context, CancellationToken cancellationToken)
+    {
+        var input = context.Inputs[0];
+        var output = await TranscodeAsync(context, OutputName(input, Path.GetExtension(input), " - " + Strings.Suffix_Muted),
+            o => o.WithCustomArgument("-map 0 -map -0:a -c copy"), cancellationToken);
+        return [output];
+    }
+}
+
+/// <summary>
+/// Brings the sound to a standard loudness (EBU R128) with ffmpeg's loudnorm in two passes: the
+/// first measures, the second corrects linearly, so the dynamics are kept. Video is copied as is.
+/// </summary>
+public sealed class AudioNormalizeTool : VideoToolBase
+{
+    private static readonly IReadOnlySet<FileKind> VideoAndAudio = new HashSet<FileKind> { FileKind.Video, FileKind.Audio };
+
+    public override string Id => "audio.normalize";
+    public override string Name => Strings.Tool_AudioNormalize_Name;
+    public override string Description => Strings.Tool_AudioNormalize_Description;
+    public override IReadOnlySet<FileKind> AcceptedKinds => VideoAndAudio;
+    public override bool ShowsSizeChange => false;
+
+    public override IReadOnlyList<ToolOption> Options { get; } =
+    [
+        new ChoiceOption("target", Strings.Option_Loudness,
+        [
+            new Choice("-16", Strings.Choice_LoudnessVoice),
+            new Choice("-14", Strings.Choice_LoudnessMusic),
+            new Choice("-23", Strings.Choice_LoudnessBroadcast),
+        ], "-16") { Hint = Strings.Hint_Loudness },
+    ];
+
+    public override async Task<IReadOnlyList<string>> ExecuteAsync(ToolContext context, CancellationToken cancellationToken)
+    {
+        var input = context.Inputs[0];
+        var target = context.Settings.GetInt("target", -16);
+        var analysis = await AnalyseAsync(input, cancellationToken);
+        if (analysis.PrimaryAudioStream is null)
+            throw new ToolException(Strings.Error_NoAudio);
+
+        // Pass 1: measure (ffmpeg prints the measures as JSON at the end of its log).
+        var filter = $"loudnorm=I={target}:TP=-1.5:LRA=11";
+        var (exitCode, log) = await ExternalTools.RunAsync(ExternalTools.RequireFfmpeg(),
+            ["-hide_banner", "-nostats", "-i", input, "-vn", "-af", filter + ":print_format=json", "-f", "null", "-"], cancellationToken);
+        var measures = Measures(log);
+        if (exitCode != 0 || measures is null)
+            throw new ToolException(Strings.Error_MediaConversion);
+        context.Progress.Report(0.4);
+
+        // Pass 2: correct, at a fixed sample rate (loudnorm would otherwise output 192 kHz).
+        var corrected = string.Create(CultureInfo.InvariantCulture,
+            $"{filter}:measured_I={measures["input_i"]}:measured_TP={measures["input_tp"]}:measured_LRA={measures["input_lra"]}:measured_thresh={measures["input_thresh"]}:offset={measures["target_offset"]}:linear=true");
+        var isVideo = FileKindDetector.Detect(input) == FileKind.Video;
+        var (extension, codec) = Codec(Path.GetExtension(input).ToLowerInvariant(), isVideo);
+        var output = await TranscodeAsync(context, OutputName(input, extension, " - " + Strings.Suffix_Normalized), o => o.WithCustomArgument(
+                $"{(isVideo ? "-map 0:v? -map 0:a:0 -c:v copy" : "-vn")} -af \"{corrected}\" -ar 48000 {codec}"),
+            cancellationToken);
+        return [output];
+    }
+
+    /// <summary>Output container and audio codec: the original's when possible.</summary>
+    private static (string Extension, string Codec) Codec(string extension, bool isVideo) => extension switch
+    {
+        ".mp3" => (".mp3", "-c:a libmp3lame -b:a 192k"),
+        ".flac" => (".flac", "-c:a flac"),
+        ".wav" => (".wav", "-c:a pcm_s16le"),
+        ".ogg" or ".opus" => (extension, "-c:a libopus -b:a 160k"),
+        ".webm" => (".webm", "-c:a libopus -b:a 160k"),
+        ".mkv" or ".mov" or ".m4v" or ".mp4" or ".m4a" => (extension, "-c:a aac -b:a 192k"),
+        _ => (isVideo ? ".mp4" : ".m4a", "-c:a aac -b:a 192k"),
+    };
+
+    /// <summary>The measures printed by the first pass, keyed by name.</summary>
+    internal static Dictionary<string, string>? Measures(string log)
+    {
+        var start = log.LastIndexOf('{');
+        var end = log.LastIndexOf('}');
+        if (start < 0 || end <= start)
+            return null;
+        try
+        {
+            using var json = System.Text.Json.JsonDocument.Parse(log[start..(end + 1)]);
+            var measures = json.RootElement.EnumerateObject().ToDictionary(p => p.Name, p => p.Value.GetString() ?? "");
+            string[] required = ["input_i", "input_tp", "input_lra", "input_thresh", "target_offset"];
+            // Silence measures as "-inf": nothing to normalize.
+            return required.All(k => measures.TryGetValue(k, out var v) && double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _))
+                ? measures
+                : null;
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
     }
 }

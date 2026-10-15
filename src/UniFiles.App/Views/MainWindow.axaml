@@ -228,6 +228,27 @@
           <TextBlock Classes="display" Text="{x:Static res:Strings.Drop_Release}" HorizontalAlignment="Center" />
         </StackPanel>
       </Panel>
+
+      <!-- Document (notices, release notes) in a window over the page; click outside or Esc to close -->
+      <Panel x:Name="DocumentLayer" Grid.Row="0" Grid.RowSpan="2" Grid.Column="0" Grid.ColumnSpan="2" IsVisible="{Binding HasDocument}">
+        <Border x:Name="DocumentScrim" Background="#99000000" CornerRadius="24" />
+        <Border Classes="panel" Padding="0" Margin="64,56" MaxWidth="820" MaxHeight="760"
+                HorizontalAlignment="Center" VerticalAlignment="Center">
+          <DockPanel>
+            <DockPanel DockPanel.Dock="Top" Margin="32,22,18,8">
+              <Button DockPanel.Dock="Right" Classes="icon" x:Name="DocumentClose" Command="{Binding CloseDocumentCommand}"
+                      AutomationProperties.Name="{x:Static res:Strings.Common_Close}" ToolTip.Tip="{x:Static res:Strings.Common_Close}">
+                <controls:Icon Size="18" Data="{StaticResource IconClose}" />
+              </Button>
+              <TextBlock Classes="h1" Text="{Binding Document.Title, FallbackValue=''}" VerticalAlignment="Center" />
+            </DockPanel>
+            <!-- Margin rather than Padding: the scroll viewer measures its content without its padding. -->
+            <ScrollViewer x:Name="DocumentScroller" Focusable="True" AutomationProperties.Name="{Binding Document.Title, FallbackValue=''}">
+              <controls:MarkdownView Margin="32,4,32,28" Markdown="{Binding Document.Markdown, FallbackValue=''}" />
+            </ScrollViewer>
+          </DockPanel>
+        </Border>
+      </Panel>
     </Grid>
 
     <!-- Resize grips along the edges (hidden when maximized) -->

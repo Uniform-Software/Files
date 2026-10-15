@@ -394,7 +394,7 @@ public partial class TrimEditorViewModel : PageViewModel, IDisposable
 
         settings[VideoTrimTool.SegmentsKey] = VideoTrimTool.FormatSegments(KeptRanges());
         settings["precise"] = !(ExportFast && CanExportFast);
-        _services.Queue.Enqueue(_tool, [FilePath], settings, _services.OutputFolder);
+        _services.Queue.Enqueue(_tool, [InputFile.Of(FilePath)], settings, _services.TargetFor(settings));
         Dispose();
         _main.ShowQueue();
     }

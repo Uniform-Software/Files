@@ -17,6 +17,8 @@ public sealed class ViewLocator : IDataTemplate
         PreferencesViewModel => new PreferencesView(),
         TrimEditorViewModel => new TrimEditorView(),
         PdfOrganizerViewModel => new PdfOrganizerView(),
+        PdfFormEditorViewModel => new PdfFormEditorView(),
+        AutomationsViewModel => new AutomationsView(),
         _ => new TextBlock { Text = data?.GetType().Name },
     };
 

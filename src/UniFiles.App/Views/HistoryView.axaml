@@ -28,6 +28,11 @@
             <DataTemplate x:DataType="vm:HistoryItemViewModel">
               <Border Classes="card" Padding="18,12" Margin="0,0,0,8">
                 <DockPanel>
+                  <Button DockPanel.Dock="Right" Classes="ghost" Margin="8,0,0,0" IsVisible="{Binding CanRerun}"
+                          Command="{Binding $parent[ItemsControl].((vm:HistoryViewModel)DataContext).RerunCommand}"
+                          CommandParameter="{Binding}"
+                          ToolTip.Tip="{x:Static res:Strings.History_RerunHint}"
+                          Content="{x:Static res:Strings.History_Rerun}" />
                   <Button DockPanel.Dock="Right" Classes="icon"
                           Command="{Binding $parent[ItemsControl].((vm:HistoryViewModel)DataContext).OpenFolderCommand}"
                           CommandParameter="{Binding}"

@@ -200,6 +200,25 @@
     <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
   </Style>
 
+  <!-- Segmented choice (two modes side by side): lemon with ink text when chosen. -->
+  <Style Selector="ToggleButton.segment">
+    <Setter Property="MinHeight" Value="38" />
+    <Setter Property="Padding" Value="14,0" />
+    <Setter Property="CornerRadius" Value="{StaticResource RadiusSmall}" />
+    <Setter Property="Background" Value="{DynamicResource SurfaceRaisedBrush}" />
+    <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalContentAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToggleButton.segment:checked /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource LemonBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+  </Style>
+  <Style Selector="ToggleButton.segment:checked:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{StaticResource LemonHoverBrush}" />
+    <Setter Property="Foreground" Value="{StaticResource InkBrush}" />
+  </Style>
+
   <!-- Preset chip: the whole chip is the button, without a second outline. -->
   <Style Selector="Border.preset Button.ghost">
     <Setter Property="BorderThickness" Value="0" />

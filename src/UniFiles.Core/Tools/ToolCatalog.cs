@@ -1,3 +1,4 @@
+using UniFiles.Core.Tools.Files;
 using UniFiles.Core.Tools.Images;
 using UniFiles.Core.Tools.Pdf;
 using UniFiles.Core.Tools.Rename;
@@ -21,12 +22,20 @@ public sealed class ToolCatalog
             new PdfMergeTool(),
             new PdfSplitTool(),
             new PdfOrganizeTool(),
+            new PdfToImagesTool(),
+            new PdfStripMetadataTool(),
+            new PdfFormFillTool(),
+            new PdfFormFlattenTool(),
+            new PdfFormExportTool(),
             new ImagesToPdfTool(),
             new PdfCompressTool(),
             new VideoTrimTool(),
             new VideoCompressTool(),
             new VideoConvertTool(),
             new AudioExtractTool(),
+            new AudioNormalizeTool(),
+            new VideoMuteTool(),
+            new ZipTool(),
         ];
     }
 

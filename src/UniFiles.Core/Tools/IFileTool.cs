@@ -22,6 +22,9 @@ public interface IFileTool
     /// <summary>Whether this file can be processed: its kind, and for some tools its exact format.</summary>
     bool Accepts(string path);
 
+    /// <summary>Kind of file produced from an input of this kind (the same by default); used to chain actions.</summary>
+    FileKind OutputKind(FileKind input);
+
     /// <summary>
     /// True when all inputs produce a single result (merge, images to PDF).
     /// False when each input is processed on its own.
@@ -79,6 +82,15 @@ public sealed record PreviewRow(string Before, string After);
 public sealed class ToolContext
 {
     public required IReadOnlyList<string> Inputs { get; init; }
+
+    /// <summary>The inputs with their place in a dropped folder (same order as <see cref="Inputs"/>).</summary>
+    public IReadOnlyList<InputFile> Files
+    {
+        get => _files ?? Inputs.Select(InputFile.Of).ToList();
+        init => _files = value;
+    }
+
+    private readonly IReadOnlyList<InputFile>? _files;
 
     /// <summary>Position of the first input within the whole job (used by counters).</summary>
     public int Index { get; init; }

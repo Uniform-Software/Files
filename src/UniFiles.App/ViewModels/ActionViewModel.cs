@@ -12,13 +12,15 @@ using UniFiles.Core.Tools.Video;
 
 namespace UniFiles.App.ViewModels;
 
-public sealed class FileItemViewModel(string path)
+public sealed class FileItemViewModel(InputFile input)
 {
-    public string Path { get; } = path;
+    public InputFile Input { get; } = input;
 
-    public string Name { get; } = System.IO.Path.GetFileName(path);
+    public string Path { get; } = input.Path;
 
-    public long Size { get; } = File.Exists(path) ? new FileInfo(path).Length : 0;
+    public string Name { get; } = System.IO.Path.GetFileName(input.Path);
+
+    public long Size { get; } = File.Exists(input.Path) ? new FileInfo(input.Path).Length : 0;
 
     public string SizeText => Format.Size(Size);
 
@@ -38,6 +40,11 @@ public sealed class ToolItemViewModel(IFileTool tool)
     public override string ToString() => $"{Name}. {Description}";
 }
 
+public sealed record OutputModeChoice(OutputMode Mode, string Label)
+{
+    public override string ToString() => Label;
+}
+
 /// <summary>A saved preset offered for the current files.</summary>
 public sealed class PresetItemViewModel(ToolPreset preset, IFileTool tool)
 {
@@ -52,13 +59,19 @@ public sealed class PresetItemViewModel(ToolPreset preset, IFileTool tool)
     public string ToolName => Tool.Name;
 
     /// <summary>The action and its settings, for the tooltip: "Resize · Max width: 1600 px · Quality: 82 %".</summary>
-    public string Details => string.Join(Environment.NewLine, [ToolName, .. Describe(Tool, Preset)]);
+    public string Details => Tool is ChainTool chain
+        ? string.Join(Environment.NewLine, chain.Steps.SelectMany((step, i) =>
+            new[] { $"{i + 1}. {step.Tool.Name}" }.Concat(Describe(step.Tool, Preset.Steps[i].Values).Select(d => "    " + d))))
+        : string.Join(Environment.NewLine, [ToolName, .. Describe(Tool, Preset.Values)]);
+
+    /// <summary>"3 steps" on a chain's chip.</summary>
+    public string? StepsText => Preset.IsChain ? string.Format(Strings.Chain_Steps, Preset.Steps.Count) : null;
 
     public override string ToString() => $"{Name}. {ToolName}";
 
-    private static IEnumerable<string> Describe(IFileTool tool, ToolPreset preset)
+    private static IEnumerable<string> Describe(IFileTool tool, IReadOnlyDictionary<string, System.Text.Json.JsonElement> values)
     {
-        var settings = AppServices.SettingsFrom(tool, preset.Values);
+        var settings = AppServices.SettingsFrom(tool, values);
         foreach (var option in tool.Options)
         {
             // Options hidden by another one (quality when compressing to a size) don't apply.
@@ -92,13 +105,21 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     private readonly AppServices _services;
     private readonly ToolModule? _preferredModule;
 
-    public ActionViewModel(MainWindowViewModel main, AppServices services, IReadOnlyList<string> files, ToolModule? preferredModule)
+    public ActionViewModel(MainWindowViewModel main, AppServices services, IReadOnlyList<InputFile> files, ToolModule? preferredModule)
     {
         _main = main;
         _services = services;
         _preferredModule = preferredModule;
         foreach (var file in files)
             Files.Add(new FileItemViewModel(file));
+        OutputModes =
+        [
+            new(OutputMode.Default, Strings.Output_Default),
+            new(OutputMode.NextToOriginals, Strings.Output_NextToOriginals),
+            new(OutputMode.DatedSubfolder, Strings.Output_Dated),
+            new(OutputMode.Custom, Strings.Output_Choose),
+        ];
+        _selectedOutputMode = OutputModes[0];
 
         // Settings change in bursts (sliders): render the comparison once they settle.
         _previewTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(450) };
@@ -136,7 +157,8 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     public bool HasComparison => Comparison is not null;
 
-    public bool CanCompare => SelectedTool?.Tool is { Module: ToolModule.Images, CombinesInputs: false } && ComparisonFile is not null;
+    public bool CanCompare => EffectiveTool() is { Module: ToolModule.Images, CombinesInputs: false } tool
+        && tool.OutputKind(FileKind.Image) == FileKind.Image && ComparisonFile is not null;
 
     public string? ComparisonSizes => Comparison is { } c
         ? SelectedTool?.Tool.KeepsOriginalIfLarger == true && c.AfterBytes > c.BeforeBytes
@@ -173,7 +195,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
 
     private async Task RenderComparisonAsync()
     {
-        if (SelectedTool?.Tool is not { } tool || ComparisonFile is not { } file || !CanCompare || Warning is not null)
+        if (EffectiveTool() is not { } tool || ComparisonFile is not { } file || !CanCompare || Warning is not null)
         {
             ComparisonBusy = false;
             return;
@@ -284,7 +306,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     public string LaunchLabel => SelectedTool?.Tool.NeedsEditor == true ? Strings.Action_OpenEditor : Strings.Action_Launch;
 
     // Editor-based tools are set up in their editor, not here.
-    public bool HasOptions => Options.Count > 0 && SelectedTool?.Tool.NeedsEditor != true;
+    public bool HasOptions => (Options.Count > 0 || HasSteps) && SelectedTool?.Tool.NeedsEditor != true;
 
     public bool HasPreview => PreviewRows.Count > 0;
 
@@ -300,7 +322,13 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     partial void OnSelectedToolChanged(ToolItemViewModel? value)
     {
         ActivePreset = null;
+        IsChoosingStep = false;
         BuildOptions();
+        // A new first action may not fit the steps after it.
+        if (HasSteps && ChainTool.Validate(ChainTools(), InputKind) is not null)
+            ClearSteps();
+        OnPropertyChanged(nameof(CanAddStep));
+        OnPropertyChanged(nameof(SettingsTitle));
     }
 
     partial void OnEstimateChanged(string? value) => OnPropertyChanged(nameof(HasEstimate));
@@ -314,7 +342,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         var compatible = _services.Catalog.CompatibleWith(Files.Select(f => f.Path).ToList())
             .Select(t => new ToolItemViewModel(t))
             // The module matching the files (or picked by the user) first, renaming last.
-            .OrderBy(t => t.Tool.Module == primary ? 0 : t.Tool.Module == ToolModule.Rename ? 2 : 1)
+            .OrderBy(t => t.Tool.Module == primary ? 0 : t.Tool.Module is ToolModule.Rename or ToolModule.Files ? 2 : 1)
             .ToList();
 
         Tools.Clear();
@@ -356,6 +384,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
                 option.ValueChanged += OnOptionChanged;
                 Options.Add(option);
             }
+            RestoreOutput(_services.LoadToolSettings(item.Tool));
         }
 
         OnPropertyChanged(nameof(HasOptions));
@@ -366,7 +395,10 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     private void OnOptionChanged(object? sender, EventArgs e)
     {
         if (!_applyingPreset)
+        {
             ActivePreset = null;
+            RecipeNote = null;
+        }
         Update();
     }
 
@@ -375,10 +407,18 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     private void RefreshPresets()
     {
         Presets.Clear();
+        var paths = Files.Select(f => f.Path).ToList();
         foreach (var preset in _services.Settings.Presets)
         {
-            if (Tools.FirstOrDefault(t => t.Tool.Id == preset.ToolId && !t.Tool.NeedsEditor) is { } tool)
+            if (preset.IsChain)
+            {
+                if (PresetResolver.Resolve(_services.Catalog, preset)?.Tool is { } chain && paths.All(chain.Accepts) && paths.Count >= chain.MinimumInputs)
+                    Presets.Add(new PresetItemViewModel(preset, chain));
+            }
+            else if (Tools.FirstOrDefault(t => t.Tool.Id == preset.ToolId && !t.Tool.NeedsEditor) is { } tool)
+            {
                 Presets.Add(new PresetItemViewModel(preset, tool.Tool));
+            }
         }
         OnPropertyChanged(nameof(HasPresets));
     }
@@ -386,15 +426,30 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     [RelayCommand]
     private void ApplyPreset(PresetItemViewModel preset)
     {
-        SelectedTool = Tools.FirstOrDefault(t => t.Tool.Id == preset.Tool.Id) ?? SelectedTool;
+        // A chain: its first action and settings are step 1, the others become steps 2, 3…
+        var first = preset.Tool is ChainTool chain ? chain.Steps[0] : null;
+        var firstTool = first?.Tool ?? preset.Tool;
+        var firstValues = preset.Preset.IsChain ? preset.Preset.Steps[0].Values : preset.Preset.Values;
+
+        SelectedTool = Tools.FirstOrDefault(t => t.Tool.Id == firstTool.Id) ?? SelectedTool;
         _applyingPreset = true;
         try
         {
+            ClearSteps();
             foreach (var option in Options)
             {
-                if (preset.Preset.Values.TryGetValue(option.Key, out var value))
+                if (firstValues.TryGetValue(option.Key, out var value))
                     option.Restore(value);
             }
+            if (preset.Preset.IsChain)
+            {
+                foreach (var step in preset.Preset.Steps.Skip(1))
+                {
+                    if (_services.Catalog.Find(step.ToolId) is { } tool)
+                        AddStep(tool, step.Values);
+                }
+            }
+            RestoreOutput(AppServices.SettingsFrom(preset.Tool, preset.Preset.Values));
         }
         finally
         {
@@ -403,6 +458,23 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         ActivePreset = preset;
         IsSavingPreset = false;
         Update();
+    }
+
+    /// <summary>"Settings of 15/10/2026", while the history's settings are shown unchanged.</summary>
+    [ObservableProperty]
+    private string? _recipeNote;
+
+    /// <summary>History's "Do again": the action (or chain) and settings used then, if they fit these files.</summary>
+    public void ApplyRecipe(ToolPreset recipe, DateTime when)
+    {
+        if (PresetResolver.Resolve(_services.Catalog, recipe)?.Tool is not { } tool)
+            return;
+        var first = tool is ChainTool chain ? chain.Steps[0].Tool : tool;
+        if (Tools.All(t => t.Tool.Id != first.Id))
+            return;
+        ApplyPreset(new PresetItemViewModel(recipe, tool));
+        ActivePreset = null;
+        RecipeNote = string.Format(Strings.History_RerunSettings, when);
     }
 
     [RelayCommand]
@@ -450,6 +522,10 @@ public partial class ActionViewModel : PageViewModel, IDisposable
             }
             saved = renamed.Preset;
         }
+        else if (HasSteps && EffectiveTool() is ChainTool chain)
+        {
+            saved = _services.SaveChainPreset(name, chain.Steps, OutputOnlySettings());
+        }
         else
         {
             saved = _services.SavePreset(tool, name, CurrentSettings());
@@ -471,25 +547,111 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         RefreshPresets();
     }
 
-    private ToolSettings CurrentSettings() =>
-        new(Options.ToDictionary(o => o.Key, o => o.CurrentValue));
+    private ToolSettings CurrentSettings()
+    {
+        var settings = new ToolSettings(Options.ToDictionary(o => o.Key, o => o.CurrentValue));
+        OutputSettings.Write(settings, SelectedOutputMode.Mode, CustomOutputDirectory, KeepTree);
+        return settings;
+    }
+
+    // ---- Destination ("Save to") ---------------------------------------------------------------
+
+    public IReadOnlyList<OutputModeChoice> OutputModes { get; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowKeepTree), nameof(OutputDescription), nameof(IsCustomOutput))]
+    private OutputModeChoice _selectedOutputMode;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(OutputDescription))]
+    private string? _customOutputDirectory;
+
+    [ObservableProperty]
+    private bool _keepTree;
+
+    private bool _restoringOutput;
+
+    /// <summary>Some files come from a dropped folder: their sub-folders can be kept.</summary>
+    public bool HasFolders => Files.Any(f => f.Input.RootName is not null);
+
+    public bool ShowKeepTree => HasFolders && SelectedOutputMode.Mode != OutputMode.NextToOriginals;
+
+    public bool IsCustomOutput => SelectedOutputMode.Mode == OutputMode.Custom;
+
+    /// <summary>Where the results will go, in words.</summary>
+    public string OutputDescription => SelectedOutputMode.Mode switch
+    {
+        OutputMode.NextToOriginals => Strings.Output_NextToOriginalsHint,
+        OutputMode.DatedSubfolder => Format.ShortPath(Path.Combine(_services.Settings.OutputDirectory, DateTime.Now.ToString("yyyy-MM-dd"))),
+        OutputMode.Custom => Format.ShortPath(CustomOutputDirectory ?? ""),
+        _ => Format.ShortPath(_services.Settings.OutputDirectory),
+    };
+
+    private void RestoreOutput(ToolSettings settings)
+    {
+        _restoringOutput = true;
+        try
+        {
+            var target = _services.TargetFor(settings);
+            CustomOutputDirectory = target.Mode == OutputMode.Custom ? target.BaseDirectory : null;
+            SelectedOutputMode = OutputModes.First(m => m.Mode == target.Mode);
+            KeepTree = target.KeepTree;
+        }
+        finally
+        {
+            _restoringOutput = false;
+        }
+    }
+
+    partial void OnSelectedOutputModeChanged(OutputModeChoice? oldValue, OutputModeChoice newValue)
+    {
+        if (_restoringOutput || newValue.Mode != OutputMode.Custom)
+            return;
+        // "Choose…": ask for the folder; going back to the previous choice if canceled.
+        _ = ChooseOutputAsync(oldValue);
+    }
+
+    [RelayCommand]
+    private Task ChangeOutputFolder() => ChooseOutputAsync(null);
+
+    private async Task ChooseOutputAsync(OutputModeChoice? fallback)
+    {
+        if (await DialogService.PickFolderAsync(Strings.Output_Choose) is { } folder)
+        {
+            CustomOutputDirectory = folder;
+            return;
+        }
+        if (CustomOutputDirectory is null && fallback is not null)
+        {
+            _restoringOutput = true;
+            SelectedOutputMode = fallback;
+            _restoringOutput = false;
+        }
+    }
 
     /// <summary>Refreshes what depends on the settings: visible options, estimate, preview.</summary>
     private void Update()
     {
-        foreach (var option in Options)
+        foreach (var options in ExtraSteps.Select(s => s.Options).Prepend(Options))
         {
-            if (option.Option.VisibleWhenKey is not { } key)
-                continue;
-            var other = Options.FirstOrDefault(o => o.Key == key)?.CurrentValue?.ToString();
-            option.IsVisible = string.Equals(other, option.Option.VisibleWhenValue ?? bool.TrueString, StringComparison.OrdinalIgnoreCase);
+            foreach (var option in options)
+            {
+                if (option.Option.VisibleWhenKey is not { } key)
+                    continue;
+                var other = options.FirstOrDefault(o => o.Key == key)?.CurrentValue?.ToString();
+                option.IsVisible = string.Equals(other, option.Option.VisibleWhenValue ?? bool.TrueString, StringComparison.OrdinalIgnoreCase);
+            }
         }
 
         Estimate = null;
         PreviewRows.Clear();
         PreviewError = null;
+        // A program missing for any step would fail every file.
+        Warning = HasSteps
+            ? ChainTools().Select(AppServices.MissingProgramWarning).FirstOrDefault(w => w is not null)
+            : AppServices.MissingProgramWarning(SelectedTool?.Tool);
 
-        if (SelectedTool?.Tool is not { } tool)
+        if (EffectiveTool() is not { } tool)
         {
             OnPropertyChanged(nameof(HasPreview));
             return;
@@ -520,7 +682,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
     }
 
     // A missing program (ffmpeg, Ghostscript) would fail every file: don't let the job start.
-    private bool CanLaunch() => SelectedTool is { } tool && Files.Count >= tool.Tool.MinimumInputs && Warning is null;
+    private bool CanLaunch() => EffectiveTool() is { } tool && Files.Count >= tool.MinimumInputs && Warning is null;
 
     [RelayCommand(CanExecute = nameof(CanLaunch))]
     private void Launch()
@@ -538,11 +700,27 @@ public partial class ActionViewModel : PageViewModel, IDisposable
             _main.OpenPdfOrganizer(organize, Files[0].Path, this);
             return;
         }
+        if (tool is PdfFormFillTool form)
+        {
+            _main.OpenFormEditor(form, Files[0].Path, this);
+            return;
+        }
 
         var settings = CurrentSettings();
         _services.SaveToolSettings(tool, settings);
 
-        _services.Queue.Enqueue(tool, Files.Select(f => f.Path).ToList(), settings, _services.OutputFolder);
+        if (HasSteps && EffectiveTool() is ChainTool chain)
+        {
+            // Each step's settings become that action's "last used" ones too.
+            foreach (var step in chain.Steps.Skip(1))
+                _services.SaveToolSettings(step.Tool, step.Settings);
+            var destination = OutputOnlySettings();
+            _services.Queue.Enqueue(chain, Files.Select(f => f.Input).ToList(), destination, _services.TargetFor(destination));
+        }
+        else
+        {
+            _services.Queue.Enqueue(tool, Files.Select(f => f.Input).ToList(), settings, _services.TargetFor(settings));
+        }
         _main.ShowQueue();
     }
 
@@ -564,7 +742,7 @@ public partial class ActionViewModel : PageViewModel, IDisposable
         var added = await DialogService.PickFilesAsync(Strings.Home_PickFiles, Strings.Home_AllFiles, ["*"]);
         var known = Files.Select(f => f.Path).ToHashSet(StringComparer.OrdinalIgnoreCase);
         foreach (var file in added.Where(known.Add))
-            Files.Add(new FileItemViewModel(file));
+            Files.Add(new FileItemViewModel(InputFile.Of(file)));
         RefreshTools();
     }
 

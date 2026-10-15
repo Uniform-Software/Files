@@ -30,6 +30,13 @@ public static class Format
     public static string Files(int count) =>
         string.Format(count == 1 ? Strings.Format_OneFile : Strings.Format_Files, count);
 
+    /// <summary>A path with the home folder written "~" (as in the Terminal), shorter to read.</summary>
+    public static string ShortPath(string path)
+    {
+        var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        return home.Length > 0 && path.StartsWith(home, StringComparison.Ordinal) ? "~" + path[home.Length..] : path;
+    }
+
     /// <summary>"2 files already optimized, originals kept", or null when there are none.</summary>
     public static string? KeptOriginals(int count) => count switch
     {

@@ -29,6 +29,8 @@ public sealed partial class PdfRenderer : IDisposable
 
     public int PageCount { get; }
 
+    private bool _closed;
+
     /// <summary>Opens a PDF (read from memory, so any file name works on every system).</summary>
     public static unsafe PdfRenderer Open(string path)
     {
@@ -53,6 +55,23 @@ public sealed partial class PdfRenderer : IDisposable
         }
     }
 
+    /// <summary>Draws a page at a resolution in dots per inch (72 = the page's size in points).</summary>
+    public byte[] RenderAtDpi(int pageIndex, int dpi, out int width, out int height)
+    {
+        double longest;
+        lock (Sync)
+        {
+            if (_closed)
+                throw new ToolException(Strings.Error_PdfUnreadable);
+            var page = LoadPage(_document, pageIndex);
+            if (page == IntPtr.Zero)
+                throw new ToolException(Strings.Error_PdfUnreadable);
+            longest = Math.Max(GetPageWidthF(page), GetPageHeightF(page));
+            ClosePage(page);
+        }
+        return Render(pageIndex, (int)Math.Round(longest * dpi / 72), out width, out height);
+    }
+
     /// <summary>
     /// Draws a page so that its longer side measures <paramref name="maxSide"/> pixels, on white.
     /// Returns BGRA pixels, rows of <c>width * 4</c> bytes.
@@ -61,6 +80,9 @@ public sealed partial class PdfRenderer : IDisposable
     {
         lock (Sync)
         {
+            // A drawing finishing after the window closed the document.
+            if (_closed)
+                throw new ToolException(Strings.Error_PdfUnreadable);
             var page = LoadPage(_document, pageIndex);
             if (page == IntPtr.Zero)
                 throw new ToolException(Strings.Error_PdfUnreadable);
@@ -103,6 +125,9 @@ public sealed partial class PdfRenderer : IDisposable
     {
         lock (Sync)
         {
+            if (_closed)
+                return;
+            _closed = true;
             CloseDocument(_document);
             NativeMemory.Free((void*)_data);
         }

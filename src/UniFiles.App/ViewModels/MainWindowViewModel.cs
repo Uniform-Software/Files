@@ -8,6 +8,7 @@ using UniFiles.App.Services;
 using UniFiles.Core;
 using UniFiles.Core.Jobs;
 using UniFiles.Core.Resources;
+using UniFiles.Core.Storage;
 using UniFiles.Core.Tools.Pdf;
 using UniFiles.Core.Tools.Video;
 
@@ -15,6 +16,9 @@ namespace UniFiles.App.ViewModels;
 
 /// <summary>Base class of the screens shown in the main area.</summary>
 public abstract class PageViewModel : ObservableObject;
+
+/// <summary>A text shown in a window over the page (notices, release notes).</summary>
+public sealed record DocumentViewModel(string Title, string Markdown);
 
 public sealed class NavItemViewModel(string title, string iconKey, PageViewModel page) : ObservableObject
 {
@@ -54,14 +58,16 @@ public partial class MainWindowViewModel : ObservableObject
         _services = services;
         Home = new HomeViewModel(this, services);
         Queue = new QueueViewModel(services);
-        History = new HistoryViewModel(services);
+        History = new HistoryViewModel(this, services);
         Preferences = new PreferencesViewModel(this, services);
+        Automations = new AutomationsViewModel(services);
 
         NavItems =
         [
             new NavItemViewModel(Strings.Nav_Home, "IconHome", Home),
             new NavItemViewModel(Strings.Nav_Queue, "IconQueue", Queue),
             new NavItemViewModel(Strings.Nav_History, "IconHistory", History),
+            new NavItemViewModel(Strings.Nav_Automations, "IconAutomation", Automations),
             new NavItemViewModel(Strings.Nav_Preferences, "IconSettings", Preferences),
         ];
         _selectedNav = NavItems[0];
@@ -93,6 +99,8 @@ public partial class MainWindowViewModel : ObservableObject
     public HistoryViewModel History { get; }
 
     public PreferencesViewModel Preferences { get; }
+
+    public AutomationsViewModel Automations { get; }
 
     public ObservableCollection<NavItemViewModel> NavItems { get; }
 
@@ -132,6 +140,22 @@ public partial class MainWindowViewModel : ObservableObject
     // ---- Update button (sidebar) ----------------------------------------------------------
 
     public Updater Updater { get; }
+
+    /// <summary>Set by the window: what the clipboard holds, as local files.</summary>
+    public Func<Task<IReadOnlyList<string>>>? ReadClipboard { get; set; }
+
+    /// <summary>Cmd/Ctrl+V outside a text field: process the copied files or picture.</summary>
+    [RelayCommand]
+    public async Task Paste()
+    {
+        var files = ReadClipboard is null ? [] : await ReadClipboard();
+        if (files.Count == 0)
+        {
+            ShowNotification(Strings.Paste_Nothing, isError: true);
+            return;
+        }
+        OpenFiles(files);
+    }
 
     /// <summary>Set by the app: installs the update and relaunches.</summary>
     public Action? RestartForUpdate { get; set; }
@@ -177,9 +201,10 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     /// <summary>Entry point for dropped, picked or command-line files.</summary>
-    public void OpenFiles(IEnumerable<string> paths, ToolModule? module = null)
+    /// <param name="recipe">Settings to start from (history's "Do again") and when they were used.</param>
+    public void OpenFiles(IEnumerable<string> paths, ToolModule? module = null, (ToolPreset Recipe, DateTime When)? recipe = null)
     {
-        var files = FileKindDetector.ExpandPaths(paths);
+        var files = FileKindDetector.ExpandInputs(paths);
         if (files.Count == 0)
         {
             ShowNotification(Strings.Notification_NoFiles, isError: true);
@@ -193,6 +218,8 @@ public partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        if (recipe is { } r)
+            action.ApplyRecipe(r.Recipe, r.When);
         SelectedNav = NavItems[0];
         CurrentPage = action;
     }
@@ -216,15 +243,47 @@ public partial class MainWindowViewModel : ObservableObject
     public void OpenPdfOrganizer(PdfOrganizeTool tool, string file, PageViewModel back) =>
         ShowPage(new PdfOrganizerViewModel(this, _services, tool, file, back));
 
+    public void OpenFormEditor(PdfFormFillTool tool, string file, PageViewModel back) =>
+        ShowPage(new PdfFormEditorViewModel(this, _services, tool, file, back));
+
     public void GoHome()
     {
         SelectedNav = NavItems[0];
         CurrentPage = Home;
     }
 
-    public void ShowQueue() => SelectedNav = NavItems[1];
+    public void ShowQueue() => SelectedNav = NavItems.First(n => n.Page == Queue);
 
-    public void ShowPreferences() => SelectedNav = NavItems[3];
+    public void ShowPreferences() => SelectedNav = NavItems.First(n => n.Page == Preferences);
+
+    // ---- Documents (window over the page) ---------------------------------------------------
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDocument))]
+    private DocumentViewModel? _document;
+
+    public bool HasDocument => Document is not null;
+
+    [RelayCommand]
+    private void ShowReleaseNotes() => Document = new DocumentViewModel(Strings.Doc_ReleaseNotes, Documents.AllReleaseNotes());
+
+    [RelayCommand]
+    private void ShowLicenses() => Document = new DocumentViewModel(Strings.Prefs_ThirdParty, Documents.ThirdPartyNotices());
+
+    [RelayCommand]
+    private void CloseDocument() => Document = null;
+
+    private bool _whatsNewShown;
+
+    /// <summary>After an update, the new version's notes, once, when the window first shows.</summary>
+    public void ShowWhatsNewIfUpdated()
+    {
+        if (_whatsNewShown || !_services.JustUpdated)
+            return;
+        _whatsNewShown = true;
+        if (Documents.ReleaseNotesFor(AppServices.CurrentVersion) is { } notes)
+            Document = new DocumentViewModel(string.Format(Strings.Doc_WhatsNew, AppServices.CurrentVersion.ToString(3)), notes);
+    }
 
     public void ShowNotification(string text, bool isError = false, string? folder = null, ToolModule? module = null)
     {
@@ -284,10 +343,10 @@ public partial class MainWindowViewModel : ObservableObject
             if (resolved is not var (tool, settings))
                 continue;
 
-            var files = FileKindDetector.ExpandPaths(paths)
-                .Where(tool.Accepts)
+            var files = FileKindDetector.ExpandInputs(paths)
+                .Where(f => tool.Accepts(f.Path))
                 // Explorer starts the processes in no particular order: sort by name (matters for merges).
-                .OrderBy(Path.GetFileName, StringComparer.CurrentCultureIgnoreCase)
+                .OrderBy(f => Path.GetFileName(f.Path), StringComparer.CurrentCultureIgnoreCase)
                 .ToList();
             if (AppServices.MissingProgramWarning(tool) is { } warning)
             {
@@ -300,7 +359,7 @@ public partial class MainWindowViewModel : ObservableObject
                 continue;
             }
 
-            var job = _services.Queue.Enqueue(tool, files, settings, _services.OutputFolder);
+            var job = _services.Queue.Enqueue(tool, files, settings, _services.TargetFor(settings));
 
             // Quick jobs end with a notification; long ones also say they started.
             DispatcherTimer.RunOnce(() =>
@@ -327,7 +386,7 @@ public partial class MainWindowViewModel : ObservableObject
     }
 
     private void UpdateQueueBadge() =>
-        NavItems[1].Badge = _services.Queue.Jobs.Count(j => !j.IsFinished);
+        NavItems.First(n => n.Page == Queue).Badge = _services.Queue.Jobs.Count(j => !j.IsFinished);
 
     private void OnJobFinished(Job job)
     {

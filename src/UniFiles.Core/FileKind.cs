@@ -1,3 +1,5 @@
+using UniFiles.Core.Tools;
+
 namespace UniFiles.Core;
 
 /// <summary>Broad family of a file, used to decide which tools can handle it.</summary>
@@ -17,6 +19,9 @@ public enum ToolModule
     Rename,
     Pdf,
     Video,
+
+    /// <summary>Any file: archives and other file-level actions.</summary>
+    Files,
 }
 
 public static class FileKindDetector
@@ -64,9 +69,13 @@ public static class FileKindDetector
     /// <summary>
     /// Expands dropped paths: folders are walked recursively, hidden and system files are skipped.
     /// </summary>
-    public static IReadOnlyList<string> ExpandPaths(IEnumerable<string> paths)
+    public static IReadOnlyList<string> ExpandPaths(IEnumerable<string> paths) =>
+        ExpandInputs(paths).Select(i => i.Path).ToList();
+
+    /// <summary>Like <see cref="ExpandPaths"/>, keeping each file's place in the folder it came from.</summary>
+    public static IReadOnlyList<InputFile> ExpandInputs(IEnumerable<string> paths)
     {
-        var files = new List<string>();
+        var files = new List<InputFile>();
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var path in paths)
@@ -79,15 +88,17 @@ public static class FileKindDetector
                     IgnoreInaccessible = true,
                     AttributesToSkip = FileAttributes.Hidden | FileAttributes.System,
                 };
+                var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+                var rootName = Path.GetFileName(root);
                 foreach (var file in Directory.EnumerateFiles(path, "*", options).Order(StringComparer.OrdinalIgnoreCase))
                 {
                     if (seen.Add(file))
-                        files.Add(file);
+                        files.Add(new InputFile(file, Path.GetRelativePath(root, Path.GetDirectoryName(Path.GetFullPath(file))!) is var relative && relative != "." ? relative : "", rootName));
                 }
             }
             else if (File.Exists(path) && seen.Add(path))
             {
-                files.Add(path);
+                files.Add(new InputFile(path));
             }
         }
 

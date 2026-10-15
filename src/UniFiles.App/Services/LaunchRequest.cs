@@ -15,6 +15,9 @@ public enum LaunchMode
 
     /// <summary>Remove the right-click menu, then exit (uninstaller hook).</summary>
     Unregister,
+
+    /// <summary>Start without a window, in the menu bar / notification area (opening of the session).</summary>
+    Background,
 }
 
 /// <summary>
@@ -43,6 +46,8 @@ public sealed record LaunchRequest(LaunchMode Mode, IReadOnlyList<string> Files,
                     return new(LaunchMode.QuickAction, Absolute(args.Skip(2)), PresetPrefix + args[1]);
                 case "--open":
                     return new(LaunchMode.Open, Absolute(args.Skip(1)));
+                case "--background":
+                    return new(LaunchMode.Background, []);
             }
         }
         return new(LaunchMode.Open, Absolute(args));

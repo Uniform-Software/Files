@@ -41,6 +41,15 @@ public sealed class AppSettings
 
     /// <summary>Named settings saved by the user ("Web 1600 px WebP"), in the order they were created.</summary>
     public List<ToolPreset> Presets { get; set; } = [];
+
+    /// <summary>Watched folders (automations).</summary>
+    public List<Automation.WatchRule> WatchRules { get; set; } = [];
+
+    /// <summary>Start UniFiles when the session opens (needed for watched folders to keep working).</summary>
+    public bool LaunchAtLogin { get; set; }
+
+    /// <summary>Version that ran last, to show its release notes once after an update.</summary>
+    public string? LastVersion { get; set; }
 }
 
 /// <summary>A tool with saved settings, launched in one click (action screen, right-click menu).</summary>
@@ -52,7 +61,21 @@ public sealed class ToolPreset
 
     public string ToolId { get; set; } = "";
 
-    /// <summary>Option values, keyed by option key.</summary>
+    /// <summary>Option values, keyed by option key. For a chain: its destination only.</summary>
+    public Dictionary<string, JsonElement> Values { get; set; } = [];
+
+    /// <summary>The actions of a chain, in order (empty for a single action). <see cref="ToolId"/> is then "chain".</summary>
+    public List<PresetStep> Steps { get; set; } = [];
+
+    [JsonIgnore]
+    public bool IsChain => Steps.Count > 1;
+}
+
+/// <summary>One action of a chain preset and its settings.</summary>
+public sealed class PresetStep
+{
+    public string ToolId { get; set; } = "";
+
     public Dictionary<string, JsonElement> Values { get; set; } = [];
 }
 

@@ -22,7 +22,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AppIcon.Apply(this);
         DialogService.Owner = this;
+        DataContextChanged += (_, _) =>
+        {
+            if (ViewModel is { } vm)
+                vm.ReadClipboard = () => ClipboardImport.ReadAsync(this);
+        };
         _dragEndTimer.Tick += (_, _) => EndDrag();
 
         // Notifications go to the desktop when the user isn't looking at the window.
@@ -38,6 +44,37 @@ public partial class MainWindow : Window
         foreach (var grip in Grips.Children.OfType<Border>())
             grip.PointerPressed += OnGripPressed;
         Body.SizeChanged += (_, _) => ClipBody();
+
+        // Document window: Esc or a click outside closes it; it opens at its top.
+        DocumentScrim.PointerPressed += (_, _) => ViewModel?.CloseDocumentCommand.Execute(null);
+        DocumentLayer.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == IsVisibleProperty && DocumentLayer.IsVisible)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    // The text takes the focus: arrows and Page Down scroll it, Tab reaches "Close".
+                    DocumentScroller.Offset = default;
+                    DocumentScroller.Focus();
+                }, DispatcherPriority.Background);
+            }
+        };
+
+        // Paste to process (Cmd/Ctrl+V), except in a text field where it pastes text as usual.
+        AddHandler(KeyDownEvent, (_, e) =>
+        {
+            if (e.Key == Key.Escape && ViewModel is { HasDocument: true } open)
+            {
+                e.Handled = true;
+                open.CloseDocumentCommand.Execute(null);
+                return;
+            }
+            var command = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
+            if (e.Key != Key.V || e.KeyModifiers != command || FocusManager?.GetFocusedElement() is TextBox || ViewModel is not { } vm)
+                return;
+            e.Handled = true;
+            vm.PasteCommand.Execute(null);
+        }, Avalonia.Interactivity.RoutingStrategies.Tunnel);
 
         // macOS: window buttons in the tab, where the range chip sits elsewhere; and the usual
         // window shortcuts, which the system doesn't provide without its own title bar.

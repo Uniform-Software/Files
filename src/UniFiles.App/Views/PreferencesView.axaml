@@ -100,7 +100,8 @@
           <TextBlock Text="{x:Static res:Strings.Prefs_About}" TextWrapping="Wrap" />
           <TextBlock Classes="caption" Text="{x:Static res:Strings.Prefs_Licenses}" TextWrapping="Wrap" />
           <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,6,0,0">
-            <Button Classes="ghost" Command="{Binding OpenNoticesCommand}" Content="{x:Static res:Strings.Prefs_ThirdParty}" />
+            <Button Classes="ghost" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowReleaseNotesCommand}" Content="{x:Static res:Strings.Doc_ReleaseNotes}" />
+            <Button Classes="ghost" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowLicensesCommand}" Content="{x:Static res:Strings.Prefs_ThirdParty}" />
             <Button Classes="ghost" Command="{Binding OpenLogsCommand}" Content="{x:Static res:Strings.Prefs_Logs}" />
           </StackPanel>
         </StackPanel>

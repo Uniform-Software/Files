@@ -52,7 +52,7 @@ internal sealed class MacQuickActionsInstaller : IContextMenuInstaller
             Write(tool.Name, $"--action {tool.Id}", Utis(tool), executablePath);
         foreach (var preset in presets)
         {
-            if (catalog.Find(preset.ToolId) is { NeedsEditor: false } tool)
+            if (ExplorerMenu.PresetTool(catalog, preset) is { NeedsEditor: false } tool)
                 Write(preset.Name, $"--preset {preset.Id}", Utis(tool), executablePath);
         }
         // Folders: open their content in UniFiles (files already have "Open With").

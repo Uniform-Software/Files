@@ -33,6 +33,7 @@ public sealed class ModuleInfo
         new(ToolModule.Rename, Strings.Module_Rename, Strings.Module_Rename_Summary, "Rename", "IconRename"),
         new(ToolModule.Pdf, Strings.Module_Pdf, Strings.Module_Pdf_Summary, "Pdf", "IconPdf"),
         new(ToolModule.Video, Strings.Module_Video, Strings.Module_Video_Summary, "Video", "IconVideo"),
+        new(ToolModule.Files, Strings.Module_Files, Strings.Module_Files_Summary, "Files", "IconArchive"),
     ];
 
     public static ModuleInfo For(ToolModule module) => All.First(m => m.Module == module);

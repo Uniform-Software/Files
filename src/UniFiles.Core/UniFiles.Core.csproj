@@ -5,6 +5,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="UniFiles.Core.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="FFMpegCore" Version="5.5.0" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />

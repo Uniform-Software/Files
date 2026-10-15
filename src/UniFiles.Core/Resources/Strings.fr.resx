@@ -28,9 +28,9 @@
   <data name="Module_Rename" xml:space="preserve"><value>Renommage</value></data>
   <data name="Module_Rename_Summary" xml:space="preserve"><value>Renommer un lot à partir d'un modèle</value></data>
   <data name="Module_Pdf" xml:space="preserve"><value>PDF</value></data>
-  <data name="Module_Pdf_Summary" xml:space="preserve"><value>Fusionner, découper, compresser, images vers PDF</value></data>
+  <data name="Module_Pdf_Summary" xml:space="preserve"><value>Fusionner, découper, formulaires, PDF vers images</value></data>
   <data name="Module_Video" xml:space="preserve"><value>Vidéo / audio</value></data>
-  <data name="Module_Video_Summary" xml:space="preserve"><value>Couper, compresser, convertir, extraire l'audio</value></data>
+  <data name="Module_Video_Summary" xml:space="preserve"><value>Couper, compresser, convertir, volume, audio</value></data>
   <data name="Action_Title" xml:space="preserve"><value>Choisis une action</value></data>
   <data name="Action_ToolsLabel" xml:space="preserve"><value>Actions disponibles</value></data>
   <data name="Action_MixedHint" xml:space="preserve"><value>Ces fichiers sont de types différents : seules les actions communes sont proposées.</value></data>
@@ -328,4 +328,144 @@
   <data name="Queue_Drag" xml:space="preserve"><value>Glisser les {0} fichiers</value></data>
   <data name="Queue_DragHint" xml:space="preserve"><value>Fais glisser les résultats dans un e-mail, une discussion ou un autre dossier. Les fichiers restent dans le dossier de sortie.</value></data>
   <data name="Queue_DragOne" xml:space="preserve"><value>Glisser le fichier</value></data>
+  <data name="Error_FormUnsupported" xml:space="preserve"><value>Ce formulaire est un formulaire XFA dynamique (fait avec Adobe LiveCycle), que UniFiles ne sait pas remplir. Ouvre-le dans Adobe Acrobat Reader.</value></data>
+  <data name="Form_NameTaken" xml:space="preserve"><value>Un champ nommé « {0} » existe déjà.</value></data>
+  <data name="Output_Label" xml:space="preserve"><value>Enregistrer dans</value></data>
+  <data name="Output_Default" xml:space="preserve"><value>Dossier UniFiles</value></data>
+  <data name="Output_NextToOriginals" xml:space="preserve"><value>À côté des originaux</value></data>
+  <data name="Output_NextToOriginalsHint" xml:space="preserve"><value>Chaque résultat va dans le dossier de son original, sous un nouveau nom.</value></data>
+  <data name="Output_Dated" xml:space="preserve"><value>Dossier du jour</value></data>
+  <data name="Output_Choose" xml:space="preserve"><value>Choisir un dossier…</value></data>
+  <data name="Output_Change" xml:space="preserve"><value>Changer</value></data>
+  <data name="Output_KeepTree" xml:space="preserve"><value>Garder les sous-dossiers</value></data>
+  <data name="Output_KeepTreeHint" xml:space="preserve"><value>Les résultats gardent l'arborescence des dossiers déposés.</value></data>
+  <data name="Tool_PdfToImages_Name" xml:space="preserve"><value>PDF vers images</value></data>
+  <data name="Tool_PdfToImages_Description" xml:space="preserve"><value>Une image PNG ou JPG par page</value></data>
+  <data name="Tool_PdfStrip_Name" xml:space="preserve"><value>Supprimer les métadonnées du PDF</value></data>
+  <data name="Tool_PdfStrip_Description" xml:space="preserve"><value>Auteur, logiciel, dates : effacés. Pages intactes</value></data>
+  <data name="Tool_VideoMute_Name" xml:space="preserve"><value>Couper le son</value></data>
+  <data name="Tool_VideoMute_Description" xml:space="preserve"><value>Vidéo muette, instantané, sans perte</value></data>
+  <data name="Tool_AudioNormalize_Name" xml:space="preserve"><value>Normaliser le volume</value></data>
+  <data name="Tool_AudioNormalize_Description" xml:space="preserve"><value>Même niveau sonore partout, sans distorsion</value></data>
+  <data name="Tool_Zip_Name" xml:space="preserve"><value>Créer une archive ZIP</value></data>
+  <data name="Tool_Zip_Description" xml:space="preserve"><value>Tous les fichiers en une pièce jointe</value></data>
+  <data name="Module_Files" xml:space="preserve"><value>Fichiers</value></data>
+  <data name="Module_Files_Summary" xml:space="preserve"><value>Archiver, et bientôt plus</value></data>
+  <data name="Option_Pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="Choice_AllPages" xml:space="preserve"><value>Toutes les pages</value></data>
+  <data name="Choice_SomePages" xml:space="preserve"><value>Certaines pages</value></data>
+  <data name="Choice_DpiScreen" xml:space="preserve"><value>Écran (72 dpi)</value></data>
+  <data name="Choice_DpiStandard" xml:space="preserve"><value>Standard (150 dpi)</value></data>
+  <data name="Choice_DpiPrint" xml:space="preserve"><value>Impression (300 dpi)</value></data>
+  <data name="Suffix_Page" xml:space="preserve"><value>page</value></data>
+  <data name="Suffix_Muted" xml:space="preserve"><value>muet</value></data>
+  <data name="Suffix_Normalized" xml:space="preserve"><value>normalisé</value></data>
+  <data name="Option_KeepTitle" xml:space="preserve"><value>Garder le titre</value></data>
+  <data name="Option_Loudness" xml:space="preserve"><value>Cible</value></data>
+  <data name="Choice_LoudnessVoice" xml:space="preserve"><value>Podcast et voix (−16 LUFS)</value></data>
+  <data name="Choice_LoudnessMusic" xml:space="preserve"><value>Musique et streaming (−14 LUFS)</value></data>
+  <data name="Choice_LoudnessBroadcast" xml:space="preserve"><value>Diffusion (−23 LUFS)</value></data>
+  <data name="Hint_Loudness" xml:space="preserve"><value>UniFiles mesure le son, puis le corrige d'un bloc : les passages calmes restent calmes, rien ne sature.</value></data>
+  <data name="Error_NoAudio" xml:space="preserve"><value>Ce fichier n'a pas de son.</value></data>
+  <data name="Option_Compression" xml:space="preserve"><value>Compression</value></data>
+  <data name="Choice_ZipFast" xml:space="preserve"><value>Rapide</value></data>
+  <data name="Choice_ZipBalanced" xml:space="preserve"><value>Équilibrée</value></data>
+  <data name="Choice_ZipSmallest" xml:space="preserve"><value>La plus petite</value></data>
+  <data name="Chain_Steps" xml:space="preserve"><value>{0} étapes</value></data>
+  <data name="Chain_NotAllowed" xml:space="preserve"><value>Un enchaînement demande au moins deux actions.</value></data>
+  <data name="Chain_StepNotAllowed" xml:space="preserve"><value>« {0} » ne peut pas faire partie d'un enchaînement (ou seulement en dernière étape).</value></data>
+  <data name="Chain_Incompatible" xml:space="preserve"><value>« {0} » ne peut pas traiter ce que produit « {1} ».</value></data>
+  <data name="Chain_StepError" xml:space="preserve"><value>Étape {0} ({1}) : {2}</value></data>
+  <data name="Chain_FileNotAccepted" xml:space="preserve"><value>{1} ne sait pas traiter {0}.</value></data>
+  <data name="Chain_Step" xml:space="preserve"><value>Étape {0}</value></data>
+  <data name="Chain_AddStep" xml:space="preserve"><value>Ajouter une étape</value></data>
+  <data name="Chain_AddStepHint" xml:space="preserve"><value>Enchaîne une autre action sur les résultats : redimensionner, puis convertir, puis nettoyer… en une fois.</value></data>
+  <data name="Chain_ChooseStep" xml:space="preserve"><value>Ensuite :</value></data>
+  <data name="Chain_Remove" xml:space="preserve"><value>Retirer cette étape</value></data>
+  <data name="Chain_MoveUp" xml:space="preserve"><value>Monter</value></data>
+  <data name="Chain_MoveDown" xml:space="preserve"><value>Descendre</value></data>
+  <data name="Nav_Automations" xml:space="preserve"><value>Automatisations</value></data>
+  <data name="Auto_Title" xml:space="preserve"><value>Automatisations</value></data>
+  <data name="Auto_Intro" xml:space="preserve"><value>Choisis un dossier et un préréglage : chaque nouveau fichier qui y arrive est traité tout seul, tant que UniFiles tourne.</value></data>
+  <data name="Auto_Empty" xml:space="preserve"><value>Aucun dossier surveillé pour l'instant. Captures d'écran, téléchargements, photos de l'appareil : laisse UniFiles s'en occuper.</value></data>
+  <data name="Auto_Add" xml:space="preserve"><value>Surveiller un dossier</value></data>
+  <data name="Auto_Folder" xml:space="preserve"><value>Dossier à surveiller</value></data>
+  <data name="Auto_Preset" xml:space="preserve"><value>Préréglage</value></data>
+  <data name="Auto_Destination" xml:space="preserve"><value>Résultats</value></data>
+  <data name="Auto_After" xml:space="preserve"><value>Ensuite, l'original</value></data>
+  <data name="Auto_AfterKeep" xml:space="preserve"><value>reste où il est</value></data>
+  <data name="Auto_AfterMove" xml:space="preserve"><value>va dans un sous-dossier « Traités »</value></data>
+  <data name="Auto_AfterTrash" xml:space="preserve"><value>va à la corbeille</value></data>
+  <data name="Auto_Subfolders" xml:space="preserve"><value>Inclure les sous-dossiers</value></data>
+  <data name="Auto_Enabled" xml:space="preserve"><value>Active</value></data>
+  <data name="Auto_Today" xml:space="preserve"><value>{0} traité(s) aujourd'hui</value></data>
+  <data name="Auto_Last" xml:space="preserve"><value>dernier : {0}</value></data>
+  <data name="Auto_Waiting" xml:space="preserve"><value>En attente de nouveaux fichiers</value></data>
+  <data name="Auto_Paused" xml:space="preserve"><value>En pause</value></data>
+  <data name="Auto_Missing" xml:space="preserve"><value>Dossier introuvable (disque débranché ?). UniFiles vérifie à nouveau toutes les 30 secondes.</value></data>
+  <data name="Auto_PresetMissing" xml:space="preserve"><value>Le préréglage de cette automatisation a été supprimé : choisis-en un autre.</value></data>
+  <data name="Auto_ProcessExisting" xml:space="preserve"><value>Traiter les fichiers déjà présents</value></data>
+  <data name="Auto_ProcessingExisting" xml:space="preserve"><value>{0} envoyé(s) dans la file d'attente.</value></data>
+  <data name="Auto_NothingThere" xml:space="preserve"><value>Rien à traiter dans ce dossier.</value></data>
+  <data name="Auto_ShowFolder" xml:space="preserve"><value>Ouvrir le dossier</value></data>
+  <data name="Auto_Remove" xml:space="preserve"><value>Arrêter de surveiller</value></data>
+  <data name="Auto_NoPreset" xml:space="preserve"><value>Enregistre d'abord un préréglage (dans l'écran d'action, « Enregistrer comme préréglage ») : une automatisation applique un préréglage.</value></data>
+  <data name="Auto_Limit" xml:space="preserve"><value>{0} dossiers surveillés au maximum.</value></data>
+  <data name="Auto_LoginItem" xml:space="preserve"><value>Lancer UniFiles à l'ouverture de session</value></data>
+  <data name="Auto_LoginItemHint" xml:space="preserve"><value>UniFiles démarre sans fenêtre, dans la barre des menus, pour que les dossiers surveillés continuent de fonctionner.</value></data>
+  <data name="Auto_LoginItemError" xml:space="preserve"><value>Le système a refusé le lancement de UniFiles à l'ouverture de session.</value></data>
+  <data name="Auto_Notification" xml:space="preserve"><value>{0} : {1} traité(s)</value></data>
+  <data name="Tool_PdfFormFill_Name" xml:space="preserve"><value>Remplir un formulaire</value></data>
+  <data name="Tool_PdfFormFill_Description" xml:space="preserve"><value>Saisir les réponses, ou ajouter des champs à un PDF</value></data>
+  <data name="Tool_PdfFormFlatten_Name" xml:space="preserve"><value>Aplatir un formulaire</value></data>
+  <data name="Tool_PdfFormFlatten_Description" xml:space="preserve"><value>Figer les réponses : plus rien de modifiable</value></data>
+  <data name="Tool_PdfFormExport_Name" xml:space="preserve"><value>Exporter les réponses (CSV)</value></data>
+  <data name="Tool_PdfFormExport_Description" xml:space="preserve"><value>Une ligne par formulaire, pour Excel ou Numbers</value></data>
+  <data name="Suffix_Filled" xml:space="preserve"><value>rempli</value></data>
+  <data name="Suffix_Flattened" xml:space="preserve"><value>aplati</value></data>
+  <data name="Error_NoFormFields" xml:space="preserve"><value>Ce PDF n'a aucun champ de formulaire.</value></data>
+  <data name="Option_Separator" xml:space="preserve"><value>Séparateur</value></data>
+  <data name="Choice_Semicolon" xml:space="preserve"><value>Point-virgule (Excel en français)</value></data>
+  <data name="Choice_Comma" xml:space="preserve"><value>Virgule</value></data>
+  <data name="Hint_Separator" xml:space="preserve"><value>Excel en français attend des points-virgules ; la plupart des autres applis, des virgules.</value></data>
+  <data name="Option_CheckboxValues" xml:space="preserve"><value>Cases à cocher</value></data>
+  <data name="Choice_YesNo" xml:space="preserve"><value>Oui / Non</value></data>
+  <data name="Choice_Yes" xml:space="preserve"><value>Oui</value></data>
+  <data name="Choice_No" xml:space="preserve"><value>Non</value></data>
+  <data name="Csv_File" xml:space="preserve"><value>Fichier</value></data>
+  <data name="Csv_Answers" xml:space="preserve"><value>Réponses</value></data>
+  <data name="Form_ModeFill" xml:space="preserve"><value>Remplir</value></data>
+  <data name="Form_ModeAdd" xml:space="preserve"><value>Ajouter des champs</value></data>
+  <data name="Form_AddHelp" xml:space="preserve"><value>Trace un rectangle sur la page pour placer un champ. Clique sur un champ ajouté pour le renommer, le déplacer, ou le redimensionner par son coin.</value></data>
+  <data name="Form_FieldType" xml:space="preserve"><value>Nouveau champ</value></data>
+  <data name="Form_Text" xml:space="preserve"><value>Texte</value></data>
+  <data name="Form_Multiline" xml:space="preserve"><value>Texte sur plusieurs lignes</value></data>
+  <data name="Form_CheckBox" xml:space="preserve"><value>Case à cocher</value></data>
+  <data name="Form_FieldName" xml:space="preserve"><value>Nom du champ</value></data>
+  <data name="Form_FieldRequired" xml:space="preserve"><value>Obligatoire</value></data>
+  <data name="Form_FontSize" xml:space="preserve"><value>Taille du texte (pt)</value></data>
+  <data name="Form_FontSizeHint" xml:space="preserve"><value>0 = ajustée au champ.</value></data>
+  <data name="Form_DeleteField" xml:space="preserve"><value>Supprimer ce champ</value></data>
+  <data name="Form_DefaultName" xml:space="preserve"><value>champ_{0}</value></data>
+  <data name="Form_Summary" xml:space="preserve"><value>{0} champs · {1} remplis</value></data>
+  <data name="Form_PageOf" xml:space="preserve"><value>Page {0} sur {1}</value></data>
+  <data name="Form_PreviousPage" xml:space="preserve"><value>Page précédente</value></data>
+  <data name="Form_NextPage" xml:space="preserve"><value>Page suivante</value></data>
+  <data name="Form_ZoomIn" xml:space="preserve"><value>Agrandir</value></data>
+  <data name="Form_ZoomOut" xml:space="preserve"><value>Réduire</value></data>
+  <data name="Form_Flatten" xml:space="preserve"><value>Aplatir (figer les réponses)</value></data>
+  <data name="Form_FlattenHint" xml:space="preserve"><value>Les réponses font partie de la page : plus personne ne peut les modifier. Garde l'original si tu dois encore les changer.</value></data>
+  <data name="Form_Save" xml:space="preserve"><value>Enregistrer le PDF</value></data>
+  <data name="Form_NoFields" xml:space="preserve"><value>Ce PDF n'a pas encore de champ : ajoutes-en avec « Ajouter des champs ».</value></data>
+  <data name="Form_Unsupported" xml:space="preserve"><value>UniFiles ne sait pas remplir ce type de champ (signature…).</value></data>
+  <data name="Paste_Action" xml:space="preserve"><value>Coller pour traiter</value></data>
+  <data name="Paste_Nothing" xml:space="preserve"><value>Rien à traiter dans le presse-papiers : copie d'abord des fichiers ou une image.</value></data>
+  <data name="Paste_Folder" xml:space="preserve"><value>Collé</value></data>
+  <data name="Paste_ImageName" xml:space="preserve"><value>Capture {0:yyyy-MM-dd} à {0:HH.mm.ss}</value></data>
+  <data name="History_Rerun" xml:space="preserve"><value>Refaire</value></data>
+  <data name="History_RerunHint" xml:space="preserve"><value>Même action et mêmes réglages, sur d'autres fichiers</value></data>
+  <data name="History_RerunPick" xml:space="preserve"><value>Fichiers à traiter</value></data>
+  <data name="History_RerunSettings" xml:space="preserve"><value>Réglages du {0:d}</value></data>
+  <data name="Doc_ReleaseNotes" xml:space="preserve"><value>Nouveautés</value></data>
+  <data name="Doc_WhatsNew" xml:space="preserve"><value>Nouveautés de la {0}</value></data>
 </root>

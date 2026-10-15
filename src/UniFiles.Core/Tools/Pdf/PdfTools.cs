@@ -160,6 +160,7 @@ public sealed class ImagesToPdfTool : PdfToolBase
     private static readonly IReadOnlySet<FileKind> ImagesOnly = new HashSet<FileKind> { FileKind.Image };
 
     public override string Id => "pdf.fromImages";
+    public override FileKind OutputKind(FileKind input) => FileKind.Pdf;
     public override string Name => Strings.Tool_ImagesToPdf_Name;
     public override string Description => Strings.Tool_ImagesToPdf_Description;
     public override IReadOnlySet<FileKind> AcceptedKinds => ImagesOnly;

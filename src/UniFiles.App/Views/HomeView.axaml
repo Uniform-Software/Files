@@ -40,7 +40,7 @@
         <ItemsControl ItemsSource="{Binding Modules}">
           <ItemsControl.ItemsPanel>
             <ItemsPanelTemplate>
-              <UniformGrid Columns="4" />
+              <UniformGrid Columns="5" />
             </ItemsPanelTemplate>
           </ItemsControl.ItemsPanel>
           <ItemsControl.ItemTemplate>

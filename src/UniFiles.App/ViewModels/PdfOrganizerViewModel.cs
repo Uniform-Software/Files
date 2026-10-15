@@ -226,7 +226,7 @@ public partial class PdfOrganizerViewModel : PageViewModel, IDisposable
         var settings = ToolSettings.FromDefaults(_tool);
         settings[PdfOrganizeTool.PagesKey] = PdfOrganizeTool.FormatPages(
             Pages.Where(p => !p.IsRemoved).Select(p => new PageChoice(p.SourceIndex, p.Rotation)));
-        _services.Queue.Enqueue(_tool, [FilePath], settings, _services.OutputFolder);
+        _services.Queue.Enqueue(_tool, [InputFile.Of(FilePath)], settings, _services.TargetFor(settings));
         Dispose();
         _main.ShowQueue();
     }

@@ -124,8 +124,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${TAG#v}"
-          notes="build/release-notes/$version.md"
-          [[ -f "$notes" ]] || notes=/dev/null
+          # French notes, then the English ones (build/release-notes/<version>.en.md) when there are some.
+          notes=$(mktemp)
+          if [[ -f "build/release-notes/$version.md" ]]; then
+            cat "build/release-notes/$version.md" >> "$notes"
+          fi
+          if [[ -f "build/release-notes/$version.en.md" ]]; then
+            if [[ -s "$notes" ]]; then printf '\n---\n\n' >> "$notes"; fi
+            cat "build/release-notes/$version.en.md" >> "$notes"
+          fi
           prerelease=""
           [[ "$version" == *-* ]] && prerelease="--prerelease"
           if ! gh release view "$TAG" >/dev/null 2>&1; then

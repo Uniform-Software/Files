@@ -30,12 +30,16 @@ public sealed class JobQueue
         get { lock (_sync) return _jobs.ToList(); }
     }
 
-    public Job Enqueue(IFileTool tool, IReadOnlyList<string> inputs, ToolSettings settings, OutputFolder output)
+    /// <summary>Queues files for a single output folder (every result in <paramref name="output"/>).</summary>
+    public Job Enqueue(IFileTool tool, IReadOnlyList<string> inputs, ToolSettings settings, OutputFolder output) =>
+        Enqueue(tool, inputs.Select(InputFile.Of).ToList(), settings, OutputTarget.Fixed(output.Path));
+
+    public Job Enqueue(IFileTool tool, IReadOnlyList<InputFile> inputs, ToolSettings settings, OutputTarget target)
     {
         if (inputs.Count < tool.MinimumInputs)
             throw new ArgumentException($"{tool.Id} needs at least {tool.MinimumInputs} files.", nameof(inputs));
 
-        var job = new Job(tool, inputs.ToList(), settings.Clone(), output);
+        var job = new Job(tool, inputs.ToList(), settings.Clone(), target);
         // A waiting job that gets resumed must be able to start without another event.
         job.Changed += (_, _) =>
         {
@@ -54,9 +58,9 @@ public sealed class JobQueue
     {
         var inputs = job.Items
             .Where(i => i.Status is WorkStatus.Failed or WorkStatus.Canceled)
-            .SelectMany(i => i.Inputs)
+            .SelectMany(i => i.Files)
             .ToList();
-        return inputs.Count >= job.Tool.MinimumInputs ? Enqueue(job.Tool, inputs, job.Settings, job.Output) : null;
+        return inputs.Count >= job.Tool.MinimumInputs ? Enqueue(job.Tool, inputs, job.Settings, job.Target) : null;
     }
 
     /// <summary>Moves a waiting job one place up (-1) or down (+1) among waiting jobs.</summary>
@@ -172,7 +176,7 @@ public sealed class JobQueue
         var original = item.Inputs[0];
         var heavier = item.Outputs[0];
         OutputFolder.Release(heavier);
-        var kept = job.Output.Reserve(Path.GetFileNameWithoutExtension(heavier) + Path.GetExtension(original));
+        var kept = item.Output.Reserve(Path.GetFileNameWithoutExtension(heavier) + Path.GetExtension(original));
         File.Copy(original, kept, overwrite: true);
         item.Outputs = [kept];
         item.OutputBytes = item.InputBytes;
@@ -193,7 +197,8 @@ public sealed class JobQueue
             Inputs = item.Inputs,
             Index = item.Index,
             Settings = job.Settings,
-            Output = job.Output,
+            Output = item.Output,
+            Files = item.Files,
             Progress = new SyncProgress(value =>
             {
                 item.Progress = value;

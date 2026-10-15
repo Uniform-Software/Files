@@ -28,9 +28,9 @@
   <data name="Module_Rename" xml:space="preserve"><value>Rename</value></data>
   <data name="Module_Rename_Summary" xml:space="preserve"><value>Rename a batch from a pattern</value></data>
   <data name="Module_Pdf" xml:space="preserve"><value>PDF</value></data>
-  <data name="Module_Pdf_Summary" xml:space="preserve"><value>Merge, split, compress, images to PDF</value></data>
+  <data name="Module_Pdf_Summary" xml:space="preserve"><value>Merge, split, forms, PDF to images</value></data>
   <data name="Module_Video" xml:space="preserve"><value>Video / audio</value></data>
-  <data name="Module_Video_Summary" xml:space="preserve"><value>Trim, compress, convert, extract audio</value></data>
+  <data name="Module_Video_Summary" xml:space="preserve"><value>Trim, compress, convert, loudness, audio</value></data>
   <data name="Action_Title" xml:space="preserve"><value>Choose an action</value></data>
   <data name="Action_ToolsLabel" xml:space="preserve"><value>Available actions</value></data>
   <data name="Action_MixedHint" xml:space="preserve"><value>These files are of different kinds: only the actions they share are offered.</value></data>
@@ -328,4 +328,144 @@
   <data name="Queue_Drag" xml:space="preserve"><value>Drag the {0} files</value></data>
   <data name="Queue_DragHint" xml:space="preserve"><value>Drag the results into an e-mail, a chat or another folder. The files stay in the output folder.</value></data>
   <data name="Queue_DragOne" xml:space="preserve"><value>Drag the file</value></data>
+  <data name="Error_FormUnsupported" xml:space="preserve"><value>This form is a dynamic XFA form (made with Adobe LiveCycle), which UniFiles can't fill. Open it in Adobe Acrobat Reader.</value></data>
+  <data name="Form_NameTaken" xml:space="preserve"><value>A field named "{0}" already exists.</value></data>
+  <data name="Output_Label" xml:space="preserve"><value>Save to</value></data>
+  <data name="Output_Default" xml:space="preserve"><value>UniFiles folder</value></data>
+  <data name="Output_NextToOriginals" xml:space="preserve"><value>Next to the originals</value></data>
+  <data name="Output_NextToOriginalsHint" xml:space="preserve"><value>Each result goes in its original's folder, under a new name.</value></data>
+  <data name="Output_Dated" xml:space="preserve"><value>Folder of the day</value></data>
+  <data name="Output_Choose" xml:space="preserve"><value>Choose a folder…</value></data>
+  <data name="Output_Change" xml:space="preserve"><value>Change</value></data>
+  <data name="Output_KeepTree" xml:space="preserve"><value>Keep the sub-folders</value></data>
+  <data name="Output_KeepTreeHint" xml:space="preserve"><value>The results keep the folder structure you dropped.</value></data>
+  <data name="Tool_PdfToImages_Name" xml:space="preserve"><value>PDF to images</value></data>
+  <data name="Tool_PdfToImages_Description" xml:space="preserve"><value>One PNG or JPG image per page</value></data>
+  <data name="Tool_PdfStrip_Name" xml:space="preserve"><value>Remove PDF metadata</value></data>
+  <data name="Tool_PdfStrip_Description" xml:space="preserve"><value>Author, software, dates: gone. Pages untouched</value></data>
+  <data name="Tool_VideoMute_Name" xml:space="preserve"><value>Remove the sound</value></data>
+  <data name="Tool_VideoMute_Description" xml:space="preserve"><value>Silent video, instantly, no quality loss</value></data>
+  <data name="Tool_AudioNormalize_Name" xml:space="preserve"><value>Normalize the volume</value></data>
+  <data name="Tool_AudioNormalize_Description" xml:space="preserve"><value>Same loudness everywhere, without distortion</value></data>
+  <data name="Tool_Zip_Name" xml:space="preserve"><value>Create a ZIP archive</value></data>
+  <data name="Tool_Zip_Description" xml:space="preserve"><value>All files in one attachment</value></data>
+  <data name="Module_Files" xml:space="preserve"><value>Files</value></data>
+  <data name="Module_Files_Summary" xml:space="preserve"><value>Archive, and more to come</value></data>
+  <data name="Option_Pages" xml:space="preserve"><value>Pages</value></data>
+  <data name="Choice_AllPages" xml:space="preserve"><value>All pages</value></data>
+  <data name="Choice_SomePages" xml:space="preserve"><value>Some pages</value></data>
+  <data name="Choice_DpiScreen" xml:space="preserve"><value>Screen (72 dpi)</value></data>
+  <data name="Choice_DpiStandard" xml:space="preserve"><value>Standard (150 dpi)</value></data>
+  <data name="Choice_DpiPrint" xml:space="preserve"><value>Print (300 dpi)</value></data>
+  <data name="Suffix_Page" xml:space="preserve"><value>page</value></data>
+  <data name="Suffix_Muted" xml:space="preserve"><value>muted</value></data>
+  <data name="Suffix_Normalized" xml:space="preserve"><value>normalized</value></data>
+  <data name="Option_KeepTitle" xml:space="preserve"><value>Keep the title</value></data>
+  <data name="Option_Loudness" xml:space="preserve"><value>Target</value></data>
+  <data name="Choice_LoudnessVoice" xml:space="preserve"><value>Podcast and voice (−16 LUFS)</value></data>
+  <data name="Choice_LoudnessMusic" xml:space="preserve"><value>Music and streaming (−14 LUFS)</value></data>
+  <data name="Choice_LoudnessBroadcast" xml:space="preserve"><value>Broadcast (−23 LUFS)</value></data>
+  <data name="Hint_Loudness" xml:space="preserve"><value>UniFiles measures the sound, then corrects it in one go: quiet passages stay quiet, nothing is clipped.</value></data>
+  <data name="Error_NoAudio" xml:space="preserve"><value>This file has no sound.</value></data>
+  <data name="Option_Compression" xml:space="preserve"><value>Compression</value></data>
+  <data name="Choice_ZipFast" xml:space="preserve"><value>Fast</value></data>
+  <data name="Choice_ZipBalanced" xml:space="preserve"><value>Balanced</value></data>
+  <data name="Choice_ZipSmallest" xml:space="preserve"><value>Smallest</value></data>
+  <data name="Chain_Steps" xml:space="preserve"><value>{0} steps</value></data>
+  <data name="Chain_NotAllowed" xml:space="preserve"><value>A chain needs at least two actions.</value></data>
+  <data name="Chain_StepNotAllowed" xml:space="preserve"><value>"{0}" can't be part of a chain (or only as the last step).</value></data>
+  <data name="Chain_Incompatible" xml:space="preserve"><value>"{0}" can't work on what "{1}" produces.</value></data>
+  <data name="Chain_StepError" xml:space="preserve"><value>Step {0} ({1}): {2}</value></data>
+  <data name="Chain_FileNotAccepted" xml:space="preserve"><value>{1} can't process {0}.</value></data>
+  <data name="Chain_Step" xml:space="preserve"><value>Step {0}</value></data>
+  <data name="Chain_AddStep" xml:space="preserve"><value>Add a step</value></data>
+  <data name="Chain_AddStepHint" xml:space="preserve"><value>Chain another action on the results: resize, then convert, then remove metadata… in one go.</value></data>
+  <data name="Chain_ChooseStep" xml:space="preserve"><value>Then:</value></data>
+  <data name="Chain_Remove" xml:space="preserve"><value>Remove this step</value></data>
+  <data name="Chain_MoveUp" xml:space="preserve"><value>Move up</value></data>
+  <data name="Chain_MoveDown" xml:space="preserve"><value>Move down</value></data>
+  <data name="Nav_Automations" xml:space="preserve"><value>Automations</value></data>
+  <data name="Auto_Title" xml:space="preserve"><value>Automations</value></data>
+  <data name="Auto_Intro" xml:space="preserve"><value>Choose a folder and a preset: every new file that lands in it is processed on its own, while UniFiles runs.</value></data>
+  <data name="Auto_Empty" xml:space="preserve"><value>No watched folder yet. Screenshots, downloads, camera exports: let UniFiles take care of them.</value></data>
+  <data name="Auto_Add" xml:space="preserve"><value>Watch a folder</value></data>
+  <data name="Auto_Folder" xml:space="preserve"><value>Folder to watch</value></data>
+  <data name="Auto_Preset" xml:space="preserve"><value>Preset</value></data>
+  <data name="Auto_Destination" xml:space="preserve"><value>Results</value></data>
+  <data name="Auto_After" xml:space="preserve"><value>Then the original</value></data>
+  <data name="Auto_AfterKeep" xml:space="preserve"><value>stays where it is</value></data>
+  <data name="Auto_AfterMove" xml:space="preserve"><value>goes to a "Traités" sub-folder</value></data>
+  <data name="Auto_AfterTrash" xml:space="preserve"><value>goes to the trash</value></data>
+  <data name="Auto_Subfolders" xml:space="preserve"><value>Include sub-folders</value></data>
+  <data name="Auto_Enabled" xml:space="preserve"><value>Active</value></data>
+  <data name="Auto_Today" xml:space="preserve"><value>{0} processed today</value></data>
+  <data name="Auto_Last" xml:space="preserve"><value>last: {0}</value></data>
+  <data name="Auto_Waiting" xml:space="preserve"><value>Waiting for new files</value></data>
+  <data name="Auto_Paused" xml:space="preserve"><value>Paused</value></data>
+  <data name="Auto_Missing" xml:space="preserve"><value>Folder not found (drive unplugged?). UniFiles checks again every 30 seconds.</value></data>
+  <data name="Auto_PresetMissing" xml:space="preserve"><value>The preset of this automation was deleted: choose another one.</value></data>
+  <data name="Auto_ProcessExisting" xml:space="preserve"><value>Process the files already there</value></data>
+  <data name="Auto_ProcessingExisting" xml:space="preserve"><value>{0} sent to the queue.</value></data>
+  <data name="Auto_NothingThere" xml:space="preserve"><value>Nothing to process in this folder.</value></data>
+  <data name="Auto_ShowFolder" xml:space="preserve"><value>Open the folder</value></data>
+  <data name="Auto_Remove" xml:space="preserve"><value>Stop watching</value></data>
+  <data name="Auto_NoPreset" xml:space="preserve"><value>Save a preset first (in the action screen, "Save as preset"): an automation applies a preset.</value></data>
+  <data name="Auto_Limit" xml:space="preserve"><value>At most {0} watched folders.</value></data>
+  <data name="Auto_LoginItem" xml:space="preserve"><value>Start UniFiles when I log in</value></data>
+  <data name="Auto_LoginItemHint" xml:space="preserve"><value>UniFiles starts without a window, in the menu bar, so watched folders keep working.</value></data>
+  <data name="Auto_LoginItemError" xml:space="preserve"><value>The system refused to start UniFiles at login.</value></data>
+  <data name="Auto_Notification" xml:space="preserve"><value>{0}: {1} processed</value></data>
+  <data name="Tool_PdfFormFill_Name" xml:space="preserve"><value>Fill a form</value></data>
+  <data name="Tool_PdfFormFill_Description" xml:space="preserve"><value>Type the answers, or add fields to a PDF</value></data>
+  <data name="Tool_PdfFormFlatten_Name" xml:space="preserve"><value>Flatten a form</value></data>
+  <data name="Tool_PdfFormFlatten_Description" xml:space="preserve"><value>Freeze the answers: nothing editable left</value></data>
+  <data name="Tool_PdfFormExport_Name" xml:space="preserve"><value>Export the answers (CSV)</value></data>
+  <data name="Tool_PdfFormExport_Description" xml:space="preserve"><value>One row per form, for Excel or Numbers</value></data>
+  <data name="Suffix_Filled" xml:space="preserve"><value>filled</value></data>
+  <data name="Suffix_Flattened" xml:space="preserve"><value>flattened</value></data>
+  <data name="Error_NoFormFields" xml:space="preserve"><value>This PDF has no form field.</value></data>
+  <data name="Option_Separator" xml:space="preserve"><value>Separator</value></data>
+  <data name="Choice_Semicolon" xml:space="preserve"><value>Semicolon (Excel in French)</value></data>
+  <data name="Choice_Comma" xml:space="preserve"><value>Comma</value></data>
+  <data name="Hint_Separator" xml:space="preserve"><value>Excel in French expects semicolons; most other apps, commas.</value></data>
+  <data name="Option_CheckboxValues" xml:space="preserve"><value>Check boxes</value></data>
+  <data name="Choice_YesNo" xml:space="preserve"><value>Yes / No</value></data>
+  <data name="Choice_Yes" xml:space="preserve"><value>Yes</value></data>
+  <data name="Choice_No" xml:space="preserve"><value>No</value></data>
+  <data name="Csv_File" xml:space="preserve"><value>File</value></data>
+  <data name="Csv_Answers" xml:space="preserve"><value>Answers</value></data>
+  <data name="Form_ModeFill" xml:space="preserve"><value>Fill</value></data>
+  <data name="Form_ModeAdd" xml:space="preserve"><value>Add fields</value></data>
+  <data name="Form_AddHelp" xml:space="preserve"><value>Draw a rectangle on the page to place a field. Click a field you added to rename it, move it, or resize it with its corner.</value></data>
+  <data name="Form_FieldType" xml:space="preserve"><value>New field</value></data>
+  <data name="Form_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="Form_Multiline" xml:space="preserve"><value>Text on several lines</value></data>
+  <data name="Form_CheckBox" xml:space="preserve"><value>Check box</value></data>
+  <data name="Form_FieldName" xml:space="preserve"><value>Field name</value></data>
+  <data name="Form_FieldRequired" xml:space="preserve"><value>Required</value></data>
+  <data name="Form_FontSize" xml:space="preserve"><value>Text size (pt)</value></data>
+  <data name="Form_FontSizeHint" xml:space="preserve"><value>0 = adjusted to the field.</value></data>
+  <data name="Form_DeleteField" xml:space="preserve"><value>Delete this field</value></data>
+  <data name="Form_DefaultName" xml:space="preserve"><value>field_{0}</value></data>
+  <data name="Form_Summary" xml:space="preserve"><value>{0} fields · {1} filled</value></data>
+  <data name="Form_PageOf" xml:space="preserve"><value>Page {0} of {1}</value></data>
+  <data name="Form_PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="Form_NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="Form_ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="Form_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="Form_Flatten" xml:space="preserve"><value>Flatten (freeze the answers)</value></data>
+  <data name="Form_FlattenHint" xml:space="preserve"><value>The answers become part of the page: nobody can change them any more. Keep the original if you may need to edit them.</value></data>
+  <data name="Form_Save" xml:space="preserve"><value>Save the PDF</value></data>
+  <data name="Form_NoFields" xml:space="preserve"><value>This PDF has no field yet: add some with "Add fields".</value></data>
+  <data name="Form_Unsupported" xml:space="preserve"><value>UniFiles can't fill this kind of field (signature…).</value></data>
+  <data name="Paste_Action" xml:space="preserve"><value>Paste to process</value></data>
+  <data name="Paste_Nothing" xml:space="preserve"><value>Nothing to process in the clipboard: copy files or a picture first.</value></data>
+  <data name="Paste_Folder" xml:space="preserve"><value>Pasted</value></data>
+  <data name="Paste_ImageName" xml:space="preserve"><value>Capture {0:yyyy-MM-dd} at {0:HH.mm.ss}</value></data>
+  <data name="History_Rerun" xml:space="preserve"><value>Do again</value></data>
+  <data name="History_RerunHint" xml:space="preserve"><value>Same action and settings, on other files</value></data>
+  <data name="History_RerunPick" xml:space="preserve"><value>Files to process again</value></data>
+  <data name="History_RerunSettings" xml:space="preserve"><value>Settings of {0:d}</value></data>
+  <data name="Doc_ReleaseNotes" xml:space="preserve"><value>What's new</value></data>
+  <data name="Doc_WhatsNew" xml:space="preserve"><value>What's new in {0}</value></data>
 </root>

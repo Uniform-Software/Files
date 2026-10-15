@@ -43,7 +43,10 @@ public static class ExplorerMenu
 
     /// <summary>Presets whose tool works on a file extension, in creation order.</summary>
     public static IEnumerable<ToolPreset> PresetsFor(ToolCatalog catalog, IReadOnlyList<ToolPreset> presets, string extension) =>
-        presets.Where(p => catalog.Find(p.ToolId) is { NeedsEditor: false } tool && tool.Accepts("file" + extension));
+        presets.Where(p => PresetTool(catalog, p) is { NeedsEditor: false } tool && tool.Accepts("file" + extension));
+
+    /// <summary>The action a preset runs (a chain for chain presets), or null if a tool is missing.</summary>
+    public static IFileTool? PresetTool(ToolCatalog catalog, ToolPreset preset) => PresetResolver.Resolve(catalog, preset)?.Tool;
 }
 
 internal sealed class UnsupportedContextMenuInstaller : IContextMenuInstaller

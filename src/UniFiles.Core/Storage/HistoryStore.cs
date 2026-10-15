@@ -1,5 +1,7 @@
+using System.Text.Json;
 using Microsoft.Data.Sqlite;
 using UniFiles.Core.Jobs;
+using UniFiles.Core.Tools;
 
 namespace UniFiles.Core.Storage;
 
@@ -12,11 +14,19 @@ public sealed record HistoryEntry(
     long InputBytes,
     long OutputBytes,
     JobStatus Status,
-    string OutputDirectory);
+    string OutputDirectory,
+    string? ToolName = null,
+    ToolPreset? Recipe = null);
 
-/// <summary>Past jobs, kept in a local SQLite database.</summary>
+/// <summary>
+/// Past jobs, kept in a local SQLite database. Since version 2 (UniFiles 0.3) each entry also
+/// keeps the action's name and its "recipe" (tool or chain steps, settings, destination) so it
+/// can be run again.
+/// </summary>
 public sealed class HistoryStore
 {
+    private const int CurrentVersion = 2;
+
     private readonly string _connectionString;
 
     public HistoryStore(string? path = null)
@@ -41,15 +51,45 @@ public sealed class HistoryStore
             );
             """;
         command.ExecuteNonQuery();
+        Migrate(connection);
     }
+
+    /// <summary>Brings an older database up to date; only the missing steps run.</summary>
+    private static void Migrate(SqliteConnection connection)
+    {
+        using var read = connection.CreateCommand();
+        read.CommandText = "PRAGMA user_version;";
+        var version = Convert.ToInt32(read.ExecuteScalar());
+        if (version >= CurrentVersion)
+            return;
+
+        using var migrate = connection.CreateCommand();
+        migrate.CommandText = """
+            ALTER TABLE history ADD COLUMN tool_name TEXT;
+            ALTER TABLE history ADD COLUMN settings TEXT;
+            PRAGMA user_version = 2;
+            """;
+        migrate.ExecuteNonQuery();
+    }
+
+    /// <summary>What ran, as a preset: the tool (or chain steps) and settings, destination included.</summary>
+    public static ToolPreset Recipe(Job job) => job.Tool is ChainTool chain
+        ? new ToolPreset
+        {
+            Name = chain.Name,
+            ToolId = ChainTool.ChainId,
+            Values = SavedSettings.ToSaved(job.Settings),
+            Steps = chain.Steps.Select(s => new PresetStep { ToolId = s.Tool.Id, Values = SavedSettings.ToSaved(s.Settings) }).ToList(),
+        }
+        : new ToolPreset { Name = job.Tool.Name, ToolId = job.Tool.Id, Values = SavedSettings.ToSaved(job.Settings) };
 
     public void Add(Job job)
     {
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO history (finished_at, tool_id, file_count, failed_count, input_bytes, output_bytes, status, output_directory)
-            VALUES ($finishedAt, $toolId, $fileCount, $failedCount, $inputBytes, $outputBytes, $status, $outputDirectory);
+            INSERT INTO history (finished_at, tool_id, file_count, failed_count, input_bytes, output_bytes, status, output_directory, tool_name, settings)
+            VALUES ($finishedAt, $toolId, $fileCount, $failedCount, $inputBytes, $outputBytes, $status, $outputDirectory, $toolName, $settings);
             """;
         command.Parameters.AddWithValue("$finishedAt", (job.FinishedAt ?? DateTime.Now).ToString("O"));
         command.Parameters.AddWithValue("$toolId", job.Tool.Id);
@@ -59,6 +99,8 @@ public sealed class HistoryStore
         command.Parameters.AddWithValue("$outputBytes", job.OutputBytes);
         command.Parameters.AddWithValue("$status", job.Status.ToString());
         command.Parameters.AddWithValue("$outputDirectory", job.Output.Path);
+        command.Parameters.AddWithValue("$toolName", job.Tool.Name);
+        command.Parameters.AddWithValue("$settings", JsonSerializer.Serialize(Recipe(job)));
         command.ExecuteNonQuery();
     }
 
@@ -67,7 +109,7 @@ public sealed class HistoryStore
         using var connection = Open();
         using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, finished_at, tool_id, file_count, failed_count, input_bytes, output_bytes, status, output_directory
+            SELECT id, finished_at, tool_id, file_count, failed_count, input_bytes, output_bytes, status, output_directory, tool_name, settings
             FROM history ORDER BY id DESC LIMIT $limit;
             """;
         command.Parameters.AddWithValue("$limit", limit);
@@ -85,9 +127,23 @@ public sealed class HistoryStore
                 reader.GetInt64(5),
                 reader.GetInt64(6),
                 Enum.TryParse<JobStatus>(reader.GetString(7), out var status) ? status : JobStatus.Completed,
-                reader.GetString(8)));
+                reader.GetString(8),
+                reader.IsDBNull(9) ? null : reader.GetString(9),
+                reader.IsDBNull(10) ? null : ReadRecipe(reader.GetString(10))));
         }
         return entries;
+    }
+
+    private static ToolPreset? ReadRecipe(string json)
+    {
+        try
+        {
+            return JsonSerializer.Deserialize<ToolPreset>(json);
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
     }
 
     public void Clear()

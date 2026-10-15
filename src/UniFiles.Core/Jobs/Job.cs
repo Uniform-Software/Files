@@ -27,15 +27,23 @@ public enum WorkStatus
 /// </summary>
 public sealed class WorkItem
 {
-    internal WorkItem(int index, IReadOnlyList<string> inputs)
+    internal WorkItem(int index, IReadOnlyList<InputFile> files, OutputFolder output)
     {
         Index = index;
-        Inputs = inputs;
+        Files = files;
+        Inputs = files.Select(f => f.Path).ToList();
+        Output = output;
     }
 
     public int Index { get; }
 
     public IReadOnlyList<string> Inputs { get; }
+
+    /// <summary>The inputs with their place in the dropped folder.</summary>
+    public IReadOnlyList<InputFile> Files { get; }
+
+    /// <summary>Where this item's results go.</summary>
+    public OutputFolder Output { get; }
 
     public string DisplayName => Inputs.Count == 1
         ? Path.GetFileName(Inputs[0])
@@ -64,15 +72,17 @@ public sealed class Job
     private readonly CancellationTokenSource _cancellation = new();
     private readonly TaskCompletionSource _completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    internal Job(IFileTool tool, IReadOnlyList<string> inputs, ToolSettings settings, OutputFolder output)
+    internal Job(IFileTool tool, IReadOnlyList<InputFile> inputs, ToolSettings settings, OutputTarget target)
     {
         Tool = tool;
-        Inputs = inputs;
+        Inputs = inputs.Select(i => i.Path).ToList();
         Settings = settings;
-        Output = output;
+        Target = target;
+        Output = target.Display(inputs);
+        // Tools combining their inputs write one result, where the first file's would go.
         Items = tool.CombinesInputs
-            ? [new WorkItem(0, inputs)]
-            : inputs.Select((input, index) => new WorkItem(index, [input])).ToList();
+            ? [new WorkItem(0, inputs, target.For(inputs[0]))]
+            : inputs.Select((input, index) => new WorkItem(index, [input], target.For(input))).ToList();
     }
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -83,7 +93,10 @@ public sealed class Job
 
     public ToolSettings Settings { get; }
 
+    /// <summary>The destination as one folder, for the history and "Open folder".</summary>
     public OutputFolder Output { get; }
+
+    public OutputTarget Target { get; }
 
     public IReadOnlyList<WorkItem> Items { get; }
 

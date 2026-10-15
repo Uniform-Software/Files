@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using UniFiles.Core;
 using UniFiles.Core.Jobs;
@@ -18,7 +19,15 @@ public sealed class AppServices
     private AppServices()
     {
         SettingsStore = new SettingsStore();
+        var existed = File.Exists(SettingsStore.FilePath);
         Settings = SettingsStore.Load();
+        if (CurrentVersion.ToString(3) != Settings.LastVersion)
+        {
+            // Settings from an earlier version (0.2 had no LastVersion): this launch follows an update.
+            JustUpdated = existed;
+            Settings.LastVersion = CurrentVersion.ToString(3);
+            SaveSettings();
+        }
         VideoEncoder.HardwareEnabled = Settings.HardwareAcceleration;
         History = new HistoryStore();
         Queue.JobFinished += (_, job) =>
@@ -42,11 +51,21 @@ public sealed class AppServices
 
     public SettingsStore SettingsStore { get; }
 
+    public static Version CurrentVersion { get; } = Assembly.GetEntryAssembly()?.GetName().Version ?? new Version(0, 0, 0);
+
+    /// <summary>First launch of this version after an update: its release notes are shown once.</summary>
+    public bool JustUpdated { get; }
+
     public AppSettings Settings { get; }
 
     public HistoryStore History { get; }
 
     public Updater Updater { get; } = new();
+
+    /// <summary>Watched folders; started by the app once the window is ready.</summary>
+    public AutomationService Automations => _automations ??= new AutomationService(this);
+
+    private AutomationService? _automations;
 
     public OutputFolder OutputFolder => new(Settings.OutputDirectory);
 
@@ -55,29 +74,11 @@ public sealed class AppServices
         SettingsFrom(tool, Settings.ToolSettings.GetValueOrDefault(tool.Id));
 
     /// <summary>The tool's defaults, overridden by saved values of the right type (unknown keys are ignored).</summary>
-    public static ToolSettings SettingsFrom(IFileTool tool, IReadOnlyDictionary<string, JsonElement>? saved)
-    {
-        var settings = ToolSettings.FromDefaults(tool);
-        if (saved is null)
-            return settings;
+    public static ToolSettings SettingsFrom(IFileTool tool, IReadOnlyDictionary<string, JsonElement>? saved) =>
+        SavedSettings.FromSaved(tool, saved);
 
-        foreach (var option in tool.Options)
-        {
-            if (!saved.TryGetValue(option.Key, out var value))
-                continue;
-            object? restored = (option, value.ValueKind) switch
-            {
-                (NumberOption, JsonValueKind.Number) when value.TryGetInt32(out var number) => number,
-                (BoolOption, JsonValueKind.True or JsonValueKind.False) => value.GetBoolean(),
-                (ChoiceOption choice, JsonValueKind.String) when choice.Choices.Any(c => c.Value == value.GetString()) => value.GetString(),
-                (TextOption, JsonValueKind.String) => value.GetString(),
-                _ => null,
-            };
-            if (restored is not null)
-                settings[option.Key] = restored;
-        }
-        return settings;
-    }
+    /// <summary>Where the results of an action with these settings go.</summary>
+    public OutputTarget TargetFor(ToolSettings settings) => OutputSettings.Read(settings, Settings.OutputDirectory);
 
     public void SaveToolSettings(IFileTool tool, ToolSettings settings)
     {
@@ -85,8 +86,7 @@ public sealed class AppServices
         SaveSettings();
     }
 
-    public static Dictionary<string, JsonElement> Serialize(ToolSettings settings) =>
-        settings.Values.ToDictionary(p => p.Key, p => JsonSerializer.SerializeToElement(p.Value));
+    public static Dictionary<string, JsonElement> Serialize(ToolSettings settings) => SavedSettings.ToSaved(settings);
 
     /// <summary>Raised after a preset is added, replaced or deleted (the right-click menu lists them).</summary>
     public event EventHandler? PresetsChanged;
@@ -102,6 +102,27 @@ public sealed class AppServices
         }
         preset.Name = name;
         preset.Values = Serialize(settings);
+        SaveSettings();
+        PresetsChanged?.Invoke(this, EventArgs.Empty);
+        return preset;
+    }
+
+    /// <summary>Saves a chain preset (its steps and destination); one with the same name is replaced.</summary>
+    public ToolPreset SaveChainPreset(string name, IReadOnlyList<ChainStep> steps, ToolSettings destination)
+    {
+        var preset = Settings.Presets.FirstOrDefault(p => p.IsChain && string.Equals(p.Name, name, StringComparison.CurrentCultureIgnoreCase));
+        if (preset is null)
+        {
+            preset = new ToolPreset { ToolId = ChainTool.ChainId };
+            Settings.Presets.Add(preset);
+        }
+        preset.Name = name;
+        preset.Values = Serialize(destination);
+        preset.Steps = steps.Select(s => new PresetStep
+        {
+            ToolId = s.Tool.Id,
+            Values = Serialize(new ToolSettings(s.Settings.Values.Where(p => !OutputSettings.IsReserved(p.Key)).ToDictionary(p => p.Key, p => p.Value))),
+        }).ToList();
         SaveSettings();
         PresetsChanged?.Invoke(this, EventArgs.Empty);
         return preset;
@@ -127,11 +148,9 @@ public sealed class AppServices
         }
     }
 
-    /// <summary>A preset and its tool, if the tool still exists.</summary>
+    /// <summary>A preset's tool (or chain) and settings, if its tools still exist.</summary>
     public (IFileTool Tool, ToolSettings Settings)? ResolvePreset(string presetId) =>
-        Settings.Presets.FirstOrDefault(p => p.Id == presetId) is { } preset && Catalog.Find(preset.ToolId) is { } tool
-            ? (tool, SettingsFrom(tool, preset.Values))
-            : null;
+        Settings.Presets.FirstOrDefault(p => p.Id == presetId) is { } preset ? PresetResolver.Resolve(Catalog, preset) : null;
 
     /// <summary>Plain-language warning when a tool needs a program that isn't installed, else null.</summary>
     public static string? MissingProgramWarning(IFileTool? tool) => tool switch

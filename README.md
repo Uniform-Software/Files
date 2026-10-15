@@ -11,20 +11,23 @@ Images, PDF, vidéos et noms de fichiers, traités en local. Sans compte, sans p
 
 ---
 
-UniFiles remplace les sites de conversion en ligne par une application de bureau gratuite pour Windows, macOS et Linux. **Aucun fichier ne quitte ton ordinateur** et l'appli n'envoie aucune télémétrie. Tes fichiers d'origine ne sont jamais modifiés : les résultats sont enregistrés dans un dossier de sortie (`Documents/UniFiles` par défaut).
+UniFiles remplace les sites de conversion en ligne par une application de bureau gratuite pour Windows, macOS et Linux. **Aucun fichier ne quitte ton ordinateur** et l'appli n'envoie aucune télémétrie. Tes fichiers d'origine ne sont jamais modifiés (seul un dossier surveillé peut les ranger ou les mettre à la corbeille, si tu le choisis) : les résultats sont enregistrés dans un dossier de sortie (`Documents/UniFiles` par défaut).
 
 *English: UniFiles is a free, open-source desktop app that resizes, compresses and converts images, PDFs, videos and file names locally. Nothing leaves your computer. The interface is available in French and English.*
 
-## Ce que fait la v0.2
+## Ce que fait la v0.3
 
 | Module | Actions |
 | --- | --- |
 | **Images** | Compresser (selon une qualité ou pour une taille cible) · Redimensionner · Convertir (PNG, JPG, WebP, AVIF) · Convertir des photos iPhone (HEIC) · Supprimer les métadonnées |
 | **Renommage** | Renommer un lot par modèle (`{name}`, `{n}`, `{date}`, `{ext}`) avec aperçu avant/après |
-| **PDF** | Fusionner · Découper (par page ou par plages) · Organiser les pages (réordonner, pivoter, retirer) · Images vers PDF · Compresser |
-| **Vidéo / audio** | Couper (éditeur de montage simplifié, export en vidéo ou en GIF animé) · Compresser (selon une qualité ou pour une taille cible : 10 Mo pour Discord, 25 Mo pour un e-mail…) · Convertir (MP4, WebM, MOV, MKV) · Extraire / convertir l'audio |
+| **PDF** | Fusionner · Découper (par page ou par plages) · Organiser les pages (réordonner, pivoter, retirer) · Images vers PDF · PDF vers images · Compresser · Supprimer les métadonnées · Remplir un formulaire et ajouter des champs · Aplatir un formulaire · Exporter les réponses en CSV |
+| **Vidéo / audio** | Couper (éditeur de montage simplifié, export en vidéo ou en GIF animé) · Compresser (selon une qualité ou pour une taille cible : 10 Mo pour Discord, 25 Mo pour un e-mail…) · Convertir (MP4, WebM, MOV, MKV) · Extraire / convertir l'audio · Normaliser le volume · Couper le son |
+| **Fichiers** | Créer une archive ZIP (arborescence conservée) |
 
-**Nouveau en 0.2** : préréglages, tailles cibles, HEIC, aperçu avant/après des images, organisation des pages PDF, GIF animé, encodage vidéo matériel, Actions rapides du Finder et mises à jour automatiques.
+**Nouveau en 0.3** : formulaires PDF (remplir, ajouter des champs, aplatir, exporter en CSV), enchaînements d'actions, dossiers surveillés, choix du dossier de sortie au lancement (arborescence conservée), coller pour traiter (Cmd/Ctrl+V), « Refaire » depuis l'historique, et cinq nouvelles actions.
+
+**En 0.2** : préréglages, tailles cibles, HEIC, aperçu avant/après des images, organisation des pages PDF, GIF animé, encodage vidéo matériel, Actions rapides du Finder et mises à jour automatiques.
 
 - Glisser-déposer de fichiers ou de dossiers entiers, ou fichiers passés en ligne de commande (dépôt sur l'icône du bureau).
 - **Préréglages** : enregistre une action et ses réglages sous un nom (« Site web 1600 px »), puis relance-les en un clic depuis l'écran d'action ou le clic droit.
@@ -101,7 +104,7 @@ Options de ligne de commande : `UniFiles fichiers…` (ouvre l'appli sur ces fic
 ./build/release-windows.ps1 -Version 0.2.0
 ```
 
-Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (build BtbN figé et vérifié par SHA-256) et Ghostscript avec leurs licences, puis crée l'installeur et les paquets de mise à jour avec [Velopack](https://velopack.io) dans `artifacts/releases`. Les notes de version sont lues dans `build/release-notes/<version>.md`. Prérequis : Ghostscript 10.08.0 installé sur la machine de build.
+Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (build BtbN figé et vérifié par SHA-256) et Ghostscript avec leurs licences, puis crée l'installeur et les paquets de mise à jour avec [Velopack](https://velopack.io) dans `artifacts/releases`. Les notes de version sont lues dans `build/release-notes/<version>.md` (français) ; la version anglaise, `<version>.en.md`, est affichée dans l'appli en anglais et ajoutée à la version GitHub. Prérequis : Ghostscript 10.08.0 installé sur la machine de build.
 
 ### Publier une version macOS
 
@@ -113,7 +116,7 @@ Le script lance les tests, publie l'appli (autonome, win-x64), ajoute ffmpeg (bu
 
 ### Publier avec GitHub Actions
 
-Chaque push et chaque pull request lancent les tests sous Windows, macOS et Linux (`.github/workflows/ci.yml`). Pour publier une version, pousse un tag :
+Chaque push et chaque pull request lancent les tests sous Windows et macOS (`.github/workflows/ci.yml`). Pour publier une version, pousse un tag :
 
 ```bash
 git tag v0.2.0 && git push origin v0.2.0
@@ -128,7 +131,8 @@ Pour utiliser l'appli en mode portable ou en développement sans toucher à tes 
 ```
 src/
   UniFiles.Core/      Logique métier, sans interface
-    Tools/            IFileTool et un fichier par module (Images, Pdf, Video, Rename)
+    Tools/            IFileTool et un fichier par module (Images, Pdf, Video, Rename, Files), ChainTool
+    Automation/       Dossiers surveillés (FolderWatcher, WatchRule)
     Jobs/             JobQueue : exécution parallèle, pause, annulation, erreurs isolées
     Storage/          Préférences (JSON) et historique (SQLite)
     Resources/        Tous les textes : Strings.resx (anglais) et Strings.fr.resx
@@ -145,7 +149,7 @@ tests/
 
 ## Stack
 
-C# / .NET 10 · Avalonia UI 11 · CommunityToolkit.Mvvm · NetVips (libvips) · PDFsharp · FFMpegCore + ffmpeg · LibVLCSharp + LibVLC · Ghostscript · Microsoft.Data.Sqlite
+C# / .NET 10 · Avalonia UI 11 · CommunityToolkit.Mvvm · NetVips (libvips) · PDFsharp · PDFium · FFMpegCore + ffmpeg · LibVLCSharp + LibVLC · Ghostscript · Microsoft.Data.Sqlite
 
 Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.App/Assets/Fonts`).
 
@@ -155,7 +159,8 @@ Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.A
 - [x] Actions rapides du Finder (macOS)
 - [ ] Menu clic droit sous Linux (Dolphin, Nautilus)
 - [x] Icône et menu dans la zone de notification
-- [ ] Notifications natives du système, lancement au démarrage
+- [ ] Notifications natives du système
+- [x] Lancement à l'ouverture de session (dossiers surveillés)
 - [x] Instance unique (les autres points d'entrée transmettent leurs fichiers par named pipe)
 - [x] ffmpeg et Ghostscript embarqués (Windows), ffmpeg embarqué (macOS)
 - [x] Installeur Windows (Velopack)
@@ -168,6 +173,9 @@ Polices : Bricolage Grotesque et Figtree, sous licence OFL (voir `src/UniFiles.A
 - [ ] Installeur Linux
 - [x] Aperçu visuel avant/après pour les images
 - [x] Préréglages, tailles cibles, HEIC, organisation des pages PDF, GIF, encodage matériel
+- [x] Formulaires PDF, enchaînements, dossiers surveillés
+- [ ] Signature numérique des PDF avec certificat
+- [ ] Éditeur de champs complet (listes, validation, calculs)
 
 ## Licence
 

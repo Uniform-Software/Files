@@ -17,6 +17,7 @@ public partial class SplashWindow : Window
     public SplashWindow(bool reducedMotion)
     {
         InitializeComponent();
+        AppIcon.Apply(this);
         Classes.Set("reducedMotion", reducedMotion);
         VersionText.Text = string.Format(Strings.Prefs_Version,
             Assembly.GetEntryAssembly()?.GetName().Version?.ToString(3) ?? "0.1.0");
