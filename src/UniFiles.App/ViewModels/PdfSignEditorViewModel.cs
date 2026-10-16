@@ -185,7 +185,7 @@ public sealed partial class PdfSignEditorViewModel : PdfPagesViewModel, IShownAg
     {
         var selected = SelectedIdentity?.Identity.Id ?? Services.Settings.Signing.LastIdentity;
         Identities.Clear();
-        foreach (var identity in SigningContext.Identities.Identities().Where(i => i.IsValidNow))
+        foreach (var identity in SigningContext.Identities.Identities().Where(i => i.CanSignNow))
             Identities.Add(new IdentityChoice(identity));
         SelectedIdentity = Identities.FirstOrDefault(i => i.Identity.Id == selected) ?? Identities.FirstOrDefault();
         OnPropertyChanged(nameof(HasNoIdentity));

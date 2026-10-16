@@ -632,4 +632,6 @@
   <data name="SignSettings_IssuedNone" xml:space="preserve"><value>Aucun certificat délivré</value></data>
   <data name="SignSettings_IssuedOne" xml:space="preserve"><value>1 certificat délivré</value></data>
   <data name="SignSettings_IssuedMany" xml:space="preserve"><value>{0} certificats délivrés</value></data>
+  <data name="Sign_KeyMissing" xml:space="preserve"><value>La clé de cette signature n'est plus sur cet ordinateur (créée par une préversion de UniFiles). Supprime-la dans Préférences › Signatures et crée-la à nouveau.</value></data>
+  <data name="SignSettings_BadgeKeyMissing" xml:space="preserve"><value>Clé introuvable</value></data>
 </root>

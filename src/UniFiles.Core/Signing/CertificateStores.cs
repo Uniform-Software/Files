@@ -24,10 +24,14 @@ public interface ICertificateStore
 public sealed class SystemCertificateStore : ICertificateStore
 {
     /// <summary>
-    /// Windows: the key must be persisted to survive in the store. macOS: never PersistKeySet, which
-    /// writes straight into the login keychain on load; <see cref="Add"/> copies it there itself.
+    /// Windows: the key must be persisted in the user's key storage, or it is deleted with the
+    /// object that loaded it and the certificate in the store points at nothing ("key refused"
+    /// when signing). macOS: never PersistKeySet, which writes straight into the login keychain on
+    /// load; <see cref="Add"/> copies the key there itself.
     /// </summary>
-    public X509KeyStorageFlags ImportFlags => OperatingSystem.IsWindows() ? X509KeyStorageFlags.PersistKeySet : X509KeyStorageFlags.DefaultKeySet;
+    public X509KeyStorageFlags ImportFlags => OperatingSystem.IsWindows()
+        ? X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.UserKeySet
+        : X509KeyStorageFlags.DefaultKeySet;
 
     /// <summary>Empty when the store can't be read (no keychain, locked or missing store).</summary>
     public IReadOnlyList<X509Certificate2> Certificates()

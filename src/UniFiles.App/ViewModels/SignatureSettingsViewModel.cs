@@ -38,9 +38,12 @@ public sealed class SignatureItemViewModel
 
     public bool HasEmail => Email is not null;
 
-    public string Detail => Identity.IsValidNow
-        ? string.Format(Strings.SignSettings_IssuedBy, Identity.IsSelfSigned ? Strings.SignSettings_Self : Identity.Issuer, Identity.NotAfter)
-        : string.Format(Strings.Error_CertificateExpired, Identity.NotAfter);
+    public string Detail => Identity.KeyMissing ? Strings.Sign_KeyMissing
+        : Identity.IsValidNow
+            ? string.Format(Strings.SignSettings_IssuedBy, Identity.IsSelfSigned ? Strings.SignSettings_Self : Identity.Issuer, Identity.NotAfter)
+            : string.Format(Strings.Error_CertificateExpired, Identity.NotAfter);
+
+    public bool KeyMissing => Identity.KeyMissing;
 
     public bool IsQualified => Identity.DeclaredQualified;
 

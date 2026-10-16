@@ -107,6 +107,37 @@ public class IdentityTests
         Assert.Throws<InvalidOperationException>(() => identities.Remove(listed));
     }
 
+    /// <summary>
+    /// Windows only (it runs on the CI): a signature made by UniFiles goes into the real certificate
+    /// store, is read back from it as on the next launch, and signs. Its private key must have been
+    /// persisted, or Windows refuses it. Everything made here is removed at the end.
+    /// </summary>
+    [Fact]
+    public async Task On_windows_a_created_signature_still_signs_when_read_back_from_the_store()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+        using var temp = new TempFolder();
+        var identities = new IdentityStore(new SystemCertificateStore(), temp.Sub("signature"));
+        var created = identities.CreatePersonal($"UniFiles Test {Guid.NewGuid():N}", null);
+        try
+        {
+            // Read back from the store, like the app does later: a fresh object, not the one that made the key.
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            var reloaded = new IdentityStore(new SystemCertificateStore(), temp.Sub("signature")).Find(created.Id);
+            Assert.NotNull(reloaded);
+            Assert.False(reloaded.KeyMissing);
+            var signed = await SignWith(identities, reloaded);
+            Assert.True(Assert.Single(PdfSignatureVerifier.Verify(signed)).Intact);
+        }
+        finally
+        {
+            identities.Remove(identities.Find(created.Id) ?? created);
+        }
+        Assert.Null(identities.Find(created.Id));
+    }
+
     [Fact]
     public void Removing_a_certificate_made_by_unifiles_takes_it_out_of_the_store()
     {

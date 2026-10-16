@@ -75,6 +75,8 @@ public sealed class PdfSignTool : PdfToolBase
             ?? throw new ToolException(Strings.Sign_IdentityMissing);
         if (!identity.IsValidNow)
             throw new ToolException(string.Format(CultureInfo.CurrentCulture, Strings.Error_CertificateExpired, identity.NotAfter));
+        if (identity.KeyMissing)
+            throw new ToolException(Strings.Sign_KeyMissing);
 
         var time = DateTimeOffset.Now;
         var reason = settings.GetString(ReasonKey);

@@ -9,6 +9,12 @@ namespace UniFiles.Core.Signing;
 /// <summary>A certificate the user can sign with: the certificate and access to its private key.</summary>
 public sealed record SigningIdentity(X509Certificate2 Certificate, bool CreatedByUniFiles, bool IsHardware)
 {
+    /// <summary>
+    /// The certificate is there but its private key isn't (made by UniFiles 0.4 previews under
+    /// Windows, whose keys weren't persisted): it can't sign, and has to be made again.
+    /// </summary>
+    public bool KeyMissing { get; init; }
+
     /// <summary>SHA-256 of the certificate, in hex: how settings and presets refer to it.</summary>
     public string Id { get; } = IdentityStore.IdOf(Certificate);
 
@@ -23,6 +29,9 @@ public sealed record SigningIdentity(X509Certificate2 Certificate, bool CreatedB
     public DateTime NotAfter => Certificate.NotAfter;
 
     public bool IsValidNow => DateTime.Now >= Certificate.NotBefore && DateTime.Now <= Certificate.NotAfter;
+
+    /// <summary>Usable to sign now: valid, and its key is there.</summary>
+    public bool CanSignNow => IsValidNow && !KeyMissing;
 
     public bool ExpiresSoon => IsValidNow && Certificate.NotAfter - DateTime.Now < TimeSpan.FromDays(30);
 
@@ -60,7 +69,11 @@ public sealed class IdentityStore(ICertificateStore store, string folder)
         var state = Load();
         return store.Certificates()
             .Where(c => c.HasPrivateKey && CanSign(c))
-            .Select(c => new SigningIdentity(c, state.Created.Contains(IdOf(c)), IsHardware(c)))
+            .Select(c =>
+            {
+                var created = state.Created.Contains(IdOf(c));
+                return new SigningIdentity(c, created, IsHardware(c)) { KeyMissing = created && !KeyWorks(c) };
+            })
             .OrderByDescending(i => i.IsValidNow)
             .ThenBy(i => i.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
@@ -70,7 +83,7 @@ public sealed class IdentityStore(ICertificateStore store, string folder)
 
     public SigningIdentity CreatePersonal(string name, string? email)
     {
-        var certificate = CertificateFactory.CreatePersonal(name, email);
+        var certificate = Persisted(CertificateFactory.CreatePersonal(name, email));
         store.Add(certificate);
         Update(state => state.Created.Add(IdOf(certificate)));
         return Find(IdOf(certificate))!;
@@ -102,6 +115,7 @@ public sealed class IdentityStore(ICertificateStore store, string folder)
     {
         if (!identity.CreatedByUniFiles)
             throw new InvalidOperationException("Only certificates made or imported by UniFiles are removed here.");
+        DeleteKey(identity.Certificate);
         store.Remove(identity.Certificate);
         Update(state => state.Created.Remove(identity.Id));
         new HandwritingStore(folder).Clear(identity.Id);
@@ -140,7 +154,7 @@ public sealed class IdentityStore(ICertificateStore store, string folder)
 
     public OrganizationAuthority CreateAuthority(string organization)
     {
-        var certificate = CertificateFactory.CreateAuthority(organization);
+        var certificate = Persisted(CertificateFactory.CreateAuthority(organization));
         store.Add(certificate);
         Update(state => state.Authorities.Add(IdOf(certificate)));
         return Authorities().First(a => a.Id == IdOf(certificate));
@@ -204,6 +218,52 @@ public sealed class IdentityStore(ICertificateStore store, string folder)
     }
 
     // ---- Helpers --------------------------------------------------------------------------------------
+
+    /// <summary>Under Windows, the key persisted with a certificate made by UniFiles is deleted with it (no orphan key left).</summary>
+    private static void DeleteKey(X509Certificate2 certificate)
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+        try
+        {
+            using var rsa = certificate.GetRSAPrivateKey();
+            if (rsa is RSACng cng)
+                cng.Key.Delete();
+        }
+        catch (CryptographicException)
+        {
+            // Already gone (lost key): nothing to delete.
+        }
+    }
+
+    /// <summary>A certificate made in memory, reloaded the way the store keeps keys (persisted under Windows).</summary>
+    private X509Certificate2 Persisted(X509Certificate2 made)
+    {
+        using (made)
+            return X509CertificateLoader.LoadPkcs12(made.Export(X509ContentType.Pkcs12, ""), "", store.ImportFlags);
+    }
+
+    /// <summary>
+    /// Whether the private key of a certificate made by UniFiles can still sign (a software key:
+    /// trying it asks nothing). Checked under Windows only, where earlier previews lost their keys.
+    /// </summary>
+    private static bool KeyWorks(X509Certificate2 certificate)
+    {
+        if (!OperatingSystem.IsWindows())
+            return true;
+        try
+        {
+            using var rsa = certificate.GetRSAPrivateKey();
+            if (rsa is not null)
+                return rsa.SignData([1], HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1).Length > 0;
+            using var ec = certificate.GetECDsaPrivateKey();
+            return ec is not null && ec.SignData([1], HashAlgorithmName.SHA256).Length > 0;
+        }
+        catch (CryptographicException)
+        {
+            return false;
+        }
+    }
 
     /// <summary>Purposes that allow signing documents: document signing (RFC 9336, Adobe, Microsoft), email protection, any.</summary>
     private static readonly HashSet<string> DocumentPurposes =

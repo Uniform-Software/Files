@@ -143,6 +143,7 @@
                     <Border Classes="badge" IsVisible="{Binding IsHardware}"><TextBlock Text="{x:Static res:Strings.SignSettings_BadgeHardware}" /></Border>
                     <Border Classes="badge warning" IsVisible="{Binding ExpiresSoon}"><TextBlock Text="{x:Static res:Strings.SignSettings_BadgeSoon}" /></Border>
                     <Border Classes="badge warning" IsVisible="{Binding IsExpired}"><TextBlock Text="{x:Static res:Strings.SignSettings_BadgeExpired}" /></Border>
+                    <Border Classes="badge warning" IsVisible="{Binding KeyMissing}"><TextBlock Text="{x:Static res:Strings.SignSettings_BadgeKeyMissing}" /></Border>
                   </WrapPanel>
                   <TextBlock Classes="caption" Text="{Binding Email}" IsVisible="{Binding HasEmail}" />
                   <TextBlock Classes="caption" Text="{Binding Detail}" TextWrapping="Wrap" />

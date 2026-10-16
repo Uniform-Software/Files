@@ -632,4 +632,6 @@
   <data name="SignSettings_IssuedNone" xml:space="preserve"><value>No certificate issued</value></data>
   <data name="SignSettings_IssuedOne" xml:space="preserve"><value>1 certificate issued</value></data>
   <data name="SignSettings_IssuedMany" xml:space="preserve"><value>{0} certificates issued</value></data>
+  <data name="Sign_KeyMissing" xml:space="preserve"><value>The key of this signature isn't on this computer any more (made by an earlier preview of UniFiles). Delete it in Preferences › Signatures and create it again.</value></data>
+  <data name="SignSettings_BadgeKeyMissing" xml:space="preserve"><value>Key missing</value></data>
 </root>
